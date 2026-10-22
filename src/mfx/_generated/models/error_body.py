@@ -1,0 +1,108 @@
+from collections.abc import Mapping
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    BinaryIO,
+    Generator,
+    Optional,
+    TextIO,
+    TypeVar,
+    Union,
+    cast,
+)
+
+from attrs import define as _attrs_define
+from attrs import field as _attrs_field
+
+from ..types import UNSET, Unset
+
+if TYPE_CHECKING:
+    from ..models.error_body_details import ErrorBodyDetails
+
+
+T = TypeVar("T", bound="ErrorBody")
+
+
+@_attrs_define
+class ErrorBody:
+    """
+    Attributes:
+        code (str): Which rule refused the request, or which failure this is: the kind of error, not the HTTP status.
+            **`x-known-values` beside this lists every code the platform sends today, and the list is not closed**: a new
+            rule brings a new code, and it is added here in the release that sends it. A client must read a code it does not
+            know as an error, by the HTTP status and `message`, and must never fail on it. A client generated from this
+            contract gets text here, not a fixed set, for that reason.
+        message (str):
+        details (Union[Unset, ErrorBodyDetails]): Only what the caller can act on. Never a stack trace, an internal
+            message, a credential, or a Key Vault URI.
+    """
+
+    code: str
+    message: str
+    details: Union[Unset, "ErrorBodyDetails"] = UNSET
+    additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
+
+    def to_dict(self) -> dict[str, Any]:
+        from ..models.error_body_details import ErrorBodyDetails
+
+        code = self.code
+
+        message = self.message
+
+        details: Union[Unset, dict[str, Any]] = UNSET
+        if not isinstance(self.details, Unset):
+            details = self.details.to_dict()
+
+        field_dict: dict[str, Any] = {}
+        field_dict.update(self.additional_properties)
+        field_dict.update(
+            {
+                "code": code,
+                "message": message,
+            }
+        )
+        if details is not UNSET:
+            field_dict["details"] = details
+
+        return field_dict
+
+    @classmethod
+    def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
+        from ..models.error_body_details import ErrorBodyDetails
+
+        d = dict(src_dict)
+        code = d.pop("code")
+
+        message = d.pop("message")
+
+        _details = d.pop("details", UNSET)
+        details: Union[Unset, ErrorBodyDetails]
+        if isinstance(_details, Unset):
+            details = UNSET
+        else:
+            details = ErrorBodyDetails.from_dict(_details)
+
+        error_body = cls(
+            code=code,
+            message=message,
+            details=details,
+        )
+
+        error_body.additional_properties = d
+        return error_body
+
+    @property
+    def additional_keys(self) -> list[str]:
+        return list(self.additional_properties.keys())
+
+    def __getitem__(self, key: str) -> Any:
+        return self.additional_properties[key]
+
+    def __setitem__(self, key: str, value: Any) -> None:
+        self.additional_properties[key] = value
+
+    def __delitem__(self, key: str) -> None:
+        del self.additional_properties[key]
+
+    def __contains__(self, key: str) -> bool:
+        return key in self.additional_properties

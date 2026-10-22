@@ -1,0 +1,126 @@
+[project]
+name = "mfx-sdk"
+version = "0.9.15"
+description = "Typed Python client for the MFX Hub API: hosted trading terminals, market data, execution and a live event stream"
+requires-python = ">=3.12"
+readme = "README.md"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+keywords = ["mfx", "mfx-hub", "trading", "market-data", "trading-api"]
+
+dependencies = [
+    "httpx>=0.28",
+    "anyio>=4.6",
+    # DECISION (spec silent): the WebSocket transport is `websockets`. httpx has no WS client, and
+    # of the alternatives this is the boring one — pure Python, no C build for a tenant to fight,
+    # maintained alongside CPython's own asyncio, and it exposes the close code, which the stream
+    # needs to tell 4001 (stop, re-authenticate) from 4009 (expected, reconnect). It is reached
+    # through the narrow StreamConnection protocol in streaming.py, so replacing it later is one
+    # function, not an API change.
+    "websockets>=13.0",
+    # structlog was declared here for `logging.py` and is not used by it: a library must not call
+    # structlog.configure(), which is process-wide, so the MFX log *shape* is produced on stdlib
+    # logging instead. Declared-but-unimported is a dependency a tenant installs and audits for
+    # nothing.
+    # Ed25519 request signing. The private key never leaves the caller's process.
+    "cryptography>=43.0",
+    # What the generated core is made of: openapi-python-client emits attrs classes and parses
+    # date-times with dateutil. The models are typed and ship py.typed.
+    "attrs>=24.2",
+    "python-dateutil>=2.9",
+]
+
+[project.urls]
+Homepage = "https://mfxhub.com"
+Source = "https://github.com/mfx-platform/mfx-sdk-python"
+Documentation = "https://docs.mfxhub.com/sdk"
+Changelog = "https://github.com/mfx-platform/mfx-sdk-python/blob/main/CHANGELOG.md"
+Issues = "https://github.com/mfx-platform/mfx-sdk-python/issues"
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3",
+    "pytest-asyncio>=0.24",
+    "pytest-cov>=6.0",
+    "mypy>=1.13",
+    "ruff>=0.8",
+    "respx>=0.22",
+    "pyyaml>=6.0",
+]
+
+# openapi-python-client is deliberately NOT a dependency of this package or its dev group: it pins
+# its own ruff, and a code generator must never choose the library's linter. It is run as an
+# isolated tool at the exact version in tools/generate.py, which CI re-runs to prove no hand edits.
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/mfx"]
+
+# The source distribution is the package and its documents; the tests stay in the repository.
+[tool.hatch.build.targets.sdist]
+include = [
+    "src/mfx",
+    "README.md",
+    "LICENSE",
+    "SECURITY.md",
+    "CODE_OF_CONDUCT.md",
+    "CONTRIBUTING.md",
+    "CHANGELOG.md",
+]
+
+# ---------------------------------------------------------------------------
+# Quality gates: lint, types end to end, and full coverage
+# ---------------------------------------------------------------------------
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "UP", "B", "A", "C4", "T20", "SIM", "ARG", "ASYNC", "S", "D1"]
+# D1: every public module, class, function and method says what it is for - this is a public
+# library, and its docstrings are its reference documentation. Dunder methods and __init__ are
+# exempt: a class's own docstring says how to build it.
+ignore = ["S101", "D105", "D107"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["ARG", "S105", "S106", "D1"]
+"tools/**" = ["D1"]
+# Generated from the API description, never hand-edited, so never hand-linted.
+"src/mfx/_generated/**" = ["ALL"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+warn_unreachable = true
+disallow_any_explicit = false
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+disallow_untyped_defs = false
+
+[[tool.mypy.overrides]]
+module = "mfx._generated.*"
+ignore_errors = true
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+addopts = "--cov=src/mfx --cov-report=term-missing --cov-fail-under=100"
+markers = [
+    "tc(case_id): the id of the test case this test proves",
+    "integration: needs external services",
+    "sit: runs against a deployed MFX environment",
+    "conformance: the contract suite every MFX Hub deployment must pass",
+    "severity(level): severity for an auto-raised bug when this case fails (default 3)",
+]
+
+[tool.coverage.report]
+exclude_also = ["if TYPE_CHECKING:", "raise NotImplementedError", "\\.\\.\\."]
+
+[tool.coverage.run]
+omit = ["src/mfx/_generated/*"]

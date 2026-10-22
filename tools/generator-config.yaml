@@ -1,0 +1,18 @@
+# openapi-python-client configuration.
+#
+# Only the post-generation hooks differ from the defaults. The generator lints what it produced and
+# fails the run on anything it cannot fix: the Candle schema's OHLC fields are named o/h/l/c in the
+# spec, and `l` is E741 "ambiguous variable name" forever. That is a true statement about generated
+# code we do not lint (pyproject excludes src/mfx/_generated from ruff), so it must not fail the
+# build. --exit-zero keeps every automatic fix and the formatting, and drops the verdict.
+# --isolated is what makes the output reproducible. Without it ruff discovers whatever pyproject.toml
+# happens to sit above the temporary directory it runs in, so the same generator formats to 88
+# columns on a CI runner and 100 on a developer's machine, and the drift job fails on line wrapping
+# that means nothing. Isolated, the only inputs are the spec and these flags.
+# `--select I` is not cosmetic: the generator emits the imports inside `if TYPE_CHECKING:` blocks in
+# set-iteration order, so two runs of the same generator on the same spec produce the same file with
+# two import orders. Sorting them is what makes the output canonical, and it is why the drift job can
+# mean something. Without it the job fails on whichever order came out this time.
+post_hooks:
+  - "ruff check . --fix --exit-zero --isolated --select I"
+  - "ruff format . --isolated --line-length 100"
