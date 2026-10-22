@@ -66,7 +66,7 @@ class Catalog:
     async def servers(
         self, broker_id: Id, *, cursor: str | None = None, limit: int | None = None
     ) -> Page[TenantBrokerServer]:
-        """The MT5 servers this broker runs, and whether MFX can use each one now.
+        """The MT5 servers this broker runs, and whether MFX can use each one now. One page.
 
         ``server_name`` is what a credential names. ``enabled`` is the per-server switch and
         ``disabled_reason`` is the sentence the operator recorded for it — the same words the
@@ -156,6 +156,17 @@ class Catalog:
 
         A quote is never returned without saying how old it is: a stale quote reads exactly like a
         live one and gets acted on.
+
+        It is read from one of your terminals on that broker's server: from its latest tick when
+        the terminal already watches the symbol, otherwise asked of the terminal on demand (up to
+        5 s). Any farm works, a ``quote_streaming`` one is not needed; that is for continuous
+        prices on the stream. It needs one of your terminals on that server.
+
+        ``state`` says whether the market can be traded: ``open``, ``closed_session`` (outside the
+        broker's trading hours), ``paused``, ``close_only``, ``long_only``, ``short_only``,
+        ``trade_disabled``, or ``unknown`` when none of your terminals on the server has reported
+        the symbol's trading conditions recently, as can happen in the first minutes after a
+        terminal goes live. ``broker_time`` is the broker's own clock, which is not UTC.
 
         A symbol listed on more than one of the tenant's servers or account types is answered
         409 ``ambiguous_symbol``; name ``server_id`` and ``account_type`` to say which.

@@ -117,14 +117,24 @@ def _decimal(value: Any) -> Decimal | None:
 
 @dataclass(frozen=True, slots=True)
 class ExecutionResult:
-    """The whole answer to one execution call. Never raised — always returned."""
+    """The whole answer to one execution call. Never raised — always returned.
 
+    Read ``state`` first: ``SUCCEEDED`` is done; ``FAILED``, ``EXPIRED`` and ``REJECTED`` did not
+    happen; ``UNKNOWN`` may already be a position and must never be sent again under a new key.
+    ``final`` says whether the platform can still change the answer;
+    :meth:`mfx.execution.Execution.wait_for` waits until it cannot.
+    """
+
+    #: True when the command succeeded.
     ok: bool
     #: The idempotency key this call was made with, so a retry can reuse it without bookkeeping.
     idempotency_key: str
     #: How long the SDK waited, end to end. Always known, even when nothing else is.
     client_rtt_ms: float
+    #: The platform's id for the command; give it to ``wait_for`` or ``get_command``.
     command_id: str | None = None
+    #: Where the command is: on its way (ACCEPTED, ENQUEUED, DELIVERED, EXECUTING), final
+    #: (SUCCEEDED, FAILED, EXPIRED, REJECTED), or UNKNOWN.
     state: CommandState | None = None
     #: True once the platform will not change this answer again.
     final: bool = False
@@ -132,19 +142,28 @@ class ExecutionResult:
     retryable: bool = False
     #: The same key with the same body: this is the original command, not a second one.
     duplicate: bool = False
+    #: Why it ended as it did, for a failure or a refusal. None when the platform gives no reason,
+    #: which is what a success looks like: read ``state`` to know it succeeded.
     reason: Reason | None = None
     #: The reason exactly as it arrived, including one this SDK version does not know.
     reason_text: str | None = None
+    #: The trading platform's own return code for the request, and its meaning in words.
     mt5_retcode: int | None = None
     retcode_text: str | None = None
     #: The broker's own comment, verbatim, for a human to read beside the reason.
     comment_raw: str | None = None
+    #: The terminal's state when the command was answered.
     terminal_state: str | None = None
+    #: The order, deal and position the broker gave this fill: ``tickets.position`` is what
+    #: ``close_position`` and ``modify_position`` take.
     tickets: Tickets = field(default_factory=Tickets)
+    #: The price and volume the broker filled at, as decimals.
     exec_price: Decimal | None = None
     exec_volume: Decimal | None = None
+    #: Time at the broker, and time inside the platform's terminal, for this command.
     broker_latency_ms: int | None = None
     agent_latency_ms: int | None = None
+    #: How many times the platform sent it to the broker.
     attempts: int = 0
     #: The terminal a failover moved this command from, when one did.
     rerouted_from: str | None = None

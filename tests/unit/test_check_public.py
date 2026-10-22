@@ -67,6 +67,7 @@ def test_the_public_check_finds_internal_text_in_the_wheel_the_sdist_and_the_doc
     for word in ("DEC-" + "12", "ADR-" + "30", "TC-S" + "1-W4-001", "§" + "9.6", "MFX\\" + "SDK"):
         assert check_public.INTERNAL.search(f"see {word}"), word
     assert not check_public.INTERNAL.search("a decimal string, ADR and DEC alone are words")
+    assert not check_public.INTERNAL.search("a file at mfx\\" + "prices.csv is not an area path")
 
     assert check_public.main([str(tmp_path / "empty")]) == 2
     empty = tmp_path / "none"

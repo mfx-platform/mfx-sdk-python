@@ -12,59 +12,91 @@ Python 3.12 or later. Async first, with a thin synchronous client for scripts.
 
 ## Your first quote and your first order
 
-You need an API key (its id and the private key shown once when it is issued), the id of a farm
-your plan allows (`client.farms.list()` shows them and what each offers), and a broker account on
-a server MFX Hub supports. The [documentation](https://docs.mfxhub.com) walks through each step,
-and the [SDK reference](https://docs.mfxhub.com/sdk) lists every method.
+You need an API key (its id, and the private key shown once when it was issued), your broker's
+name, your server's name exactly as your trading platform's login window shows it, and your
+login. The program below finds the ids for those names, asks for a terminal, reads a quote,
+buys the smallest volume the symbol allows, closes the position and retires the terminal. Use a
+**demo** account: the order is real on whatever account you log in to.
 
 ```python
+import asyncio
+import getpass
 import os
-import anyio
+import uuid
+
 import mfx
 
-API = "https://api.mfxhub.com/v1"          # https://api.dev.mfxhub.com/v1 for development
+API = "https://api.dev.mfxhub.com/v1"           # https://api.mfxhub.com/v1 for production
+SYMBOL = "EURUSD"                               # the broker's own symbol name
 
 
 async def main() -> None:
-    async with mfx.MfxClient(API, os.environ["MFX_KEY_ID"], os.environ["MFX_PRIVATE_KEY"]) as client:
-        # 1. A terminal for your broker account, on a farm your plan allows, asking only for what
-        #    that farm offers.
-        farm = await client.farms.get(os.environ["MFX_FARM_ID"])
-        offers = {str(usage) for usage in farm.usages}
+    run = uuid.uuid4().hex[:8]  # every write takes an idempotency key; one set per run
+    key = mfx.SigningKey(os.environ["MFX_PRIVATE_KEY"])
+    async with mfx.MfxClient(API, os.environ["MFX_KEY_ID"], key) as client:
+        # 1. The ids for the names you know: a farm your plan allows that executes orders,
+        #    your broker, and your server.
+        farm = [f async for f in client.farms.list() if "order_execution" in map(str, f.usages)][0]
+        broker = [b async for b in client.catalog.all_brokers()
+                  if os.environ["MFX_BROKER"].lower() in (b.code.lower(), b.display_name.lower())][0]
+        server = [s for s in await client.catalog.servers(broker.id)
+                  if s.server_name == os.environ["MFX_SERVER"]][0]
+
+        # 2. A terminal for your account, logged in with your password, typed at a prompt.
         terminal = await client.terminals.create(
-            farm_id=farm.id,
-            broker_id=os.environ["MFX_BROKER_ID"],
-            server_id=os.environ["MFX_SERVER_ID"],
-            streaming="quote_streaming" in offers,
-            execution="order_execution" in offers,
-            instruments=["EURUSD"],                # the broker's own symbol names
-            idempotency_key="my-first-terminal",
+            farm_id=farm.id, broker_id=broker.id, server_id=server.id, execution=True,
+            instruments=[SYMBOL], idempotency_key=f"terminal-{run}",
         )
         await client.terminals.submit_credentials(
-            terminal.id,
-            login=int(os.environ["BROKER_LOGIN"]),
-            password=mfx.Secret(os.environ["BROKER_PASSWORD"]),
-            server=os.environ["BROKER_SERVER"],
-            idempotency_key="my-first-credential",
+            terminal.id, login=int(os.environ["MFX_LOGIN"]), server=server.server_name,
+            password=mfx.Secret(getpass.getpass("Broker password: ")),
+            idempotency_key=f"credential-{run}",
         )
         while not mfx.is_usable(terminal := await client.terminals.get(terminal.id)):
-            await anyio.sleep(5)
+            await asyncio.sleep(5)
 
-        # 2. A quote, always with its age.
-        quote = await client.catalog.quote(os.environ["MFX_BROKER_ID"], "EURUSD")
+        # 3. A quote, always with its age.
+        quote = await client.catalog.quote(broker.id, SYMBOL, server_id=server.id)
         print(quote.bid, quote.ask, quote.age_s)
 
-        # 3. An order. Execution never raises: every outcome is a result.
+        # 4. An order, the smallest volume allowed. Execution never raises: every outcome is a
+        #    result, and wait_for returns it once it is final.
+        spec = await client.catalog.symbol(broker.id, SYMBOL, server_id=server.id)
         placed = await client.execution.place_order(
-            terminal.id, symbol="EURUSD", side="buy", volume="0.01",
-            idempotency_key="my-first-order",
+            terminal.id, symbol=SYMBOL, side="buy", volume=str(spec.volume_min),
+            idempotency_key=f"buy-{run}",
         )
         done = await client.execution.wait_for(placed.command_id)
-        print(done.state, done.reason, done.exec_price)
+        print(done.state, done.exec_price, done.comment_raw)
+
+        # 5. Close the position it opened, and retire the terminal.
+        closed = await client.execution.close_position(
+            terminal.id, done.tickets.position, idempotency_key=f"close-{run}"
+        )
+        print((await client.execution.wait_for(closed.command_id)).state)
+        await client.terminals.retire(terminal.id, idempotency_key=f"retire-{run}")
 
 
-anyio.run(main)
+asyncio.run(main())
 ```
+
+Run it with `MFX_KEY_ID`, `MFX_PRIVATE_KEY`, `MFX_BROKER` (for example `Pepperstone`),
+`MFX_SERVER` (for example `Pepperstone-Demo`) and `MFX_LOGIN` set. The same program, with every
+outcome checked, is [`samples/first_order.py`](https://github.com/mfx-platform/mfx-kb/blob/main/samples/first_order.py)
+in the knowledge base, whose [guide](https://github.com/mfx-platform/mfx-kb/blob/main/guides/your-first-order.md)
+explains each step.
+
+## Reference
+
+The [documentation](https://docs.mfxhub.com) has guides and the full reference, generated from this
+package:
+[client and signing](https://docs.mfxhub.com/sdk-client) ·
+[terminals](https://docs.mfxhub.com/sdk-terminals) ·
+[execution](https://docs.mfxhub.com/sdk-execution) ·
+[accounts and catalogue](https://docs.mfxhub.com/sdk-accounts) ·
+[market data](https://docs.mfxhub.com/sdk-market-data) ·
+[stream and live account](https://docs.mfxhub.com/sdk-stream) ·
+[errors](https://docs.mfxhub.com/sdk-errors).
 
 ## What to know
 

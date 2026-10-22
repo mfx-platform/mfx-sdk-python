@@ -1,6 +1,6 @@
 [project]
 name = "mfx-sdk"
-version = "0.9.15"
+version = "0.9.16"
 description = "Typed Python client for the MFX Hub API: hosted trading terminals, market data, execution and a live event stream"
 requires-python = ">=3.12"
 readme = "README.md"

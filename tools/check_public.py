@@ -34,7 +34,9 @@ REPO = Path(__file__).resolve().parents[1]
 INTERNAL = re.compile(
     # Written so that these lines do not match themselves when this file is scanned.
     r"design[/]|\bDEC-\d+|AB#\d+|\bADR-\d+|TC-S[1]-|§ ?\d"
-    r"|MFX[\\]{1,2}[A-Z]|\bLane \d|-intern[a]l\b",
+    # A tracker area path is upper case - MFX, a backslash, a capital. A lower-case file path that
+    # starts the same way is not one.
+    r"|(?-i:MFX[\\]{1,2}[A-Z])|\bLane \d|-intern[a]l\b",
     re.IGNORECASE,
 )
 

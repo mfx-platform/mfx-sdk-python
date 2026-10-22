@@ -28,7 +28,11 @@ __all__ = ["Page", "page_of"]
 
 @dataclass(frozen=True, slots=True)
 class Page[T]:
-    """One page, and the cursor for the next. ``next_cursor`` is None on the last."""
+    """One page, and the cursor for the next. ``next_cursor`` is None on the last.
+
+    Iterate it, or read ``items``. To walk every page, pass ``next_cursor`` back as ``cursor``, or
+    use the method that iterates for you where there is one (``all_brokers()``, ``farms.list()``).
+    """
 
     items: list[T] = field(default_factory=list)
     next_cursor: str | None = None

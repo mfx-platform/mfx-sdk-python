@@ -7,6 +7,16 @@ surface; each such change is listed under **Changed** with what to do.
 
 ## Unreleased
 
+## 0.9.16
+
+### Changed
+
+- The README's first program finds your farm, broker and server from their names, places the
+  smallest order the symbol allows, closes it and retires the terminal; it is the same code as the
+  knowledge base's `first_order.py`. The README links every reference page.
+- Reference text: every field of `ExecutionResult`, what `reason` is on a success (none: read
+  `state`), where `catalog.quote` reads from and what its `state` means, and how to read a `Page`.
+
 ## 0.9.15
 
 The first public release.
