@@ -26,8 +26,8 @@ import uuid
 
 import mfx
 
-API = "https://api.dev.mfxhub.com/v1"           # https://api.mfxhub.com/v1 for production
-SYMBOL = "EURUSD"                               # the broker's own symbol name
+API = "https://api.dev.mfxhub.com/v1"  # https://api.mfxhub.com/v1 for production
+SYMBOL = "EURUSD"  # the broker's own symbol name
 
 
 async def main() -> None:
@@ -37,18 +37,30 @@ async def main() -> None:
         # 1. The ids for the names you know: a farm your plan allows that executes orders,
         #    your broker, and your server.
         farm = [f async for f in client.farms.list() if "order_execution" in map(str, f.usages)][0]
-        broker = [b async for b in client.catalog.all_brokers()
-                  if os.environ["MFX_BROKER"].lower() in (b.code.lower(), b.display_name.lower())][0]
-        server = [s for s in await client.catalog.servers(broker.id)
-                  if s.server_name == os.environ["MFX_SERVER"]][0]
+        broker = [
+            b
+            async for b in client.catalog.all_brokers()
+            if os.environ["MFX_BROKER"].lower() in (b.code.lower(), b.display_name.lower())
+        ][0]
+        server = [
+            s
+            for s in await client.catalog.servers(broker.id)
+            if s.server_name == os.environ["MFX_SERVER"]
+        ][0]
 
         # 2. A terminal for your account, logged in with your password, typed at a prompt.
         terminal = await client.terminals.create(
-            farm_id=farm.id, broker_id=broker.id, server_id=server.id, execution=True,
-            instruments=[SYMBOL], idempotency_key=f"terminal-{run}",
+            farm_id=farm.id,
+            broker_id=broker.id,
+            server_id=server.id,
+            execution=True,
+            instruments=[SYMBOL],
+            idempotency_key=f"terminal-{run}",
         )
         await client.terminals.submit_credentials(
-            terminal.id, login=int(os.environ["MFX_LOGIN"]), server=server.server_name,
+            terminal.id,
+            login=int(os.environ["MFX_LOGIN"]),
+            server=server.server_name,
             password=mfx.Secret(getpass.getpass("Broker password: ")),
             idempotency_key=f"credential-{run}",
         )
@@ -63,7 +75,10 @@ async def main() -> None:
         #    result, and wait_for returns it once it is final.
         spec = await client.catalog.symbol(broker.id, SYMBOL, server_id=server.id)
         placed = await client.execution.place_order(
-            terminal.id, symbol=SYMBOL, side="buy", volume=str(spec.volume_min),
+            terminal.id,
+            symbol=SYMBOL,
+            side="buy",
+            volume=str(spec.volume_min),
             idempotency_key=f"buy-{run}",
         )
         done = await client.execution.wait_for(placed.command_id)

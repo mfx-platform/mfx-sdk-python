@@ -7,6 +7,14 @@ surface; each such change is listed under **Changed** with what to do.
 
 ## Unreleased
 
+## 0.9.17
+
+### Changed
+
+- Dependencies: anyio 4.15.1, websockets 17.3, cryptography 50.0.2; for development, mypy 2.4.0
+  and ruff 0.17.
+- The repository runs the OpenSSF Scorecard weekly and publishes its results.
+
 ## 0.9.16
 
 ### Changed
