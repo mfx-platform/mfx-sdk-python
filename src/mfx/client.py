@@ -261,8 +261,13 @@ class MfxClient:
             return await call()
         except httpx.TimeoutException as exc:
             raise MfxTimeout(str(exc)) from exc
+        except httpx.ConnectError as exc:
+            # The connection never opened, so nothing was sent.
+            raise MfxTransportError(str(exc), may_have_reached=False) from exc
         except httpx.HTTPError as exc:
-            raise MfxTransportError(str(exc)) from exc
+            # Anything later - a dropped connection, a protocol error mid-answer - may follow a
+            # request the server received in full.
+            raise MfxTransportError(str(exc), may_have_reached=True) from exc
         except (ValueError, KeyError, TypeError) as exc:
             # The generated parser assumes the answer matches the spec, and parses error bodies
             # too. A failure it cannot read is still a failure the caller must see as itself: a

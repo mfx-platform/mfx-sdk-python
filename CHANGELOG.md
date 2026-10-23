@@ -7,6 +7,20 @@ surface; each such change is listed under **Changed** with what to do.
 
 ## Unreleased
 
+## 0.9.18
+
+### Fixed
+
+- An order whose connection dropped after it was sent came back `retryable`, which invited sending
+  it again under a new key while the first may already be a position. It now reads `UNKNOWN` and is
+  not retryable; sending it again under the **same** key is safe. Only an order whose connection
+  never opened is retryable.
+
+### Added
+
+- The SDK runs the shared MFX Hub SDK test suite (`tests/conformance`), the same cases every MFX Hub
+  SDK must pass: signing, every error code, decimals, idempotency, paging and execution.
+
 ## 0.9.17
 
 ### Changed

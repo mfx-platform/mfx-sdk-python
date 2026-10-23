@@ -144,9 +144,10 @@ async def test_every_execution_result_carries_broker_and_agent_latency(
 async def test_execution_methods_never_raise_transport_timeout_and_429_are_results(
     private_key: object, sleeps: list[float]
 ) -> None:
-    """Given a transport fault, a timeout and a rate limit / When an order is placed into each /
-    Then each is an ExecutionResult with its own reason, nothing is raised, and **nothing is
-    retried**.
+    """Given a connection that never opened, one dropped after the order was sent, a timeout and a
+    rate limit / When an order is placed into each / Then each is an ExecutionResult with its own
+    reason, nothing is raised, and **nothing is retried**; only the order that never left may be
+    sent again under a new key, and the dropped one reads UNKNOWN.
 
     A trading loop that has to catch exceptions to find out whether it has a position is a trading
     loop that will one day place two."""
@@ -160,9 +161,16 @@ async def test_execution_methods_never_raise_transport_timeout_and_429_are_resul
         attempts.append(request)
         raise httpx.ReadTimeout("too slow", request=request)
 
-    for handler, reason, retryable in (
-        (refuse, Reason.TRANSPORT_ERROR, True),
-        (time_out, Reason.TIMEOUT, False),
+    def drop(request: httpx.Request) -> httpx.Response:
+        # The order was written to the connection and the server closed it before answering:
+        # it may have reached the broker. Found by the shared suite's dropped-connection case.
+        attempts.append(request)
+        raise httpx.RemoteProtocolError("server disconnected without a response", request=request)
+
+    for handler, reason, retryable, state in (
+        (refuse, Reason.TRANSPORT_ERROR, True, None),
+        (drop, Reason.TRANSPORT_ERROR, False, CommandState.UNKNOWN),
+        (time_out, Reason.TIMEOUT, False, None),
     ):
         attempts.clear()
         async with MfxClient(
@@ -178,6 +186,7 @@ async def test_execution_methods_never_raise_transport_timeout_and_429_are_resul
         # A timeout is never retryable: the order may already be a position, and deal-history
         # reconciliation is the only safe recovery.
         assert result.retryable is retryable
+        assert result.state is state
 
     limited = FakeMfx()
     limited.responses.append(error(429, "rate_limited", "over budget", **{"Retry-After": "30"}))

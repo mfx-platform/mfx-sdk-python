@@ -52,7 +52,16 @@ class MfxError(Exception):
 
 
 class MfxTransportError(MfxError):
-    """The request never got an answer: DNS, TCP, TLS, a dropped connection."""
+    """The request never got an answer: DNS, TCP, TLS, a dropped connection.
+
+    ``may_have_reached`` says whether the request could have arrived. It is False only when the
+    connection never opened, so nothing was sent; a connection that dropped after the request was
+    written may have delivered it, and an order sent that way may already be a position.
+    """
+
+    def __init__(self, message: str = "", *, may_have_reached: bool = True) -> None:
+        super().__init__(message)
+        self.may_have_reached = may_have_reached
 
 
 class MfxTimeout(MfxTransportError):  # noqa: N818 - "Error" would read as MfxTimeoutError

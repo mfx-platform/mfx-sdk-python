@@ -499,6 +499,7 @@ class Execution:
                 idempotency_key=idempotency_key,
                 client_rtt_ms=elapsed(),
                 detail=f"{what}: {exc}",
+                may_have_reached=exc.may_have_reached,
             )
         except MfxApiError as exc:  # an answer the generated core could not read
             return ExecutionResult.refused(

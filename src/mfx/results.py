@@ -217,8 +217,15 @@ class ExecutionResult:
         client_rtt_ms: float,
         detail: str,
         retry_at: dt.datetime | None = None,
+        may_have_reached: bool = False,
     ) -> Self:
-        """An answer the SDK concluded itself: no transport, no time, or a refusal."""
+        """An answer the SDK concluded itself: no transport, no time, or a refusal.
+
+        ``may_have_reached`` is for a transport error after the request was sent: the order may be
+        a position, so the result reads ``UNKNOWN`` and is not retryable under a new key. Sending
+        it again under the *same* key is safe, and answers with the original if it arrived.
+        """
+        reached = reason is Reason.TRANSPORT_ERROR and may_have_reached
         return cls(
             ok=False,
             idempotency_key=idempotency_key,
@@ -228,7 +235,9 @@ class ExecutionResult:
             # A timeout is never retryable: the order may have been placed (the platform's
             # rules). A transport error before the request left is, a rate limit is, and so is a
             # maintenance window's refusal, once it ends.
-            retryable=reason in {Reason.TRANSPORT_ERROR, Reason.RATE_LIMITED, Reason.MAINTENANCE},
+            retryable=not reached
+            and reason in {Reason.TRANSPORT_ERROR, Reason.RATE_LIMITED, Reason.MAINTENANCE},
+            state=CommandState.UNKNOWN if reached else None,
             final=True,
             detail=detail,
             retry_at=retry_at,

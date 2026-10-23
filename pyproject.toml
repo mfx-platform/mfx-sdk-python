@@ -1,6 +1,6 @@
 [project]
 name = "mfx-sdk"
-version = "0.9.17"
+version = "0.9.18"
 description = "Typed Python client for the MFX Hub API: hosted trading terminals, market data, execution and a live event stream"
 requires-python = ">=3.12"
 readme = "README.md"
@@ -46,6 +46,7 @@ dev = [
     "ruff>=0.8",
     "respx>=0.22",
     "pyyaml>=6.0",
+    "aiohttp>=3.10",
 ]
 
 # openapi-python-client is deliberately NOT a dependency of this package or its dev group: it pins
