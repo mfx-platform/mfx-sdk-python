@@ -7,6 +7,24 @@ surface; each such change is listed under **Changed** with what to do.
 
 ## Unreleased
 
+## 0.9.19
+
+### Fixed
+
+- An order sent again with the same idempotency key, after the first had already finished, came
+  back with `ok` false and no price, tickets or broker comment, because the platform answers a
+  repeat with the command's state only. A filled order read as not filled. The SDK now reads the
+  command once and returns the original result in full, marked `duplicate`. This applies to every
+  execution write. A repeat still in flight is returned as it is, with no extra read; follow it
+  with `wait_for`.
+- If that read fails, the call still returns what the platform said (the state, `ok` true for a
+  success, `duplicate`) with the price and tickets empty, and `detail` names the `get_command`
+  call that reads the rest. It never raises.
+
+### Changed
+
+- The SDK passes the shared SDK test suite 0.3.0, all 74 cases.
+
 ## 0.9.18
 
 ### Fixed

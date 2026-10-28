@@ -9,6 +9,7 @@ case and against the hub's verdict on what was sent. The rules are the suite's
 
 from __future__ import annotations
 
+import asyncio
 import base64
 import json
 import os
@@ -25,6 +26,7 @@ import pytest
 import mfx
 from mfx import errors
 from mfx.signing import SigningKey, signing_message
+from mfx.streaming import StreamMessage
 
 SUITE = Path(__file__).resolve().parent / "suite"
 VOCABULARY = json.loads((SUITE / "vocabulary.json").read_text(encoding="utf-8"))
@@ -103,11 +105,45 @@ async def _call(client: mfx.MfxClient, op: str, args: dict[str, Any]) -> dict[st
             "command_id": result.command_id,
             "duplicate": result.duplicate,
             "retryable": result.retryable,
+            "exec_price": result.exec_price,
+            "position": result.tickets.position,
+            "comment_raw": result.comment_raw,
         }
     if op == "catalog.quote":
         quote = await client.catalog.quote(a["broker_id"], a["symbol"])
         return {"bid": quote.bid, "ask": quote.ask, "age_s": quote.age_s, "state": str(quote.state)}
+    if op == "stream.read":
+        return await asyncio.wait_for(_read_stream(client, a["channels"], a["count"]), timeout=15)
     raise AssertionError(f"this runner does not know the operation {op!r}")
+
+
+async def _read_stream(client: mfx.MfxClient, channels: list[str], count: int) -> dict[str, Any]:
+    """Subscribe in order, read ``count`` data messages, and report them with the stream's counters.
+
+    A few reconnects are allowed, enough for any case; the client's sleep is a no-op, so a
+    reconnect is decided by the stream and not waited for."""
+    seqs: list[int | None] = []
+    types: list[str | None] = []
+    async with client.stream(max_reconnects=3) as stream:
+        for channel in channels:
+            await stream.subscribe(channel)
+        async for event in stream:
+            if isinstance(event, StreamMessage):
+                seqs.append(event.seq)
+                types.append(event.type)
+                if len(seqs) >= count:
+                    break
+        stats = stream.stats
+    return {
+        "seqs": seqs,
+        "types": types,
+        "dropped": stats.dropped,
+        "reconnects": stats.reconnects,
+        "lifetime_reconnects": stats.lifetime_reconnects,
+        "slow_consumer_drops": stats.slow_consumer_drops,
+        "resyncs": stats.resyncs,
+        "refused": stats.refused,
+    }
 
 
 def _same(got: Any, want: Any) -> bool:  # noqa: ANN401 - JSON values

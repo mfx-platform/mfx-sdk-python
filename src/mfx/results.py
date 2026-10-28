@@ -182,7 +182,11 @@ class ExecutionResult:
         reason_text = result.get("reason")
         reason_text = reason_text if isinstance(reason_text, str) and reason_text else None
         return cls(
-            ok=bool(result.get("ok", False)),
+            # The result says, once there is one. A CommandAccepted has none: a repeat of a
+            # command that already succeeded says so by its state alone.
+            ok=bool(result.get("ok", False))
+            if isinstance(answer, dict)
+            else state is CommandState.SUCCEEDED,
             idempotency_key=idempotency_key,
             client_rtt_ms=client_rtt_ms,
             command_id=str(raw["command_id"]) if raw.get("command_id") else None,

@@ -21,6 +21,7 @@ Three rules show up in every signature:
 
 from __future__ import annotations
 
+from dataclasses import replace
 from decimal import Decimal, InvalidOperation
 from typing import TYPE_CHECKING, Any, Literal
 
@@ -450,6 +451,7 @@ class Execution:
             ),
             idempotency_key,
             f"GET /commands/{command_id}",
+            write=False,
         )
 
     async def wait_for(
@@ -475,6 +477,8 @@ class Execution:
         call: Callable[[], Awaitable[GeneratedResponse[Any]]],
         idempotency_key: str,
         what: str,
+        *,
+        write: bool = True,
     ) -> ExecutionResult:
         """Run one execution call and turn *everything* it can do into a result."""
         started = self._client.wall()
@@ -535,8 +539,24 @@ class Execution:
                     client_rtt_ms=elapsed(),
                     detail=str(refused),
                 )
-        return ExecutionResult.from_command(
+        answer = ExecutionResult.from_command(
             _body_of(response), idempotency_key=idempotency_key, client_rtt_ms=elapsed()
+        )
+        if not (write and answer.duplicate and answer.final and answer.command_id):
+            return answer
+        # A repeat of a command that is already final is answered with its state only: read the
+        # command once, so the caller gets the original result - price, tickets, reason - and not
+        # an empty one. One extra read, only on a final repeat.
+        original = await self.get_command(answer.command_id, idempotency_key=idempotency_key)
+        if original.command_id is not None and original.state is not None:
+            return replace(original, duplicate=True, client_rtt_ms=elapsed())
+        # DECISION: the read failed. Report what the platform did say - the state,
+        # ok from it, duplicate - and how to read the rest. Never UNKNOWN: the outcome is known.
+        return replace(
+            answer,
+            client_rtt_ms=elapsed(),
+            detail=f"the original result could not be read ({original.detail}); "
+            f"get_command('{answer.command_id}') reads it",
         )
 
 

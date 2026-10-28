@@ -267,6 +267,89 @@ async def test_the_same_key_returns_the_original_command_and_says_so(
     assert first.duplicate is False and again.duplicate is True
 
 
+@pytest.mark.parametrize("state", ["SUCCEEDED", "REJECTED"])
+async def test_a_final_duplicate_returns_the_original_result_read_once(
+    client: MfxClient, mfx: FakeMfx, state: str
+) -> None:
+    """Given an order already final at the platform / When it is sent again with the same key and
+    answered with its state only / Then the SDK reads the command once and returns the original
+    result in full - ok, price, tickets, the broker's comment or the reason - marked duplicate."""
+    original = (
+        filled()
+        if state == "SUCCEEDED"
+        else filled(ok=False, reason="market_closed", exec_price=None, tickets={
+            "order": None, "deal": None, "position": None})
+    )  # fmt: skip
+    mfx.responses.extend([accepted(state, duplicate=True), command(state, original)])
+
+    again = await client.execution.place_order(
+        TERMINAL_ID, symbol="EURUSD", side="buy", volume="0.1", idempotency_key="same"
+    )
+
+    assert [(r.method, r.url.path) for r in mfx.requests] == [
+        ("POST", f"/v1/terminals/{TERMINAL_ID}/orders"),
+        ("GET", f"/v1/commands/{COMMAND_ID}"),
+    ]
+    assert again.duplicate is True and again.final is True
+    assert again.idempotency_key == "same" and again.command_id == COMMAND_ID
+    if state == "SUCCEEDED":
+        assert again.ok is True and again.state is CommandState.SUCCEEDED
+        assert again.exec_price == Decimal("1.09431") and again.tickets.position == 8811
+        assert again.comment_raw == "filled"
+    else:
+        assert again.ok is False and again.reason is Reason.MARKET_CLOSED
+        assert again.exec_price is None
+
+
+async def test_a_duplicate_still_in_flight_and_a_first_answer_are_not_read_again(
+    client: MfxClient, mfx: FakeMfx
+) -> None:
+    """Given a repeat whose command is still executing, a first send already final, and a read
+    of a command / When each is answered / Then none makes a second request: only a final
+    duplicate is read, and reading a command never reads it again."""
+    mfx.responses.extend(
+        [accepted("EXECUTING", duplicate=True), accepted("SUCCEEDED"), command("SUCCEEDED", None)]
+    )
+
+    in_flight = await client.execution.place_order(
+        TERMINAL_ID, symbol="EURUSD", side="buy", volume="0.1", idempotency_key="k1"
+    )
+    first = await client.execution.place_order(
+        TERMINAL_ID, symbol="EURUSD", side="buy", volume="0.1", idempotency_key="k2"
+    )
+    read = await client.execution.get_command(COMMAND_ID)
+
+    assert len(mfx.requests) == 3
+    assert in_flight.duplicate is True and in_flight.state is CommandState.EXECUTING
+    assert in_flight.ok is False and in_flight.final is False
+    assert first.state is CommandState.SUCCEEDED and first.duplicate is False
+    assert read.state is CommandState.SUCCEEDED
+
+
+@pytest.mark.parametrize(
+    "fault",
+    [error(503, "dependency_unavailable", "refused"), error(404, "not_found", "no such command")],
+)
+async def test_a_final_duplicate_whose_read_fails_is_still_what_the_platform_said(
+    client: MfxClient, mfx: FakeMfx, fault: httpx.Response
+) -> None:
+    """Given a repeat answered SUCCEEDED and a duplicate / When reading the original command fails
+    / Then the call returns the state, ok true, duplicate, no invented fields and not retryable,
+    says how to read the rest, and raises nothing."""
+    mfx.responses.extend([accepted("SUCCEEDED", duplicate=True), fault])
+
+    again = await client.execution.place_order(
+        TERMINAL_ID, symbol="EURUSD", side="buy", volume="0.1", idempotency_key="same"
+    )
+
+    assert again.ok is True and again.state is CommandState.SUCCEEDED and again.final is True
+    assert again.duplicate is True and again.retryable is False
+    assert again.command_id == COMMAND_ID and again.idempotency_key == "same"
+    assert again.exec_price is None and again.tickets.position is None
+    assert again.detail is not None and f"get_command('{COMMAND_ID}')" in again.detail
+    assert len(mfx.requests) == 2
+
+
 async def test_cancel_modify_and_close_are_first_class(client: MfxClient, mfx: FakeMfx) -> None:
     """Given a pending order and an open position / When each is cancelled, modified, closed and
     part-closed / Then each is its own call on its own path.

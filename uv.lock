@@ -768,7 +768,7 @@ wheels = [
 
 [[package]]
 name = "mfx-sdk"
-version = "0.9.18"
+version = "0.9.19"
 source = { editable = "." }
 dependencies = [
     { name = "anyio" },
