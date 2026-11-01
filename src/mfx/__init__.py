@@ -17,7 +17,7 @@ Execution methods never raise across the boundary; read methods raise the typed 
         )
 """
 
-from mfx.client import Budget, MfxClient
+from mfx.client import Budget, CallTiming, MfxClient
 from mfx.errors import (
     AuthError,
     ConflictError,
@@ -64,6 +64,7 @@ __all__ = [
     "OFFLINE_IS_TEMPORARY",
     "AuthError",
     "Budget",
+    "CallTiming",
     "AccountView",
     "Book",
     "Channel",
@@ -118,4 +119,4 @@ __all__ = [
     "verify",
 ]
 
-__version__ = "0.9.19"
+__version__ = "0.9.20"

@@ -11,6 +11,9 @@ carries a nonce that is good once (see :mod:`mfx.signing`). Reads retry on 429 h
 
 from __future__ import annotations
 
+import contextlib
+import json
+import os
 import random
 import time
 import types
@@ -45,7 +48,12 @@ from mfx.terminals import Terminals
 from mfx.usage import UsageReader
 from mfx.webhooks import Webhooks
 
-__all__ = ["Budget", "MfxClient"]
+__all__ = ["Budget", "CallTiming", "MfxClient"]
+
+#: A file to append one JSON line a call to: ``{"status": 200, "ms": 12.5}``. Set by the
+#: platform's check runner for each sample it runs, which reads the count, median and slowest
+#: call from it (checks design 6). Nothing else is written: no path, id, header or key.
+CALL_LOG_ENV: Final = "MFX_CALL_LOG"
 
 DEFAULT_TIMEOUT_S: Final = 30.0
 #: Read retries on 429. Small: a budget that is out stays out, and a caller waiting on a client
@@ -73,6 +81,19 @@ class Budget:
     source: str
 
 
+@dataclass(frozen=True, slots=True)
+class CallTiming:
+    """One HTTP call the client made: what was asked, the status, and how long it took.
+
+    Each attempt is a call: a read retried after a 429 is two. ``status`` is None when no answer
+    came (a connection that failed, a timeout). ``ms`` is measured on the client's own clock.
+    """
+
+    what: str
+    status: int | None
+    ms: float
+
+
 class MfxClient:
     """A tenant's connection to MFX.
 
@@ -92,8 +113,12 @@ class MfxClient:
         sleep: Callable[[float], Awaitable[None]] | None = None,
         jitter: Callable[[float, float], float] = random.uniform,  # noqa: S311 - backoff, not crypto
         wall: Callable[[], float] = time.monotonic,
+        on_call: Callable[[CallTiming], None] | None = None,
     ) -> None:
         self._wall = wall
+        #: Told each call as it ends (``CallTiming``); ``MFX_CALL_LOG`` is the same, as a file.
+        self._on_call = on_call
+        self._call_log = os.environ.get(CALL_LOG_ENV) or None
         self._base_url = base_url.rstrip("/")
         self._auth = MfxSignature(key_id, private_key)
         self._read_retries = read_retries
@@ -257,6 +282,7 @@ class MfxClient:
         """One attempt, with transport faults and unreadable answers turned into MFX errors."""
         slot: list[httpx.Response] = []
         token = _IN_FLIGHT.set(slot)
+        started = self._wall()
         try:
             return await call()
         except httpx.TimeoutException as exc:
@@ -282,6 +308,23 @@ class MfxClient:
             ) from exc
         finally:
             _IN_FLIGHT.reset(token)
+            self._timed(what, slot[-1].status_code if slot else None, started)
+
+    def _timed(self, what: str, status: int | None, started: float) -> None:
+        """Hand one call's timing on. Never raises: timing is an observation, not a reason for a
+        call that succeeded to fail."""
+        timing = CallTiming(what=what, status=status, ms=(self._wall() - started) * 1000)
+        if self._on_call is not None:
+            # A listener's bug must not fail the call.
+            with contextlib.suppress(Exception):
+                self._on_call(timing)
+        if self._call_log is not None:
+            line = json.dumps({"status": timing.status, "ms": round(timing.ms, 3)})
+            with (
+                contextlib.suppress(OSError),
+                open(self._call_log, "a", encoding="utf-8") as log,  # noqa: PTH123
+            ):
+                log.write(line + "\n")
 
     async def aclose(self) -> None:
         """Close the client's connections. ``async with MfxClient(...)`` does this for you."""

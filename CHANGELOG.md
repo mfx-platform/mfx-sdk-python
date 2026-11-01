@@ -7,6 +7,18 @@ surface; each such change is listed under **Changed** with what to do.
 
 ## Unreleased
 
+## 0.9.20
+
+### Added
+
+- Every HTTP call the client makes can be timed. Pass `on_call` to `MfxClient` and it is told each
+  call as it ends, as a `CallTiming`: what was asked, the HTTP status (`None` when no answer came)
+  and how long it took in milliseconds. A read retried after a 429 is two calls.
+- `MFX_CALL_LOG`: when set to a file path, the client appends one JSON line per call to it,
+  `{"status": 200, "ms": 12.5}`, and nothing else. The platform's checks use it to show how long
+  a knowledge base sample's calls took.
+- A listener that raises, or a log file that cannot be written, never fails the call.
+
 ## 0.9.19
 
 ### Fixed

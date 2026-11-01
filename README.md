@@ -173,5 +173,5 @@ uv run python tools/generate.py      # after the API description changes
 Licensed under the [Apache License 2.0](LICENSE).
 
 MFX Hub is an independent service and is not affiliated with, endorsed by or sponsored by
-MetaQuotes Ltd. MetaTrader is a trademark of MetaQuotes Ltd., used here only to say which trading
+MetaQuotes Ltd. MetaTrader is a registered trademark of MetaQuotes Ltd., used here only to say which trading
 platform MFX Hub's terminals are compatible with.
