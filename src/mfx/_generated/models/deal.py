@@ -41,7 +41,8 @@ class Deal:
         profit (str):
         commission (str):
         swap (str):
-        time (datetime.datetime):
+        time (datetime.datetime): When the broker executed the deal, in UTC (converted from the broker server's own
+            clock)
         magic (int):
         comment (str):
         close_reason (Union[DealCloseReasonType1, DealCloseReasonType2Type1, DealCloseReasonType3Type1, None]): MT5

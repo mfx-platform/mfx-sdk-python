@@ -39,6 +39,11 @@ class AccountProfileChanged:
     no earlier reading to compare with. Every fact is sent as it now stands; `changed` names the ones that moved. A fact
     the terminal could not read is left out. On the stream every value is text, as on every event.
 
+        Example:
+            {'schema_version': '1', 'terminal_id': '0e6a51a8-65f1-4f4c-9c53-3d6a2f6a0101', 'currency': 'USD', 'leverage':
+                '500', 'company': 'Example Broker Ltd', 'account_type': 'demo', 'margin_mode': 'hedging', 'trade_allowed':
+                'true', 'expert_allowed': 'true', 'changed': '["leverage"]', 'observed_at': '2026-10-23T09:00:00Z'}
+
         Attributes:
             schema_version (str): The payload's version; 1
             terminal_id (UUID):

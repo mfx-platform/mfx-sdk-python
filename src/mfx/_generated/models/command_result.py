@@ -33,7 +33,8 @@ class CommandResult:
 
         Attributes:
             ok (bool):
-            reason (Union[None, str]): Granular reason; null when ok
+            reason (Union[None, str]): Granular reason; null when ok. Every reason, with whether it is retryable, its
+                typical cause and what to do, is in the error catalogue at the root of this document
             retryable (bool): Whether sending the same order again, under a NEW Idempotency-Key, can succeed. Always false
                 while the state is UNKNOWN
             tickets (CommandTickets): MT5 relates exactly one order, one deal and one position per fill; a field is null

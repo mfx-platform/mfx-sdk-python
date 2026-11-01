@@ -31,11 +31,14 @@ class CommandAccepted:
         command_id (UUID):
         state (CommandState): Final states are SUCCEEDED, FAILED, EXPIRED and REJECTED. UNKNOWN is visible and NOT
             final: the order may have reached the broker and its outcome could not be read (a timeout after send, a lost
-            connection). Reconciliation against the terminal's deal history resolves it to SUCCEEDED or FAILED on its own. A
-            client must not re-send an order whose command is UNKNOWN, because that is how one fill becomes two. A
-            NOT_EXECUTED answer from the terminal reads REJECTED with its reason. SUCCEEDED means the broker did what the
-            command asked: for a market order, filled; for a pending order (limit, stop, stop_limit), accepted onto the
-            broker's book with its ticket in `tickets.order` - not filled (OrderPlace).
+            connection). The platform asks the terminal that ran it to read its deal and order history again, every minute,
+            until `resolve_by` (15 minutes after it became UNKNOWN by default), and the answer resolves it to SUCCEEDED,
+            FAILED or REJECTED. `command.unknown` is sent when it becomes UNKNOWN and `command.resolved` when it is
+            resolved. One still UNKNOWN at `resolve_by` stays UNKNOWN, because it may have run, and is resolved by an
+            operator with the tenant. A client must not re-send an order whose command is UNKNOWN, because that is how one
+            fill becomes two. A NOT_EXECUTED answer from the terminal reads REJECTED with its reason. SUCCEEDED means the
+            broker did what the command asked: for a market order, filled; for a pending order (limit, stop, stop_limit),
+            accepted onto the broker's book with its ticket in `tickets.order` - not filled (OrderPlace).
         duplicate (bool): True when this Idempotency-Key was seen before; the original command is returned, never re-
             executed
         expires_at (Union[Unset, datetime.datetime]): After this the command is EXPIRED and never executes: a cell

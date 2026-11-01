@@ -100,7 +100,11 @@ def sync_detailed(
     `next_cursor` continues the window before the oldest deal returned. With `position`, only that
     position's deals are returned: the window is still read from the broker and the other deals are left
     out, so a page can hold fewer than `limit`, and even none, while `next_cursor` is not null. Keep
-    asking until it is null.
+    asking until it is null. Every time is UTC: MT5 stamps deals on the broker server's own clock (UTC+2
+    or UTC+3 on many servers, moving with daylight saving), and the platform converts each deal, and the
+    window, with that server's measured clock. When no clock has been measured for the server yet the
+    read is refused rather than guessed (503 `broker_clock_unknown`); it answers once a terminal on the
+    server has received a price.
 
     Args:
         id (UUID):
@@ -151,7 +155,11 @@ def sync(
     `next_cursor` continues the window before the oldest deal returned. With `position`, only that
     position's deals are returned: the window is still read from the broker and the other deals are left
     out, so a page can hold fewer than `limit`, and even none, while `next_cursor` is not null. Keep
-    asking until it is null.
+    asking until it is null. Every time is UTC: MT5 stamps deals on the broker server's own clock (UTC+2
+    or UTC+3 on many servers, moving with daylight saving), and the platform converts each deal, and the
+    window, with that server's measured clock. When no clock has been measured for the server yet the
+    read is refused rather than guessed (503 `broker_clock_unknown`); it answers once a terminal on the
+    server has received a price.
 
     Args:
         id (UUID):
@@ -197,7 +205,11 @@ async def asyncio_detailed(
     `next_cursor` continues the window before the oldest deal returned. With `position`, only that
     position's deals are returned: the window is still read from the broker and the other deals are left
     out, so a page can hold fewer than `limit`, and even none, while `next_cursor` is not null. Keep
-    asking until it is null.
+    asking until it is null. Every time is UTC: MT5 stamps deals on the broker server's own clock (UTC+2
+    or UTC+3 on many servers, moving with daylight saving), and the platform converts each deal, and the
+    window, with that server's measured clock. When no clock has been measured for the server yet the
+    read is refused rather than guessed (503 `broker_clock_unknown`); it answers once a terminal on the
+    server has received a price.
 
     Args:
         id (UUID):
@@ -246,7 +258,11 @@ async def asyncio(
     `next_cursor` continues the window before the oldest deal returned. With `position`, only that
     position's deals are returned: the window is still read from the broker and the other deals are left
     out, so a page can hold fewer than `limit`, and even none, while `next_cursor` is not null. Keep
-    asking until it is null.
+    asking until it is null. Every time is UTC: MT5 stamps deals on the broker server's own clock (UTC+2
+    or UTC+3 on many servers, moving with daylight saving), and the platform converts each deal, and the
+    window, with that server's measured clock. When no clock has been measured for the server yet the
+    read is refused rather than guessed (503 `broker_clock_unknown`); it answers once a terminal on the
+    server has received a price.
 
     Args:
         id (UUID):

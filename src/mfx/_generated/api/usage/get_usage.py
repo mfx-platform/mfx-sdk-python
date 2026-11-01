@@ -47,7 +47,28 @@ def sync_detailed(
     *,
     client: Union[AuthenticatedClient, Client],
 ) -> Response[Union[Error, Usage]]:
-    """Quota consumption and remaining budget per metric (commands/s, md msgs/s, ws conns)
+    """The calling key's and its tenant's limits, where each comes from, and how much is in use
+
+     Every limit that applies to the calling key and its tenant, so an integration paces itself
+    below them. Per-key figures come from the tenant's plan unless the tenant or the key has
+    its own (the key's beats the tenant's, which beats the plan's), and say whether they are
+    applied yet (`enforced`).
+
+    Defaults per plan, per API key:
+
+    | Limit | Standard | Enterprise | System |
+    |---|---|---|---|
+    | Commands per second, steady | 5 | 20 | 50 |
+    | Commands, burst | 10 | 50 | 100 |
+    | Market-data messages per second | 200 | 2,000 | 5,000 |
+    | Stream connections | 3 | 10 | 20 |
+    | Account channels per connection | 50 | 500 | 1,000 |
+    | Terminals per tenant | 20 | 200 | 500 |
+    | Terminals per broker login | the broker's own limit | the broker's own limit | the broker's own
+    limit |
+
+    The terminals-per-tenant figures apply together with per-key enforcement; until then the
+    tenant's terminal limit is the one `tenant.terminals` serves.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -70,7 +91,28 @@ def sync(
     *,
     client: Union[AuthenticatedClient, Client],
 ) -> Optional[Union[Error, Usage]]:
-    """Quota consumption and remaining budget per metric (commands/s, md msgs/s, ws conns)
+    """The calling key's and its tenant's limits, where each comes from, and how much is in use
+
+     Every limit that applies to the calling key and its tenant, so an integration paces itself
+    below them. Per-key figures come from the tenant's plan unless the tenant or the key has
+    its own (the key's beats the tenant's, which beats the plan's), and say whether they are
+    applied yet (`enforced`).
+
+    Defaults per plan, per API key:
+
+    | Limit | Standard | Enterprise | System |
+    |---|---|---|---|
+    | Commands per second, steady | 5 | 20 | 50 |
+    | Commands, burst | 10 | 50 | 100 |
+    | Market-data messages per second | 200 | 2,000 | 5,000 |
+    | Stream connections | 3 | 10 | 20 |
+    | Account channels per connection | 50 | 500 | 1,000 |
+    | Terminals per tenant | 20 | 200 | 500 |
+    | Terminals per broker login | the broker's own limit | the broker's own limit | the broker's own
+    limit |
+
+    The terminals-per-tenant figures apply together with per-key enforcement; until then the
+    tenant's terminal limit is the one `tenant.terminals` serves.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -89,7 +131,28 @@ async def asyncio_detailed(
     *,
     client: Union[AuthenticatedClient, Client],
 ) -> Response[Union[Error, Usage]]:
-    """Quota consumption and remaining budget per metric (commands/s, md msgs/s, ws conns)
+    """The calling key's and its tenant's limits, where each comes from, and how much is in use
+
+     Every limit that applies to the calling key and its tenant, so an integration paces itself
+    below them. Per-key figures come from the tenant's plan unless the tenant or the key has
+    its own (the key's beats the tenant's, which beats the plan's), and say whether they are
+    applied yet (`enforced`).
+
+    Defaults per plan, per API key:
+
+    | Limit | Standard | Enterprise | System |
+    |---|---|---|---|
+    | Commands per second, steady | 5 | 20 | 50 |
+    | Commands, burst | 10 | 50 | 100 |
+    | Market-data messages per second | 200 | 2,000 | 5,000 |
+    | Stream connections | 3 | 10 | 20 |
+    | Account channels per connection | 50 | 500 | 1,000 |
+    | Terminals per tenant | 20 | 200 | 500 |
+    | Terminals per broker login | the broker's own limit | the broker's own limit | the broker's own
+    limit |
+
+    The terminals-per-tenant figures apply together with per-key enforcement; until then the
+    tenant's terminal limit is the one `tenant.terminals` serves.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -110,7 +173,28 @@ async def asyncio(
     *,
     client: Union[AuthenticatedClient, Client],
 ) -> Optional[Union[Error, Usage]]:
-    """Quota consumption and remaining budget per metric (commands/s, md msgs/s, ws conns)
+    """The calling key's and its tenant's limits, where each comes from, and how much is in use
+
+     Every limit that applies to the calling key and its tenant, so an integration paces itself
+    below them. Per-key figures come from the tenant's plan unless the tenant or the key has
+    its own (the key's beats the tenant's, which beats the plan's), and say whether they are
+    applied yet (`enforced`).
+
+    Defaults per plan, per API key:
+
+    | Limit | Standard | Enterprise | System |
+    |---|---|---|---|
+    | Commands per second, steady | 5 | 20 | 50 |
+    | Commands, burst | 10 | 50 | 100 |
+    | Market-data messages per second | 200 | 2,000 | 5,000 |
+    | Stream connections | 3 | 10 | 20 |
+    | Account channels per connection | 50 | 500 | 1,000 |
+    | Terminals per tenant | 20 | 200 | 500 |
+    | Terminals per broker login | the broker's own limit | the broker's own limit | the broker's own
+    limit |
+
+    The terminals-per-tenant figures apply together with per-key enforcement; until then the
+    tenant's terminal limit is the one `tenant.terminals` serves.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.

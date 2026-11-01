@@ -26,6 +26,52 @@ BROKER_ID = "2c2d3e4f-5a6b-7c8d-9e0f-102030405060"
 SERVER_ID = "3c2d3e4f-5a6b-7c8d-9e0f-102030405060"
 
 
+def _limit(
+    limit: int, source: str = "plan", used: int | None = None, **more: Any
+) -> dict[str, Any]:
+    return {"limit": limit, "source": source, "enforced": True, "used": used, **more}
+
+
+def usage_body() -> dict[str, Any]:
+    """``GET /usage`` as the platform answers it: a key with a cap of its own on commands."""
+    farm = {"id": FARM_ID, "label": "Standard"}
+    return {
+        "plan": "standard",
+        "key": {
+            "key_id": KEY_ID,
+            "commands_per_s": _limit(5, "key_override", used=2, key_cap=5),
+            "commands_burst": _limit(10, "key_override", key_cap=None),
+            "md_msgs_per_s": _limit(500),
+            "ws_conns": _limit(4, used=1, key_cap=None),
+            "account_channels_per_conn": _limit(20),
+        },
+        "tenant": {
+            "commands_per_s": _limit(20),
+            "commands_burst": _limit(40),
+            "ws_conns": _limit(8, used=1),
+            "terminals": {"limit": 25, "used": 3, "source": "tenant_override"},
+        },
+        "farms": [{"farm": farm, "cap": 10, "used": 3}],
+        "per_login": {"plan_limit": 2, "servers": []},
+        "lifecycle": {
+            "cooldown_s": {"restart": 120},
+            "tenant_rate_per_hour": {"restart": 30},
+            "concurrency": {"restart": 5},
+            "farm_share": 0.25,
+            "queue_max_wait_s": 300,
+        },
+        "webhooks": {
+            "endpoints": {"limit": 5, "used": 1},
+            "timeout_ms": 5000,
+            "retry_after_seconds": [5, 30, 300],
+            "pause_after_hours": 24,
+            "failure_days": 3,
+            "in_flight_per_endpoint": 4,
+        },
+        "as_of": "2026-11-01T10:00:00Z",
+    }
+
+
 def terminal_body(state: str = "REQUESTED", **overrides: Any) -> dict[str, Any]:
     """A TenantTerminal as the API answers one, with only its required fields."""
     body: dict[str, Any] = {

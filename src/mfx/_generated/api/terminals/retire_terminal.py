@@ -62,6 +62,12 @@ def sync_detailed(
 ) -> Response[Union[Error, TenantTerminal]]:
     """Retire a terminal — it drains, then retires; answered with its state now
 
+     A terminal that is ACTIVE, OFFLINE, PARKED or still PROVISIONING (waiting for its login, for example
+    for a credential) drains: its cell stops it and deletes its folder, and it is RETIRED when the cell
+    confirms, or by the platform's deadline when the cell never held it. One that is REQUESTED, FAILED
+    or DRAINED is RETIRED at once. One that is LOGGING_IN is refused (409 `state_error`) until its login
+    settles, a few minutes at most. One already DRAINING or RETIRED is answered as it is.
+
     Args:
         id (UUID):
         idempotency_key (str):
@@ -94,6 +100,12 @@ def sync(
 ) -> Optional[Union[Error, TenantTerminal]]:
     """Retire a terminal — it drains, then retires; answered with its state now
 
+     A terminal that is ACTIVE, OFFLINE, PARKED or still PROVISIONING (waiting for its login, for example
+    for a credential) drains: its cell stops it and deletes its folder, and it is RETIRED when the cell
+    confirms, or by the platform's deadline when the cell never held it. One that is REQUESTED, FAILED
+    or DRAINED is RETIRED at once. One that is LOGGING_IN is refused (409 `state_error`) until its login
+    settles, a few minutes at most. One already DRAINING or RETIRED is answered as it is.
+
     Args:
         id (UUID):
         idempotency_key (str):
@@ -120,6 +132,12 @@ async def asyncio_detailed(
     idempotency_key: str,
 ) -> Response[Union[Error, TenantTerminal]]:
     """Retire a terminal — it drains, then retires; answered with its state now
+
+     A terminal that is ACTIVE, OFFLINE, PARKED or still PROVISIONING (waiting for its login, for example
+    for a credential) drains: its cell stops it and deletes its folder, and it is RETIRED when the cell
+    confirms, or by the platform's deadline when the cell never held it. One that is REQUESTED, FAILED
+    or DRAINED is RETIRED at once. One that is LOGGING_IN is refused (409 `state_error`) until its login
+    settles, a few minutes at most. One already DRAINING or RETIRED is answered as it is.
 
     Args:
         id (UUID):
@@ -150,6 +168,12 @@ async def asyncio(
     idempotency_key: str,
 ) -> Optional[Union[Error, TenantTerminal]]:
     """Retire a terminal — it drains, then retires; answered with its state now
+
+     A terminal that is ACTIVE, OFFLINE, PARKED or still PROVISIONING (waiting for its login, for example
+    for a credential) drains: its cell stops it and deletes its folder, and it is RETIRED when the cell
+    confirms, or by the platform's deadline when the cell never held it. One that is REQUESTED, FAILED
+    or DRAINED is RETIRED at once. One that is LOGGING_IN is refused (409 `state_error`) until its login
+    settles, a few minutes at most. One already DRAINING or RETIRED is answered as it is.
 
     Args:
         id (UUID):

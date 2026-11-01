@@ -31,6 +31,13 @@ class PositionModified:
     stream every value is text, as on every event, and a field with no value is left out: a stop loss or take profit
     that was removed is absent.
 
+        Example:
+            {'schema_version': '1', 'terminal_id': '0e6a51a8-65f1-4f4c-9c53-3d6a2f6a0101', 'event_id':
+                '0e6a51a8-65f1-4f4c-9c53-3d6a2f6a0101:58190233:modify:1.08412:1.09000:0.05', 'ticket': '58190233', 'symbol':
+                'EURUSD', 'side': 'buy', 'volume': '0.05', 'open_price': '1.08412', 'price_current': '1.08455', 'sl': '1.08412',
+                'tp': '1.09000', 'profit': '2.15', 'swap': '0.00', 'open_time': '2026-10-23T09:15:02Z', 'magic': '0', 'comment':
+                '', 'ts': '2026-10-23T09:42:10Z'}
+
         Attributes:
             schema_version (str): The payload's version; 1
             terminal_id (UUID): The join key: the terminal whose account holds the position

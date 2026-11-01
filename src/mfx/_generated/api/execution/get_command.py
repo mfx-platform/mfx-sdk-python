@@ -56,7 +56,8 @@ def sync_detailed(
     """Command state + result — mt5_retcode, retcode_text, reason (granular), comment_raw, tickets,
     exec_price, exec_volume, broker_latency_ms, agent_latency_ms, terminal_state
 
-     UNKNOWN is visible and not final; it resolves to SUCCEEDED or FAILED by reconciliation. Another
+     UNKNOWN is visible and not final; the platform asks the terminal again until `resolve_by` and
+    resolves it to SUCCEEDED, FAILED or REJECTED (command.unknown, then command.resolved). Another
     tenant's command is 404.
 
     Args:
@@ -89,7 +90,8 @@ def sync(
     """Command state + result — mt5_retcode, retcode_text, reason (granular), comment_raw, tickets,
     exec_price, exec_volume, broker_latency_ms, agent_latency_ms, terminal_state
 
-     UNKNOWN is visible and not final; it resolves to SUCCEEDED or FAILED by reconciliation. Another
+     UNKNOWN is visible and not final; the platform asks the terminal again until `resolve_by` and
+    resolves it to SUCCEEDED, FAILED or REJECTED (command.unknown, then command.resolved). Another
     tenant's command is 404.
 
     Args:
@@ -117,7 +119,8 @@ async def asyncio_detailed(
     """Command state + result — mt5_retcode, retcode_text, reason (granular), comment_raw, tickets,
     exec_price, exec_volume, broker_latency_ms, agent_latency_ms, terminal_state
 
-     UNKNOWN is visible and not final; it resolves to SUCCEEDED or FAILED by reconciliation. Another
+     UNKNOWN is visible and not final; the platform asks the terminal again until `resolve_by` and
+    resolves it to SUCCEEDED, FAILED or REJECTED (command.unknown, then command.resolved). Another
     tenant's command is 404.
 
     Args:
@@ -148,7 +151,8 @@ async def asyncio(
     """Command state + result — mt5_retcode, retcode_text, reason (granular), comment_raw, tickets,
     exec_price, exec_volume, broker_latency_ms, agent_latency_ms, terminal_state
 
-     UNKNOWN is visible and not final; it resolves to SUCCEEDED or FAILED by reconciliation. Another
+     UNKNOWN is visible and not final; the platform asks the terminal again until `resolve_by` and
+    resolves it to SUCCEEDED, FAILED or REJECTED (command.unknown, then command.resolved). Another
     tenant's command is 404.
 
     Args:

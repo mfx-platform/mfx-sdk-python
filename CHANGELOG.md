@@ -7,6 +7,28 @@ surface; each such change is listed under **Changed** with what to do.
 
 ## Unreleased
 
+## 0.10.0
+
+### Changed
+
+- `client.usage.get()` answers the platform's new usage shape. Each limit now says its figure,
+  where it comes from (`plan`, `tenant_override` or `key_override`), whether it is applied yet
+  (`enforced`) and how much of it is used. `key` is the calling key's view, `tenant` the ceiling
+  for all your keys, with `plan`, `farms`, `per_login`, `lifecycle` and `webhooks` beside them.
+  `items`, `limits`, `budget_remaining` and `budget_source` are gone from it: read the remaining
+  budget from `client.budget`, which every answer still carries. **What to do:** read
+  `usage.key.commands_per_s.limit` where you read `usage.limits.commands_per_s`.
+
+### Added
+
+- The API description is re-vendored. New in it, and reachable today as plain HTTPS (listed in
+  the README): `setTerminalHa` (`POST /terminals/{id}/ha`), and `getExpertAdvisorParameters` and
+  `putExpertAdvisorParameters` (`/terminals/{id}/expert-advisor/parameters`).
+- New fields carried by the generated models: a terminal's `ha`, a command's `resolve_by`, a
+  candle list's `source`, `complete_from` and `complete_to`, and an opened position's
+  `order_ticket`; and the events `command.resolved`, `command.unknown`, `md.candle.closed`,
+  `order.placed`, `order.modified`, `order.closed` and `terminal.ha_switched`.
+
 ## 0.9.20
 
 ### Added

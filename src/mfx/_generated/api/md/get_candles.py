@@ -61,6 +61,11 @@ def _parse_response(
 
         return response_200
 
+    if response.status_code == 429:
+        response_429 = Error.from_dict(response.json())
+
+        return response_429
+
     if response.status_code == 503:
         response_503 = Error.from_dict(response.json())
 
@@ -93,8 +98,9 @@ def sync_detailed(
     to: datetime.datetime,
     limit: Union[Unset, int] = 1000,
 ) -> Response[Union[CandleList, Error]]:
-    """Historical candles by bar time, read through one of your own terminals on the server; at most 1000
-    bars per call, the newest of the window
+    """Historical candles by bar time, from the platform's store when it holds the window complete, else
+    read through one of your own terminals on the server; at most 1000 bars per call, the newest of the
+    window
 
     Args:
         broker (str):
@@ -141,8 +147,9 @@ def sync(
     to: datetime.datetime,
     limit: Union[Unset, int] = 1000,
 ) -> Optional[Union[CandleList, Error]]:
-    """Historical candles by bar time, read through one of your own terminals on the server; at most 1000
-    bars per call, the newest of the window
+    """Historical candles by bar time, from the platform's store when it holds the window complete, else
+    read through one of your own terminals on the server; at most 1000 bars per call, the newest of the
+    window
 
     Args:
         broker (str):
@@ -184,8 +191,9 @@ async def asyncio_detailed(
     to: datetime.datetime,
     limit: Union[Unset, int] = 1000,
 ) -> Response[Union[CandleList, Error]]:
-    """Historical candles by bar time, read through one of your own terminals on the server; at most 1000
-    bars per call, the newest of the window
+    """Historical candles by bar time, from the platform's store when it holds the window complete, else
+    read through one of your own terminals on the server; at most 1000 bars per call, the newest of the
+    window
 
     Args:
         broker (str):
@@ -230,8 +238,9 @@ async def asyncio(
     to: datetime.datetime,
     limit: Union[Unset, int] = 1000,
 ) -> Optional[Union[CandleList, Error]]:
-    """Historical candles by bar time, read through one of your own terminals on the server; at most 1000
-    bars per call, the newest of the window
+    """Historical candles by bar time, from the platform's store when it holds the window complete, else
+    read through one of your own terminals on the server; at most 1000 bars per call, the newest of the
+    window
 
     Args:
         broker (str):

@@ -24,6 +24,11 @@ class TerminalOperationChanged:
     /terminals/{id}/operations/{operation_id}` for its timeline. On the stream every value is text, as on every event,
     and a value that does not exist is empty.
 
+        Example:
+            {'schema_version': '1', 'operation_id': '9c2e4b71-0d3a-4e8f-b6a2-1f5c7d9e3a40', 'terminal_id':
+                '0e6a51a8-65f1-4f4c-9c53-3d6a2f6a0101', 'kind': 'restart', 'state': 'SUCCEEDED', 'step': 'RELAUNCHING',
+                'forced_stop': 'false', 'cooldown_until': '2026-10-23T10:20:00Z', 'finished_at': '2026-10-23T10:15:31Z'}
+
         Attributes:
             schema_version (str): The payload's version; 1
             operation_id (UUID):

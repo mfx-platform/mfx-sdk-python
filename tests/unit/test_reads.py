@@ -16,7 +16,7 @@ import pytest
 from mfx.client import MfxClient
 from mfx.errors import NotFoundError
 
-from .conftest import BROKER_ID, TERMINAL_ID, FakeMfx
+from .conftest import BROKER_ID, TERMINAL_ID, FakeMfx, usage_body
 
 #: The Story these cases are Tested By: generated core + ergonomic layer + conformance suite.
 
@@ -293,40 +293,26 @@ async def test_live_lists_are_snapshots_and_history_is_paged(
     assert mfx.last.url.params.get("from") or mfx.last.url.params.get("from_"), "the window is sent"
 
 
-async def test_usage_reports_this_keys_ceilings_and_whether_the_budget_is_measured(
+async def test_usage_reports_each_limit_with_where_it_comes_from_and_how_much_is_used(
     client: MfxClient, mfx: FakeMfx
 ) -> None:
-    """Given a key with its own ceilings / When usage is read / Then the limits reported are that
-    key's and budget_source says whether the number was measured or configured.
+    """Given a key with its own cap on commands / When usage is read / Then each limit says its
+    figure, where it comes from and how much of it is used: the key's 5 commands a second come
+    from its own cap, below the tenant's 20 from the plan.
 
-    The limits are the calling key's, not the tenant's, so one runaway integration cannot starve a
-    tenant's production traffic. A ceiling read as a reading is how a quota surprises someone."""
-    mfx.responses.append(
-        httpx.Response(
-            200,
-            json={
-                "items": [
-                    {
-                        "metric": "commands",
-                        "quantity": "41",
-                        "period_start": "2026-09-25T09:00:00Z",
-                        "period_end": "2026-09-25T10:00:00Z",
-                    }
-                ],  # fmt: skip
-                "limits": {"commands_per_s": 5, "md_msgs_per_s": None, "ws_conns": 2},
-                "budget_remaining": 900,
-                "budget_source": "configured",
-                "as_of": "2026-09-25T10:00:00Z",
-            },
-        )
-    )
+    The key's limits and the tenant's are both shown, so one runaway integration can be told apart
+    from a tenant at its ceiling; a limit's source says whether the figure is the plan's, the
+    tenant's or this key's own."""
+    mfx.responses.append(httpx.Response(200, json=usage_body()))
 
     usage = await client.usage.get()
 
     assert mfx.last.url.path == "/v1/usage"
-    assert usage.budget_remaining == 900
-    assert usage.budget_source.value == "configured", "a ceiling, not a measurement"
-    assert usage.limits is not None and usage.limits.commands_per_s == 5
+    assert usage.plan.value == "standard"
+    commands = usage.key.commands_per_s
+    assert (commands.limit, commands.source.value, commands.used) == (5, "key_override", 2)
+    assert usage.tenant.commands_per_s.limit == 20
+    assert usage.tenant.terminals.used == 3
 
 
 async def test_another_tenants_object_is_a_404_and_reaches_the_caller_as_one(

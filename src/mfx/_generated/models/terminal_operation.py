@@ -43,8 +43,8 @@ class TerminalOperation:
             guard, run again on the terminal as it was then, refused it; `step` carries the refusal's code), EXPIRED (still
             waiting at `queue.expires_at`; it is never run late), CANCELLED, or SUPERSEDED (a stronger ask took its place;
             `superseded_by`).
-        requested_by (str): key:<key id>, admin.<email> for an operator, or system.healing for an automatic recovery
-            step
+        requested_by (str): key:<key id>, admin.<email> for an operator, system.healing for an automatic recovery step,
+            or system.maintenance for a maintenance window's restart
         reason (str):
         forced_stop (Union[None, bool]): True when the terminal would not close and its job was stopped; null until the
             cell says

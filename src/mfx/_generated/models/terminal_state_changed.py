@@ -29,6 +29,11 @@ class TerminalStateChanged:
     lifecycle state, after the move is recorded, whoever made it (you, an operator or the platform). `transition_id`
     names the move in the terminal's history. On the stream every value is text, as on every event.
 
+        Example:
+            {'schema_version': '1', 'terminal_id': '0e6a51a8-65f1-4f4c-9c53-3d6a2f6a0101', 'from': 'LOGGING_IN', 'to':
+                'ACTIVE', 'reason': 'account verified, broker connected', 'transition_id':
+                '5b1d7e0a-2c44-4f0e-9a51-7d3b8c6e1f20', 'ts': '2026-10-23T09:02:41Z'}
+
         Attributes:
             schema_version (str): The payload's version; 1
             terminal_id (UUID):

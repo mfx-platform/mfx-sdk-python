@@ -60,11 +60,11 @@ def sync_detailed(
     own `account:{terminal_id}` channel, not on `events`: `account.snapshot` on every subscribe and
     resume (a snapshot, never a replay), when the position set changes and every 60 s, and
     `account.marks` in between. Account messages are samples: a slow client loses them before any event,
-    and a `seq` gap means resume. `position.*` and `account.profile_changed` stay on `events`; fills
-    stay on `results:{terminal_id}`. Market depth travels on `book:{server_id}:{symbol}` as `md.book`:
-    the newest book on subscribe, then each change. While a planned maintenance window suspends the
-    tenant's market data, its `md:`, `candles:` and `book:` channels carry an `md.status` of
-    `maintenance` and no data, then `live` when it ends (`MdStatusMessage`). The upgrade request is
+    and a `seq` gap means resume. `position.*`, `order.*` and `account.profile_changed` stay on
+    `events`; fills stay on `results:{terminal_id}`. Market depth travels on `book:{server_id}:{symbol}`
+    as `md.book`: the newest book on subscribe, then each change. While a planned maintenance window
+    suspends the tenant's market data, its `md:`, `candles:` and `book:` channels carry an `md.status`
+    of `maintenance` and no data, then `live` when it ends (`MdStatusMessage`). The upgrade request is
     signed as any call is (`mfxSignature`, Ed25519): over `GET`, the path with its query and an empty
     body. Each event's `data` is described by the schema `x-event-payloads` names for its type; on
     `events` it also carries the `type`. Close codes are listed in `x-close-codes`.
@@ -100,11 +100,11 @@ def sync(
     own `account:{terminal_id}` channel, not on `events`: `account.snapshot` on every subscribe and
     resume (a snapshot, never a replay), when the position set changes and every 60 s, and
     `account.marks` in between. Account messages are samples: a slow client loses them before any event,
-    and a `seq` gap means resume. `position.*` and `account.profile_changed` stay on `events`; fills
-    stay on `results:{terminal_id}`. Market depth travels on `book:{server_id}:{symbol}` as `md.book`:
-    the newest book on subscribe, then each change. While a planned maintenance window suspends the
-    tenant's market data, its `md:`, `candles:` and `book:` channels carry an `md.status` of
-    `maintenance` and no data, then `live` when it ends (`MdStatusMessage`). The upgrade request is
+    and a `seq` gap means resume. `position.*`, `order.*` and `account.profile_changed` stay on
+    `events`; fills stay on `results:{terminal_id}`. Market depth travels on `book:{server_id}:{symbol}`
+    as `md.book`: the newest book on subscribe, then each change. While a planned maintenance window
+    suspends the tenant's market data, its `md:`, `candles:` and `book:` channels carry an `md.status`
+    of `maintenance` and no data, then `live` when it ends (`MdStatusMessage`). The upgrade request is
     signed as any call is (`mfxSignature`, Ed25519): over `GET`, the path with its query and an empty
     body. Each event's `data` is described by the schema `x-event-payloads` names for its type; on
     `events` it also carries the `type`. Close codes are listed in `x-close-codes`.
@@ -136,11 +136,11 @@ async def asyncio_detailed(
     own `account:{terminal_id}` channel, not on `events`: `account.snapshot` on every subscribe and
     resume (a snapshot, never a replay), when the position set changes and every 60 s, and
     `account.marks` in between. Account messages are samples: a slow client loses them before any event,
-    and a `seq` gap means resume. `position.*` and `account.profile_changed` stay on `events`; fills
-    stay on `results:{terminal_id}`. Market depth travels on `book:{server_id}:{symbol}` as `md.book`:
-    the newest book on subscribe, then each change. While a planned maintenance window suspends the
-    tenant's market data, its `md:`, `candles:` and `book:` channels carry an `md.status` of
-    `maintenance` and no data, then `live` when it ends (`MdStatusMessage`). The upgrade request is
+    and a `seq` gap means resume. `position.*`, `order.*` and `account.profile_changed` stay on
+    `events`; fills stay on `results:{terminal_id}`. Market depth travels on `book:{server_id}:{symbol}`
+    as `md.book`: the newest book on subscribe, then each change. While a planned maintenance window
+    suspends the tenant's market data, its `md:`, `candles:` and `book:` channels carry an `md.status`
+    of `maintenance` and no data, then `live` when it ends (`MdStatusMessage`). The upgrade request is
     signed as any call is (`mfxSignature`, Ed25519): over `GET`, the path with its query and an empty
     body. Each event's `data` is described by the schema `x-event-payloads` names for its type; on
     `events` it also carries the `type`. Close codes are listed in `x-close-codes`.
@@ -174,11 +174,11 @@ async def asyncio(
     own `account:{terminal_id}` channel, not on `events`: `account.snapshot` on every subscribe and
     resume (a snapshot, never a replay), when the position set changes and every 60 s, and
     `account.marks` in between. Account messages are samples: a slow client loses them before any event,
-    and a `seq` gap means resume. `position.*` and `account.profile_changed` stay on `events`; fills
-    stay on `results:{terminal_id}`. Market depth travels on `book:{server_id}:{symbol}` as `md.book`:
-    the newest book on subscribe, then each change. While a planned maintenance window suspends the
-    tenant's market data, its `md:`, `candles:` and `book:` channels carry an `md.status` of
-    `maintenance` and no data, then `live` when it ends (`MdStatusMessage`). The upgrade request is
+    and a `seq` gap means resume. `position.*`, `order.*` and `account.profile_changed` stay on
+    `events`; fills stay on `results:{terminal_id}`. Market depth travels on `book:{server_id}:{symbol}`
+    as `md.book`: the newest book on subscribe, then each change. While a planned maintenance window
+    suspends the tenant's market data, its `md:`, `candles:` and `book:` channels carry an `md.status`
+    of `maintenance` and no data, then `live` when it ends (`MdStatusMessage`). The upgrade request is
     signed as any call is (`mfxSignature`, Ed25519): over `GET`, the path with its query and an empty
     body. Each event's `data` is described by the schema `x-event-payloads` names for its type; on
     `events` it also carries the `type`. Close codes are listed in `x-close-codes`.

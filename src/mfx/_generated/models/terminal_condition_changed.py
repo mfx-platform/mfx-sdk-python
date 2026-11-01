@@ -35,6 +35,11 @@ class TerminalConditionChanged:
     and `broker_quiet`. A reason reworded under a status that stands sends nothing. The fields are those of `Condition`.
     On the stream every value is text, as on every event, and a value that does not exist is empty.
 
+        Example:
+            {'schema_version': '1', 'terminal_id': '0e6a51a8-65f1-4f4c-9c53-3d6a2f6a0101', 'condition': 'BrokerConnected',
+                'status': 'failed', 'reason': "no connection to the broker's server", 'since': '2026-10-23T10:05:13Z',
+                'attributed_to': 'broker'}
+
         Attributes:
             schema_version (str): The payload's version; 1
             terminal_id (UUID):

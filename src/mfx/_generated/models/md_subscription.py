@@ -68,6 +68,9 @@ class MdSubscription:
             `no_ticks_in_session`: the symbol's own hours say it is trading and it has not ticked for the silence window
             (measured at the newest report); it recovers on two reports in a row that each bring a new tick inside the
             window, or when its session closes. Nothing is degraded for silence outside the symbol's trading session.
+            `bars_unwatched`: the subscription asks for timeframes and none of your terminals on the server watches the
+            symbol, so no closed bar can be sent. `bars_gap`: a closed-bar series has a gap the platform could not repair
+            (no terminal to read it through); GET says how far it is complete.
         degraded_since (Union[None, Unset, datetime.datetime]): When it became degraded; null in every other state
         degraded_cause (Union[MdSubscriptionDegradedCauseType1, MdSubscriptionDegradedCauseType2Type1,
             MdSubscriptionDegradedCauseType3Type1, None, Unset]): Whose cause the degradation is; null in every other state.

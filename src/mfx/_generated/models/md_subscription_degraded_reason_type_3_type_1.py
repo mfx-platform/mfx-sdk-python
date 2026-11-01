@@ -2,6 +2,8 @@ from enum import Enum
 
 
 class MdSubscriptionDegradedReasonType3Type1(str, Enum):
+    BARS_GAP = "bars_gap"
+    BARS_UNWATCHED = "bars_unwatched"
     NO_TICKS_IN_SESSION = "no_ticks_in_session"
     REPORT_STALE = "report_stale"
     SUBSCRIPTION_REFUSED = "subscription_refused"

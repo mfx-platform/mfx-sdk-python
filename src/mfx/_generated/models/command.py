@@ -37,11 +37,14 @@ class Command:
         kind (CommandKind):
         state (CommandState): Final states are SUCCEEDED, FAILED, EXPIRED and REJECTED. UNKNOWN is visible and NOT
             final: the order may have reached the broker and its outcome could not be read (a timeout after send, a lost
-            connection). Reconciliation against the terminal's deal history resolves it to SUCCEEDED or FAILED on its own. A
-            client must not re-send an order whose command is UNKNOWN, because that is how one fill becomes two. A
-            NOT_EXECUTED answer from the terminal reads REJECTED with its reason. SUCCEEDED means the broker did what the
-            command asked: for a market order, filled; for a pending order (limit, stop, stop_limit), accepted onto the
-            broker's book with its ticket in `tickets.order` - not filled (OrderPlace).
+            connection). The platform asks the terminal that ran it to read its deal and order history again, every minute,
+            until `resolve_by` (15 minutes after it became UNKNOWN by default), and the answer resolves it to SUCCEEDED,
+            FAILED or REJECTED. `command.unknown` is sent when it becomes UNKNOWN and `command.resolved` when it is
+            resolved. One still UNKNOWN at `resolve_by` stays UNKNOWN, because it may have run, and is resolved by an
+            operator with the tenant. A client must not re-send an order whose command is UNKNOWN, because that is how one
+            fill becomes two. A NOT_EXECUTED answer from the terminal reads REJECTED with its reason. SUCCEEDED means the
+            broker did what the command asked: for a market order, filled; for a pending order (limit, stop, stop_limit),
+            accepted onto the broker's book with its ticket in `tickets.order` - not filled (OrderPlace).
         final (bool):
         created_at (datetime.datetime):
         updated_at (datetime.datetime):
@@ -52,6 +55,9 @@ class Command:
             kind: 10 s for every execution kind (order_place, order_cancel, order_modify, position_modify, position_close,
             position_close_partial, position_close_by, trailing_stop_set, trailing_stop_clear); an order_place may ask for 1
             s to 60 s instead with `expires_in_ms`
+        resolve_by (Union[None, Unset, datetime.datetime]): While the command is UNKNOWN: until when the platform asks
+            the terminal that ran it to read the outcome again. After it, an operator resolves it with the tenant. Null in
+            every other state
     """
 
     command_id: UUID
@@ -63,6 +69,7 @@ class Command:
     updated_at: datetime.datetime
     result: Union["CommandResult", None]
     expires_at: Union[None, Unset, datetime.datetime] = UNSET
+    resolve_by: Union[None, Unset, datetime.datetime] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -96,6 +103,14 @@ class Command:
         else:
             expires_at = self.expires_at
 
+        resolve_by: Union[None, Unset, str]
+        if isinstance(self.resolve_by, Unset):
+            resolve_by = UNSET
+        elif isinstance(self.resolve_by, datetime.datetime):
+            resolve_by = self.resolve_by.isoformat()
+        else:
+            resolve_by = self.resolve_by
+
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
@@ -112,6 +127,8 @@ class Command:
         )
         if expires_at is not UNSET:
             field_dict["expires_at"] = expires_at
+        if resolve_by is not UNSET:
+            field_dict["resolve_by"] = resolve_by
 
         return field_dict
 
@@ -166,6 +183,23 @@ class Command:
 
         expires_at = _parse_expires_at(d.pop("expires_at", UNSET))
 
+        def _parse_resolve_by(data: object) -> Union[None, Unset, datetime.datetime]:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                resolve_by_type_0 = isoparse(data)
+
+                return resolve_by_type_0
+            except:  # noqa: E722
+                pass
+            return cast(Union[None, Unset, datetime.datetime], data)
+
+        resolve_by = _parse_resolve_by(d.pop("resolve_by", UNSET))
+
         command = cls(
             command_id=command_id,
             terminal_id=terminal_id,
@@ -176,6 +210,7 @@ class Command:
             updated_at=updated_at,
             result=result,
             expires_at=expires_at,
+            resolve_by=resolve_by,
         )
 
         command.additional_properties = d

@@ -41,6 +41,7 @@ from ..types import UNSET, Unset
 if TYPE_CHECKING:
     from ..models.ref import Ref
     from ..models.tenant_terminal_conditions import TenantTerminalConditions
+    from ..models.tenant_terminal_ha import TenantTerminalHa
     from ..models.tenant_terminal_labels import TenantTerminalLabels
 
 
@@ -82,6 +83,8 @@ class TenantTerminal:
         redundancy (Union[Unset, TenantTerminalRedundancy]):
         replica_role (Union[None, TenantTerminalReplicaRoleType1, TenantTerminalReplicaRoleType2Type1,
             TenantTerminalReplicaRoleType3Type1, Unset]):
+        ha (Union[Unset, TenantTerminalHa]): This terminal's MFX Hub HA. `enabled: false`, `mode: null` and
+            `fallback_state: off` when HA is not on
         terminal_build (Union[None, Unset, int]):
         last_tick_at (Union[None, Unset, datetime.datetime]):
         refresh_ms (Union[Unset, TenantTerminalRefreshMs]): The refresh rate this terminal runs at
@@ -118,6 +121,7 @@ class TenantTerminal:
         TenantTerminalReplicaRoleType3Type1,
         Unset,
     ] = UNSET
+    ha: Union[Unset, "TenantTerminalHa"] = UNSET
     terminal_build: Union[None, Unset, int] = UNSET
     last_tick_at: Union[None, Unset, datetime.datetime] = UNSET
     refresh_ms: Union[Unset, TenantTerminalRefreshMs] = UNSET
@@ -126,6 +130,7 @@ class TenantTerminal:
     def to_dict(self) -> dict[str, Any]:
         from ..models.ref import Ref
         from ..models.tenant_terminal_conditions import TenantTerminalConditions
+        from ..models.tenant_terminal_ha import TenantTerminalHa
         from ..models.tenant_terminal_labels import TenantTerminalLabels
 
         id = str(self.id)
@@ -212,6 +217,10 @@ class TenantTerminal:
         else:
             replica_role = self.replica_role
 
+        ha: Union[Unset, dict[str, Any]] = UNSET
+        if not isinstance(self.ha, Unset):
+            ha = self.ha.to_dict()
+
         terminal_build: Union[None, Unset, int]
         if isinstance(self.terminal_build, Unset):
             terminal_build = UNSET
@@ -265,6 +274,8 @@ class TenantTerminal:
             field_dict["redundancy"] = redundancy
         if replica_role is not UNSET:
             field_dict["replica_role"] = replica_role
+        if ha is not UNSET:
+            field_dict["ha"] = ha
         if terminal_build is not UNSET:
             field_dict["terminal_build"] = terminal_build
         if last_tick_at is not UNSET:
@@ -278,6 +289,7 @@ class TenantTerminal:
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         from ..models.ref import Ref
         from ..models.tenant_terminal_conditions import TenantTerminalConditions
+        from ..models.tenant_terminal_ha import TenantTerminalHa
         from ..models.tenant_terminal_labels import TenantTerminalLabels
 
         d = dict(src_dict)
@@ -466,6 +478,13 @@ class TenantTerminal:
 
         replica_role = _parse_replica_role(d.pop("replica_role", UNSET))
 
+        _ha = d.pop("ha", UNSET)
+        ha: Union[Unset, TenantTerminalHa]
+        if isinstance(_ha, Unset):
+            ha = UNSET
+        else:
+            ha = TenantTerminalHa.from_dict(_ha)
+
         def _parse_terminal_build(data: object) -> Union[None, Unset, int]:
             if data is None:
                 return data
@@ -519,6 +538,7 @@ class TenantTerminal:
             labels=labels,
             redundancy=redundancy,
             replica_role=replica_role,
+            ha=ha,
             terminal_build=terminal_build,
             last_tick_at=last_tick_at,
             refresh_ms=refresh_ms,

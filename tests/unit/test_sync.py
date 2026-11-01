@@ -31,6 +31,7 @@ from .conftest import (
     error,
     page,
     terminal_body,
+    usage_body,
 )
 
 #: The Story these cases are Tested By: generated core + ergonomic layer + conformance suite.
@@ -321,16 +322,7 @@ def test_the_read_surface_is_all_here(sync_client: Any, mfx: FakeMfx) -> None:
                 200,
                 json={"terminal_id": TERMINAL_ID, "as_of": "2026-09-25T10:00:00Z", "items": []},
             ),
-            httpx.Response(
-                200,
-                json={
-                    "items": [],
-                    "limits": {"commands_per_s": 5, "md_msgs_per_s": None, "ws_conns": 2},
-                    "budget_remaining": 900,
-                    "budget_source": "configured",
-                    "as_of": "2026-09-25T10:00:00Z",
-                },
-            ),
+            httpx.Response(200, json=usage_body()),
         ]
     )
 
@@ -347,7 +339,7 @@ def test_the_read_surface_is_all_here(sync_client: Any, mfx: FakeMfx) -> None:
     window = dt.datetime(2026, 9, 24, tzinfo=dt.UTC), dt.datetime(2026, 9, 25, tzinfo=dt.UTC)
     assert list(sync_client.deals(TERMINAL_ID, from_=window[0], to=window[1])) == []
     assert sync_client.spread(TERMINAL_ID).items == []
-    assert sync_client.usage().budget_remaining == 900
+    assert sync_client.usage().key.commands_per_s.limit == 5
 
 
 def test_closing_is_idempotent_and_a_closed_client_says_so(

@@ -31,6 +31,13 @@ class PositionOpened:
     `position.opened` then `position.closed`. On the stream every value is text, as on every event, and a field with no
     value is left out.
 
+        Example:
+            {'schema_version': '1', 'terminal_id': '0e6a51a8-65f1-4f4c-9c53-3d6a2f6a0101', 'event_id':
+                '0e6a51a8-65f1-4f4c-9c53-3d6a2f6a0101:58190233:open', 'ticket': '58190233', 'symbol': 'EURUSD', 'side': 'buy',
+                'volume': '0.10', 'open_price': '1.08412', 'price_current': '1.08420', 'sl': '1.08100', 'tp': '1.09000',
+                'profit': '0.80', 'swap': '0.00', 'open_time': '2026-10-23T09:15:02Z', 'magic': '0', 'comment': '', 'ts':
+                '2026-10-23T09:15:02Z', 'idempotency_key': 'client-order-0001', 'order_ticket': '58190233'}
+
         Attributes:
             schema_version (str): The payload's version; 1
             terminal_id (UUID): The join key: the terminal whose account holds the position
@@ -54,6 +61,9 @@ class PositionOpened:
                 the newest such command on this terminal recorded SUCCEEDED naming this position within the last 30 s. Absent
                 for a position the platform did not open (an expert advisor, the broker's apps) or whose command outcome was not
                 yet recorded
+            order_ticket (Union[Unset, str]): The MT5 ticket of the order whose deal opened the position, an integer as
+                text: for a position opened by a pending order, that order's ticket, the same order `position_ticket` names on
+                its `order.closed`. Absent from a terminal whose agent does not report it yet
     """
 
     schema_version: str
@@ -74,6 +84,7 @@ class PositionOpened:
     profit: Union[Unset, str] = UNSET
     swap: Union[Unset, str] = UNSET
     idempotency_key: Union[Unset, str] = UNSET
+    order_ticket: Union[Unset, str] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -113,6 +124,8 @@ class PositionOpened:
 
         idempotency_key = self.idempotency_key
 
+        order_ticket = self.order_ticket
+
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
@@ -143,6 +156,8 @@ class PositionOpened:
             field_dict["swap"] = swap
         if idempotency_key is not UNSET:
             field_dict["idempotency_key"] = idempotency_key
+        if order_ticket is not UNSET:
+            field_dict["order_ticket"] = order_ticket
 
         return field_dict
 
@@ -185,6 +200,8 @@ class PositionOpened:
 
         idempotency_key = d.pop("idempotency_key", UNSET)
 
+        order_ticket = d.pop("order_ticket", UNSET)
+
         position_opened = cls(
             schema_version=schema_version,
             terminal_id=terminal_id,
@@ -204,6 +221,7 @@ class PositionOpened:
             profit=profit,
             swap=swap,
             idempotency_key=idempotency_key,
+            order_ticket=order_ticket,
         )
 
         position_opened.additional_properties = d

@@ -144,6 +144,9 @@ cannot drift.
 |---|---|
 | `cancelTerminalOperation` | `DELETE /terminals/{id}/operations/{operation_id}` |
 | `createRedisPushConnector` | `POST /connectors/redis-push` |
+| `getExpertAdvisorParameters` | `GET /terminals/{id}/expert-advisor/parameters` |
+| `putExpertAdvisorParameters` | `PUT /terminals/{id}/expert-advisor/parameters` |
+| `setTerminalHa` | `POST /terminals/{id}/ha` |
 | `updateTerminal` | `PATCH /terminals/{id}` |
 <!-- rest-only:end -->
 

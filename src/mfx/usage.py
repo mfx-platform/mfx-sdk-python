@@ -1,9 +1,10 @@
-"""``client.usage`` — what this tenant has consumed, and what this key may still spend.
+"""``client.usage`` — every limit that applies to this key and its tenant, and how much is used.
 
-The limits are the **calling key's**, not the tenant's, so one runaway integration cannot starve a
-tenant's production traffic. ``budget_source`` says whether ``budget_remaining`` is a measurement
-or the key's configured allowance — a ceiling read as a reading is how a quota surprises someone.
-The same distinction rides every response as ``X-MFX-Budget-Source`` and is on ``client.budget``.
+Each limit says its figure, where it comes from (the plan, the tenant's own figure, or this key's
+cap), whether the platform applies it yet, and how much of it is in use where that is measured.
+``key`` is the calling key's view, ``tenant`` the ceiling for all its keys together, so one runaway
+integration can be told apart from a tenant at its ceiling. The remaining budget still rides every
+response as ``X-MFX-Budget-Remaining`` and ``X-MFX-Budget-Source``, and is on ``client.budget``.
 """
 
 from __future__ import annotations
@@ -26,7 +27,7 @@ class UsageReader:
         self._client = client
 
     async def get(self) -> Usage:
-        """Consumption per metric, this key's ceilings, and the remaining budget with its source."""
+        """Every limit for this key and its tenant: figure, source, whether applied, and use."""
         parsed = await self._client.read(
             lambda: _get_usage.asyncio_detailed(client=self._client.generated),
             "GET /usage",
