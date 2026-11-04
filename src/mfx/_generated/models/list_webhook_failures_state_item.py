@@ -1,7 +1,7 @@
 from enum import Enum
 
 
-class ListWebhookFailuresState(str, Enum):
+class ListWebhookFailuresStateItem(str, Enum):
     DEAD = "dead"
     DELIVERED = "delivered"
     RETRYING = "retrying"

@@ -25,6 +25,15 @@ from ..models.tenant_terminal_conditions_additional_property_attributed_to_type_
 from ..models.tenant_terminal_conditions_additional_property_attributed_to_type_3_type_1 import (
     TenantTerminalConditionsAdditionalPropertyAttributedToType3Type1,
 )
+from ..models.tenant_terminal_conditions_additional_property_refusal_kind_type_1 import (
+    TenantTerminalConditionsAdditionalPropertyRefusalKindType1,
+)
+from ..models.tenant_terminal_conditions_additional_property_refusal_kind_type_2_type_1 import (
+    TenantTerminalConditionsAdditionalPropertyRefusalKindType2Type1,
+)
+from ..models.tenant_terminal_conditions_additional_property_refusal_kind_type_3_type_1 import (
+    TenantTerminalConditionsAdditionalPropertyRefusalKindType3Type1,
+)
 from ..models.tenant_terminal_conditions_additional_property_status import (
     TenantTerminalConditionsAdditionalPropertyStatus,
 )
@@ -47,6 +56,11 @@ class TenantTerminalConditionsAdditionalProperty:
             running, logged in and answering and what is wrong is the broker's own feed (TicksFresh failed with slow_feed or
             broker_quiet): the broker's, not MFX Hub's. Null otherwise (not attributed). `terminal.condition_changed`
             carries the same field, and is sent again when a slow feed becomes a quiet broker or the reverse.
+        broker_words (Union[None, Unset, str]): As `Condition.broker_words`: the broker's own words when it refused the
+            login
+        refusal_kind (Union[None, TenantTerminalConditionsAdditionalPropertyRefusalKindType1,
+            TenantTerminalConditionsAdditionalPropertyRefusalKindType2Type1,
+            TenantTerminalConditionsAdditionalPropertyRefusalKindType3Type1, Unset]): As `Condition.refusal_kind`
     """
 
     status: Union[Unset, TenantTerminalConditionsAdditionalPropertyStatus] = UNSET
@@ -57,6 +71,14 @@ class TenantTerminalConditionsAdditionalProperty:
         TenantTerminalConditionsAdditionalPropertyAttributedToType1,
         TenantTerminalConditionsAdditionalPropertyAttributedToType2Type1,
         TenantTerminalConditionsAdditionalPropertyAttributedToType3Type1,
+        Unset,
+    ] = UNSET
+    broker_words: Union[None, Unset, str] = UNSET
+    refusal_kind: Union[
+        None,
+        TenantTerminalConditionsAdditionalPropertyRefusalKindType1,
+        TenantTerminalConditionsAdditionalPropertyRefusalKindType2Type1,
+        TenantTerminalConditionsAdditionalPropertyRefusalKindType3Type1,
         Unset,
     ] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
@@ -98,6 +120,30 @@ class TenantTerminalConditionsAdditionalProperty:
         else:
             attributed_to = self.attributed_to
 
+        broker_words: Union[None, Unset, str]
+        if isinstance(self.broker_words, Unset):
+            broker_words = UNSET
+        else:
+            broker_words = self.broker_words
+
+        refusal_kind: Union[None, Unset, str]
+        if isinstance(self.refusal_kind, Unset):
+            refusal_kind = UNSET
+        elif isinstance(
+            self.refusal_kind, TenantTerminalConditionsAdditionalPropertyRefusalKindType1
+        ):
+            refusal_kind = self.refusal_kind.value
+        elif isinstance(
+            self.refusal_kind, TenantTerminalConditionsAdditionalPropertyRefusalKindType2Type1
+        ):
+            refusal_kind = self.refusal_kind.value
+        elif isinstance(
+            self.refusal_kind, TenantTerminalConditionsAdditionalPropertyRefusalKindType3Type1
+        ):
+            refusal_kind = self.refusal_kind.value
+        else:
+            refusal_kind = self.refusal_kind
+
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update({})
@@ -109,6 +155,10 @@ class TenantTerminalConditionsAdditionalProperty:
             field_dict["since"] = since
         if attributed_to is not UNSET:
             field_dict["attributed_to"] = attributed_to
+        if broker_words is not UNSET:
+            field_dict["broker_words"] = broker_words
+        if refusal_kind is not UNSET:
+            field_dict["refusal_kind"] = refusal_kind
 
         return field_dict
 
@@ -204,11 +254,78 @@ class TenantTerminalConditionsAdditionalProperty:
 
         attributed_to = _parse_attributed_to(d.pop("attributed_to", UNSET))
 
+        def _parse_broker_words(data: object) -> Union[None, Unset, str]:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(Union[None, Unset, str], data)
+
+        broker_words = _parse_broker_words(d.pop("broker_words", UNSET))
+
+        def _parse_refusal_kind(
+            data: object,
+        ) -> Union[
+            None,
+            TenantTerminalConditionsAdditionalPropertyRefusalKindType1,
+            TenantTerminalConditionsAdditionalPropertyRefusalKindType2Type1,
+            TenantTerminalConditionsAdditionalPropertyRefusalKindType3Type1,
+            Unset,
+        ]:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                refusal_kind_type_1 = TenantTerminalConditionsAdditionalPropertyRefusalKindType1(
+                    data
+                )
+
+                return refusal_kind_type_1
+            except:  # noqa: E722
+                pass
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                refusal_kind_type_2_type_1 = (
+                    TenantTerminalConditionsAdditionalPropertyRefusalKindType2Type1(data)
+                )
+
+                return refusal_kind_type_2_type_1
+            except:  # noqa: E722
+                pass
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                refusal_kind_type_3_type_1 = (
+                    TenantTerminalConditionsAdditionalPropertyRefusalKindType3Type1(data)
+                )
+
+                return refusal_kind_type_3_type_1
+            except:  # noqa: E722
+                pass
+            return cast(
+                Union[
+                    None,
+                    TenantTerminalConditionsAdditionalPropertyRefusalKindType1,
+                    TenantTerminalConditionsAdditionalPropertyRefusalKindType2Type1,
+                    TenantTerminalConditionsAdditionalPropertyRefusalKindType3Type1,
+                    Unset,
+                ],
+                data,
+            )
+
+        refusal_kind = _parse_refusal_kind(d.pop("refusal_kind", UNSET))
+
         tenant_terminal_conditions_additional_property = cls(
             status=status,
             reason=reason,
             since=since,
             attributed_to=attributed_to,
+            broker_words=broker_words,
+            refusal_kind=refusal_kind,
         )
 
         tenant_terminal_conditions_additional_property.additional_properties = d

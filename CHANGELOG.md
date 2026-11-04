@@ -7,6 +7,44 @@ surface; each such change is listed under **Changed** with what to do.
 
 ## Unreleased
 
+## 0.11.0
+
+### Added
+
+- `client.terminals.journal(terminal_id, lines=...)` reads a terminal's MetaTrader journal, newest
+  line first. While the terminal runs it is read from its cell now (`from_` is `live`); once it has
+  stopped, failed or been retired you get the last lines its cell kept for 24 hours
+  (`last_words`), and `stopped` says why. `lines` is 1 to 200 and is checked before the request.
+  The blocking form is `SyncMfxClient.terminal_journal`.
+- `client.terminals.page()` and `list()` take `label` (a mapping; a terminal is listed only when it
+  carries every pair) and `state`. Both narrow the list on the platform before
+  the page is cut. `SyncMfxClient.terminals()` takes them too.
+- `client.catalog.catalogues(broker_id)` lists one row per server and account type you hold a
+  symbol catalogue for, each with a `catalogue_hash` that changes only when a symbol is added,
+  removed, comes back or changes its specification, description or identity: compare it to read the
+  list again only when it moved. The blocking form is `SyncMfxClient.catalogues`.
+- A symbol now carries the broker's `path`, `isin`, `exchange`, `category`, `currency_base`, `basis`
+  and `calc_mode`, each `None` when the broker leaves it empty. A symbol page has `source`:
+  `live` while a terminal of yours runs there, `last_known` when none does and the rows are the
+  last reported. `Page.source` carries it for `client.catalog.symbols()`.
+- A terminal has `server_kind` (`demo` or `live`, known before any login), and each of its
+  conditions has `broker_words` (the broker's own words when it refused the login) and
+  `refusal_kind` (`invalid_account` or `other`). `terminal.condition_changed` carries both.
+- `maintenance.window_changed` is a new event on `events` and a new webhook type.
+  `mfx.maintenance.window_event(message)` reads it as a typed value, and `WINDOW_CHANGED` names it.
+- `symbol.spec_changed` has four more `change` values: `added`, `came_back`, `description` and
+  `identity`.
+- The API description is re-vendored.
+
+### Changed
+
+- `state` on `client.terminals.page()` and `list()` (and `SyncMfxClient.terminals()`) and on
+  `client.maintenance.page()` and `list()` takes one state or a sequence of states, sent as one
+  comma-separated value; each is checked before the request.
+- A `LOGGING_IN` terminal can now be retired. Whether that is answered `202` (draining) or
+  `409 state_error` depends on the platform version, and the SDK treats both as the platform's
+  answer.
+
 ## 0.10.0
 
 ### Changed

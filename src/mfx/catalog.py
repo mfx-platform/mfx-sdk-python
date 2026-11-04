@@ -16,7 +16,9 @@ from mfx._generated.api.md import get_symbol as _get_symbol
 from mfx._generated.api.md import get_symbol_quote as _get_symbol_quote
 from mfx._generated.api.md import list_broker_servers as _list_broker_servers
 from mfx._generated.api.md import list_brokers as _list_brokers
+from mfx._generated.api.md import list_catalogues as _list_catalogues
 from mfx._generated.api.md import list_symbols as _list_symbols
+from mfx._generated.models.broker_catalogue import BrokerCatalogue
 from mfx._generated.models.symbol import Symbol
 from mfx._generated.models.symbol_quote import SymbolQuote
 from mfx._generated.models.tenant_broker import TenantBroker
@@ -86,6 +88,25 @@ class Catalog:
         )
         return page_of(parsed)
 
+    async def catalogues(self, broker_id: Id) -> list[BrokerCatalogue]:
+        """One row per server and account type you hold a symbol catalogue for on this broker.
+
+        Each row carries ``catalogue_hash``, a digest of the whole symbol list (names, spec
+        hashes, descriptions and identity fields), and ``symbols``, how many are listed now. The
+        hash changes when a symbol is added, removed or comes back, or when a symbol's spec,
+        description or identity changes, and never on a quote figure: compare it with the one you
+        last saw and read :meth:`symbols` again only when it differs. ``source`` is ``live`` while a
+        terminal of yours runs there and ``last_known`` when none does any more. A broker you hold
+        no catalogue for answers an empty list.
+        """
+        parsed = await self._client.read(
+            lambda: _list_catalogues.asyncio_detailed(
+                id=_uuid(broker_id), client=self._client.generated
+            ),
+            f"GET /brokers/{broker_id}/catalogues",
+        )
+        return list(parsed.items)
+
     async def symbols(
         self,
         broker_id: Id,
@@ -103,6 +124,12 @@ class Catalog:
         These are the names to pass to ``terminals.create`` and to ``execution.place_order``: MFX
         never renames an instrument on a tenant's behalf, so ``BTCUSD.lv`` is what a
         broker that calls it that will answer to.
+
+        The page says where the rows came from in ``source``: ``live`` when a terminal of yours
+        runs on this server and account type, ``last_known`` when none does any more and the rows
+        are the last your terminals reported, each with its own ``refreshed_at``. Each symbol also
+        carries the broker's own identity fields (``path``, ``isin``, ``exchange``, ``category``,
+        ``currency_base``, ``basis`` and ``calc_mode``), each None when the broker leaves it empty.
         """
         which = _which(server_id, account_type)
         parsed = await self._client.read(

@@ -35,6 +35,13 @@ from ..models.tenant_terminal_replica_role_type_2_type_1 import (
 from ..models.tenant_terminal_replica_role_type_3_type_1 import (
     TenantTerminalReplicaRoleType3Type1,
 )
+from ..models.tenant_terminal_server_kind_type_1 import TenantTerminalServerKindType1
+from ..models.tenant_terminal_server_kind_type_2_type_1 import (
+    TenantTerminalServerKindType2Type1,
+)
+from ..models.tenant_terminal_server_kind_type_3_type_1 import (
+    TenantTerminalServerKindType3Type1,
+)
 from ..models.tenant_terminal_state import TenantTerminalState
 from ..types import UNSET, Unset
 
@@ -69,6 +76,11 @@ class TenantTerminal:
             login, this one included. They share the account at the broker: each sees the same balance, positions and
             history. Another tenant's use of the same login is never counted or shown here. Null until the terminal has a
             credential.
+        server_kind (Union[None, TenantTerminalServerKindType1, TenantTerminalServerKindType2Type1,
+            TenantTerminalServerKindType3Type1, Unset]): The kind of the terminal's server as the operator recorded it, the
+            `kind` of `GET /brokers/{id}/servers`. Known before any login, so it answers demo or live while a login is
+            refused. Once the terminal has logged in, `GET /terminals/{id}/account` → `profile.account_type` is the
+            account's own word (demo, live or contest) and wins.
         login_masked (Union[None, Unset, str]): e.g. ****3456; null until a credential is submitted
         offline_reason (Union[None, TenantTerminalOfflineReasonType1, TenantTerminalOfflineReasonType2Type1,
             TenantTerminalOfflineReasonType3Type1, Unset]): Why an OFFLINE terminal is offline; null in every other state
@@ -100,6 +112,13 @@ class TenantTerminal:
     instruments: list[str]
     created_at: datetime.datetime
     same_login_terminals: Union[None, Unset, int] = UNSET
+    server_kind: Union[
+        None,
+        TenantTerminalServerKindType1,
+        TenantTerminalServerKindType2Type1,
+        TenantTerminalServerKindType3Type1,
+        Unset,
+    ] = UNSET
     login_masked: Union[None, Unset, str] = UNSET
     offline_reason: Union[
         None,
@@ -156,6 +175,18 @@ class TenantTerminal:
             same_login_terminals = UNSET
         else:
             same_login_terminals = self.same_login_terminals
+
+        server_kind: Union[None, Unset, str]
+        if isinstance(self.server_kind, Unset):
+            server_kind = UNSET
+        elif isinstance(self.server_kind, TenantTerminalServerKindType1):
+            server_kind = self.server_kind.value
+        elif isinstance(self.server_kind, TenantTerminalServerKindType2Type1):
+            server_kind = self.server_kind.value
+        elif isinstance(self.server_kind, TenantTerminalServerKindType3Type1):
+            server_kind = self.server_kind.value
+        else:
+            server_kind = self.server_kind
 
         login_masked: Union[None, Unset, str]
         if isinstance(self.login_masked, Unset):
@@ -256,6 +287,8 @@ class TenantTerminal:
         )
         if same_login_terminals is not UNSET:
             field_dict["same_login_terminals"] = same_login_terminals
+        if server_kind is not UNSET:
+            field_dict["server_kind"] = server_kind
         if login_masked is not UNSET:
             field_dict["login_masked"] = login_masked
         if offline_reason is not UNSET:
@@ -319,6 +352,56 @@ class TenantTerminal:
             return cast(Union[None, Unset, int], data)
 
         same_login_terminals = _parse_same_login_terminals(d.pop("same_login_terminals", UNSET))
+
+        def _parse_server_kind(
+            data: object,
+        ) -> Union[
+            None,
+            TenantTerminalServerKindType1,
+            TenantTerminalServerKindType2Type1,
+            TenantTerminalServerKindType3Type1,
+            Unset,
+        ]:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                server_kind_type_1 = TenantTerminalServerKindType1(data)
+
+                return server_kind_type_1
+            except:  # noqa: E722
+                pass
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                server_kind_type_2_type_1 = TenantTerminalServerKindType2Type1(data)
+
+                return server_kind_type_2_type_1
+            except:  # noqa: E722
+                pass
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                server_kind_type_3_type_1 = TenantTerminalServerKindType3Type1(data)
+
+                return server_kind_type_3_type_1
+            except:  # noqa: E722
+                pass
+            return cast(
+                Union[
+                    None,
+                    TenantTerminalServerKindType1,
+                    TenantTerminalServerKindType2Type1,
+                    TenantTerminalServerKindType3Type1,
+                    Unset,
+                ],
+                data,
+            )
+
+        server_kind = _parse_server_kind(d.pop("server_kind", UNSET))
 
         def _parse_login_masked(data: object) -> Union[None, Unset, str]:
             if data is None:
@@ -529,6 +612,7 @@ class TenantTerminal:
             instruments=instruments,
             created_at=created_at,
             same_login_terminals=same_login_terminals,
+            server_kind=server_kind,
             login_masked=login_masked,
             offline_reason=offline_reason,
             state_since=state_since,

@@ -1,7 +1,7 @@
 from enum import Enum
 
 
-class ListMaintenanceState(str, Enum):
+class ListMaintenanceStateItem(str, Enum):
     CANCELLED = "cancelled"
     COMPLETED = "completed"
     IN_PROGRESS = "in_progress"

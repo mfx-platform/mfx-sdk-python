@@ -30,7 +30,7 @@ import asyncio
 import datetime as dt
 import functools
 import threading
-from collections.abc import Awaitable, Callable, Iterator
+from collections.abc import Awaitable, Callable, Iterator, Mapping, Sequence
 from types import TracebackType
 from typing import TYPE_CHECKING, Any, Self
 
@@ -39,6 +39,7 @@ from mfx.pages import Page
 
 if TYPE_CHECKING:
     from mfx._generated.models.account import Account
+    from mfx._generated.models.broker_catalogue import BrokerCatalogue
     from mfx._generated.models.candle_list import CandleList
     from mfx._generated.models.credential_accepted import CredentialAccepted
     from mfx._generated.models.deal import Deal
@@ -50,11 +51,12 @@ if TYPE_CHECKING:
     from mfx._generated.models.tenant_broker import TenantBroker
     from mfx._generated.models.tenant_broker_server import TenantBrokerServer
     from mfx._generated.models.tenant_terminal import TenantTerminal
+    from mfx._generated.models.terminal_journal import TerminalJournal
     from mfx._generated.models.tick_list import TickList
     from mfx._generated.models.usage import Usage
     from mfx.results import ExecutionResult
     from mfx.secrets import Secret
-    from mfx.terminals import CredentialType, Id, Redundancy
+    from mfx.terminals import CredentialType, Id, Redundancy, TerminalStateName
 
 __all__ = ["SyncMfxClient"]
 
@@ -138,13 +140,28 @@ class SyncMfxClient:
         """Blocking form of :meth:`mfx.terminals.Terminals.get`."""
         return self._run(lambda: self._client.terminals.get(terminal_id))
 
-    def terminals(self, *, limit: int | None = None) -> Iterator[TenantTerminal]:
+    def terminals(
+        self,
+        *,
+        limit: int | None = None,
+        label: Mapping[str, str] | None = None,
+        state: TerminalStateName | Sequence[TerminalStateName] | None = None,
+    ) -> Iterator[TenantTerminal]:
         """Every terminal, following the cursor — as an ordinary iterator.
 
         Each page is one call; the walk is not read ahead, so a script that stops early has not
-        paid for the rest.
+        paid for the rest. ``label`` and ``state`` narrow the list as
+        :meth:`mfx.terminals.Terminals.page` describes.
         """
-        return self._pages(lambda cursor: self._client.terminals.page(cursor=cursor, limit=limit))
+        return self._pages(
+            lambda cursor: self._client.terminals.page(
+                cursor=cursor, limit=limit, label=label, state=state
+            )
+        )
+
+    def terminal_journal(self, terminal_id: Id, *, lines: int | None = None) -> TerminalJournal:
+        """Blocking form of :meth:`mfx.terminals.Terminals.journal`."""
+        return self._run(lambda: self._client.terminals.journal(terminal_id, lines=lines))
 
     def submit_credentials(
         self,
@@ -213,6 +230,10 @@ class SyncMfxClient:
         Blocking form of :meth:`mfx.catalog.Catalog.servers`.
         """
         return self._pages(lambda cursor: self._client.catalog.servers(broker_id, cursor=cursor))
+
+    def catalogues(self, broker_id: Id) -> list[BrokerCatalogue]:
+        """Blocking form of :meth:`mfx.catalog.Catalog.catalogues`."""
+        return self._run(lambda: self._client.catalog.catalogues(broker_id))
 
     def symbols(self, broker_id: Id) -> Iterator[Symbol]:
         """Every symbol of a broker, following the cursor.

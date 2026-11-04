@@ -8,6 +8,7 @@ from typing import (
     Optional,
     TextIO,
     TypeVar,
+    Union,
     cast,
 )
 from uuid import UUID
@@ -22,6 +23,9 @@ from ..models.terminal_condition_changed_attributed_to import (
 )
 from ..models.terminal_condition_changed_condition import (
     TerminalConditionChangedCondition,
+)
+from ..models.terminal_condition_changed_refusal_kind import (
+    TerminalConditionChangedRefusalKind,
 )
 from ..types import UNSET, Unset
 
@@ -50,6 +54,9 @@ class TerminalConditionChanged:
             since (datetime.datetime): When it took this status, UTC
             attributed_to (TerminalConditionChangedAttributedTo): As `Condition.attributed_to`: `broker` for a broker's feed
                 fault, empty when not attributed
+            broker_words (Union[Unset, str]): As `Condition.broker_words`; empty unless the reason is `login_refused`
+            refusal_kind (Union[Unset, TerminalConditionChangedRefusalKind]): As `Condition.refusal_kind`; empty unless the
+                reason is `login_refused`
     """
 
     schema_version: str
@@ -59,6 +66,8 @@ class TerminalConditionChanged:
     reason: str
     since: datetime.datetime
     attributed_to: TerminalConditionChangedAttributedTo
+    broker_words: Union[Unset, str] = UNSET
+    refusal_kind: Union[Unset, TerminalConditionChangedRefusalKind] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -76,6 +85,12 @@ class TerminalConditionChanged:
 
         attributed_to = self.attributed_to.value
 
+        broker_words = self.broker_words
+
+        refusal_kind: Union[Unset, str] = UNSET
+        if not isinstance(self.refusal_kind, Unset):
+            refusal_kind = self.refusal_kind.value
+
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
@@ -89,6 +104,10 @@ class TerminalConditionChanged:
                 "attributed_to": attributed_to,
             }
         )
+        if broker_words is not UNSET:
+            field_dict["broker_words"] = broker_words
+        if refusal_kind is not UNSET:
+            field_dict["refusal_kind"] = refusal_kind
 
         return field_dict
 
@@ -109,6 +128,15 @@ class TerminalConditionChanged:
 
         attributed_to = TerminalConditionChangedAttributedTo(d.pop("attributed_to"))
 
+        broker_words = d.pop("broker_words", UNSET)
+
+        _refusal_kind = d.pop("refusal_kind", UNSET)
+        refusal_kind: Union[Unset, TerminalConditionChangedRefusalKind]
+        if isinstance(_refusal_kind, Unset):
+            refusal_kind = UNSET
+        else:
+            refusal_kind = TerminalConditionChangedRefusalKind(_refusal_kind)
+
         terminal_condition_changed = cls(
             schema_version=schema_version,
             terminal_id=terminal_id,
@@ -117,6 +145,8 @@ class TerminalConditionChanged:
             reason=reason,
             since=since,
             attributed_to=attributed_to,
+            broker_words=broker_words,
+            refusal_kind=refusal_kind,
         )
 
         terminal_condition_changed.additional_properties = d

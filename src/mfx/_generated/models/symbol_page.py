@@ -14,6 +14,7 @@ from typing import (
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
+from ..models.symbol_page_source import SymbolPageSource
 from ..types import UNSET, Unset
 
 if TYPE_CHECKING:
@@ -29,11 +30,14 @@ class SymbolPage:
     Attributes:
         next_cursor (Union[None, str]): Opaque (created_at, id) cursor for the following page; null on the last page
         items (list['Symbol']):
+        source (Union[Unset, SymbolPageSource]): live: a terminal of yours runs on this server and account type.
+            last_known: none does any more; the rows are the last your terminals reported, each with its refreshed_at
         returned (Union[Unset, int]): How many items are in THIS page; never a total
     """
 
     next_cursor: Union[None, str]
     items: list["Symbol"]
+    source: Union[Unset, SymbolPageSource] = UNSET
     returned: Union[Unset, int] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
@@ -48,6 +52,10 @@ class SymbolPage:
             items_item = items_item_data.to_dict()
             items.append(items_item)
 
+        source: Union[Unset, str] = UNSET
+        if not isinstance(self.source, Unset):
+            source = self.source.value
+
         returned = self.returned
 
         field_dict: dict[str, Any] = {}
@@ -58,6 +66,8 @@ class SymbolPage:
                 "items": items,
             }
         )
+        if source is not UNSET:
+            field_dict["source"] = source
         if returned is not UNSET:
             field_dict["returned"] = returned
 
@@ -83,11 +93,19 @@ class SymbolPage:
 
             items.append(items_item)
 
+        _source = d.pop("source", UNSET)
+        source: Union[Unset, SymbolPageSource]
+        if isinstance(_source, Unset):
+            source = UNSET
+        else:
+            source = SymbolPageSource(_source)
+
         returned = d.pop("returned", UNSET)
 
         symbol_page = cls(
             next_cursor=next_cursor,
             items=items,
+            source=source,
             returned=returned,
         )
 

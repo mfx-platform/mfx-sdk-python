@@ -14,7 +14,7 @@ Two rules show up in every signature here:
 
 from __future__ import annotations
 
-from collections.abc import AsyncIterator, Sequence
+from collections.abc import AsyncIterator, Mapping, Sequence
 from typing import TYPE_CHECKING, Literal
 from uuid import UUID
 
@@ -36,6 +36,9 @@ from mfx._generated.api.terminals import (
 )
 from mfx._generated.api.terminals import (
     get_terminal as _get_terminal,
+)
+from mfx._generated.api.terminals import (
+    get_terminal_journal as _get_terminal_journal,
 )
 from mfx._generated.api.terminals import (
     get_terminal_operation as _get_terminal_operation,
@@ -62,6 +65,7 @@ from mfx._generated.models.expert_advisor_attach import ExpertAdvisorAttach
 from mfx._generated.models.expert_advisor_attach_timeframe import ExpertAdvisorAttachTimeframe
 from mfx._generated.models.expert_advisor_attachment import ExpertAdvisorAttachment
 from mfx._generated.models.expert_advisor_confirm import ExpertAdvisorConfirm
+from mfx._generated.models.list_terminals_state_item import ListTerminalsStateItem
 from mfx._generated.models.operation_accepted import OperationAccepted
 from mfx._generated.models.tenant_terminal import TenantTerminal
 from mfx._generated.models.tenant_terminal_state import TenantTerminalState
@@ -70,19 +74,39 @@ from mfx._generated.models.terminal_create_labels import TerminalCreateLabels
 from mfx._generated.models.terminal_create_redundancy import TerminalCreateRedundancy
 from mfx._generated.models.terminal_drain import TerminalDrain
 from mfx._generated.models.terminal_instruments import TerminalInstruments
+from mfx._generated.models.terminal_journal import TerminalJournal
 from mfx._generated.models.terminal_operation import TerminalOperation
 from mfx._generated.models.terminal_restart import TerminalRestart
 from mfx._generated.types import UNSET
-from mfx.pages import Page, page_of
+from mfx.pages import Page, page_of, states_param
 from mfx.secrets import Secret
 
 if TYPE_CHECKING:
     from mfx.client import MfxClient
 
-__all__ = ["OFFLINE_IS_TEMPORARY", "OPERATION_FINAL", "Terminals", "is_usable"]
+__all__ = [
+    "OFFLINE_IS_TEMPORARY",
+    "OPERATION_FINAL",
+    "TerminalStateName",
+    "Terminals",
+    "is_usable",
+]
 
 Redundancy = Literal["none", "active_passive", "active_active"]
 CredentialType = Literal["master", "investor"]
+#: The states ``terminals.page(state=...)`` and ``terminals.list(state=...)`` can narrow to.
+TerminalStateName = Literal[
+    "REQUESTED",
+    "PROVISIONING",
+    "LOGGING_IN",
+    "ACTIVE",
+    "OFFLINE",
+    "PARKED",
+    "DRAINING",
+    "DRAINED",
+    "RETIRED",
+    "FAILED",
+]
 Timeframe = Literal["M1", "M5", "M15", "M30", "H1", "H4", "D1", "W1", "MN1"]
 #: An operation is over in any of these; every other state is on its way (TerminalOperation).
 OPERATION_FINAL: frozenset[str] = frozenset(
@@ -199,33 +223,78 @@ class Terminals:
         return terminal  # type: ignore[no-any-return]
 
     async def page(
-        self, *, cursor: str | None = None, limit: int | None = None
+        self,
+        *,
+        cursor: str | None = None,
+        limit: int | None = None,
+        label: Mapping[str, str] | None = None,
+        state: TerminalStateName | Sequence[TerminalStateName] | None = None,
     ) -> Page[TenantTerminal]:
-        """One page of this tenant's terminals, newest first."""
+        """One page of this tenant's terminals, newest first, retired ones included.
+
+        ``label`` and ``state`` narrow the list on the platform before the page is cut, so a
+        filtered page is never short for being filtered. ``label`` is a mapping of exact,
+        case-sensitive keys and values (at most 10): a terminal is listed only when it carries
+        every one. ``state`` is one terminal state or a sequence of them, sent as one
+        comma-separated value; a terminal is listed when it is in any of them. Each is checked here.
+        """
+        wanted = states_param(state, ListTerminalsStateItem)  # before the call: a bad one is ours
         parsed = await self._client.read(
             lambda: _list_terminals.asyncio_detailed(
                 client=self._client.generated,
                 cursor=cursor if cursor is not None else UNSET,
                 limit=limit if limit is not None else UNSET,
+                label=[f"{key}:{value}" for key, value in label.items()] if label else UNSET,
+                state=wanted,
             ),
             "GET /terminals",
         )
         return page_of(parsed)
 
-    async def list(self, *, limit: int | None = None) -> AsyncIterator[TenantTerminal]:
-        """Every terminal, following the cursor.
+    async def list(
+        self,
+        *,
+        limit: int | None = None,
+        label: Mapping[str, str] | None = None,
+        state: TerminalStateName | Sequence[TerminalStateName] | None = None,
+    ) -> AsyncIterator[TenantTerminal]:
+        """Every terminal, following the cursor, optionally narrowed as :meth:`page` is.
 
         There is no `total` and no page number anywhere in the API, and there never will be
         (guardrail 7), so this follows the cursor rather than counting.
         """
         cursor: str | None = None
         while True:
-            page = await self.page(cursor=cursor, limit=limit)
+            page = await self.page(cursor=cursor, limit=limit, label=label, state=state)
             for terminal in page.items:
                 yield terminal
             cursor = page.next_cursor if isinstance(page.next_cursor, str) else None
             if not cursor:
                 return
+
+    async def journal(self, terminal_id: Id, *, lines: int | None = None) -> TerminalJournal:
+        """The terminal's MetaTrader journal, newest line first.
+
+        ``lines`` is 1 to 200 (the platform's default is 100); a value outside that is a
+        ``ValueError`` here rather than a 400 from the platform. While the terminal runs the lines
+        are read from its cell now and ``from_`` is ``live``; once it has stopped, failed or been
+        retired they are the last lines its cell kept, ``last_words``, for 24 hours, and
+        ``stopped`` says why. Account numbers are masked and file paths removed by the platform.
+        A terminal that is not running and holds no last lines is a ``409 state_error``
+        (``details.reason`` ``not_running``); a cell that does not answer within 10 s is a
+        ``503 upstream_error``. Another tenant's terminal is a 404.
+        """
+        if lines is not None and not 1 <= lines <= 200:
+            raise ValueError(f"lines must be 1 to 200, not {lines}")
+        parsed = await self._client.read(
+            lambda: _get_terminal_journal.asyncio_detailed(
+                id=_uuid(terminal_id),
+                client=self._client.generated,
+                lines=lines if lines is not None else UNSET,
+            ),
+            f"GET /terminals/{terminal_id}/journal",
+        )
+        return parsed  # type: ignore[no-any-return]
 
     async def submit_credentials(
         self,

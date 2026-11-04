@@ -13,6 +13,9 @@ from .account_profile_type_0_margin_mode import AccountProfileType0MarginMode
 from .account_snapshot_message import AccountSnapshotMessage
 from .account_snapshot_type_0 import AccountSnapshotType0
 from .book_message import BookMessage
+from .broker_catalogue import BrokerCatalogue
+from .broker_catalogue_list import BrokerCatalogueList
+from .broker_catalogue_source import BrokerCatalogueSource
 from .candle import Candle
 from .candle_list import CandleList
 from .candle_list_source import CandleListSource
@@ -100,9 +103,14 @@ from .expert_advisor_state_changed_uploaded_by_operator import (
 from .expert_advisor_upload import ExpertAdvisorUpload
 from .expert_advisor_upload_files_item import ExpertAdvisorUploadFilesItem
 from .get_candles_tf import GetCandlesTf
-from .list_maintenance_state import ListMaintenanceState
-from .list_webhook_failures_state import ListWebhookFailuresState
+from .journal_line import JournalLine
+from .list_maintenance_state_item import ListMaintenanceStateItem
+from .list_terminals_state_item import ListTerminalsStateItem
+from .list_webhook_failures_state_item import ListWebhookFailuresStateItem
 from .maintenance_service import MaintenanceService
+from .maintenance_window_changed import MaintenanceWindowChanged
+from .maintenance_window_changed_change import MaintenanceWindowChangedChange
+from .maintenance_window_changed_state import MaintenanceWindowChangedState
 from .md_candle_closed import MdCandleClosed
 from .md_candle_closed_timeframe import MdCandleClosedTimeframe
 from .md_status_message import MdStatusMessage
@@ -182,6 +190,7 @@ from .spread_list import SpreadList
 from .symbol import Symbol
 from .symbol_filling_modes_type_0_item import SymbolFillingModesType0Item
 from .symbol_page import SymbolPage
+from .symbol_page_source import SymbolPageSource
 from .symbol_quote import SymbolQuote
 from .symbol_spec_changed import SymbolSpecChanged
 from .symbol_spec_changed_after_type_0 import SymbolSpecChangedAfterType0
@@ -262,6 +271,15 @@ from .tenant_terminal_conditions_additional_property_attributed_to_type_2_type_1
 from .tenant_terminal_conditions_additional_property_attributed_to_type_3_type_1 import (
     TenantTerminalConditionsAdditionalPropertyAttributedToType3Type1,
 )
+from .tenant_terminal_conditions_additional_property_refusal_kind_type_1 import (
+    TenantTerminalConditionsAdditionalPropertyRefusalKindType1,
+)
+from .tenant_terminal_conditions_additional_property_refusal_kind_type_2_type_1 import (
+    TenantTerminalConditionsAdditionalPropertyRefusalKindType2Type1,
+)
+from .tenant_terminal_conditions_additional_property_refusal_kind_type_3_type_1 import (
+    TenantTerminalConditionsAdditionalPropertyRefusalKindType3Type1,
+)
 from .tenant_terminal_conditions_additional_property_status import (
     TenantTerminalConditionsAdditionalPropertyStatus,
 )
@@ -288,12 +306,20 @@ from .tenant_terminal_replica_role_type_2_type_1 import (
 from .tenant_terminal_replica_role_type_3_type_1 import (
     TenantTerminalReplicaRoleType3Type1,
 )
+from .tenant_terminal_server_kind_type_1 import TenantTerminalServerKindType1
+from .tenant_terminal_server_kind_type_2_type_1 import (
+    TenantTerminalServerKindType2Type1,
+)
+from .tenant_terminal_server_kind_type_3_type_1 import (
+    TenantTerminalServerKindType3Type1,
+)
 from .tenant_terminal_state import TenantTerminalState
 from .terminal_condition_changed import TerminalConditionChanged
 from .terminal_condition_changed_attributed_to import (
     TerminalConditionChangedAttributedTo,
 )
 from .terminal_condition_changed_condition import TerminalConditionChangedCondition
+from .terminal_condition_changed_refusal_kind import TerminalConditionChangedRefusalKind
 from .terminal_create import TerminalCreate
 from .terminal_create_labels import TerminalCreateLabels
 from .terminal_create_redundancy import TerminalCreateRedundancy
@@ -306,6 +332,11 @@ from .terminal_ha_mode_type_3_type_1 import TerminalHaModeType3Type1
 from .terminal_ha_switched import TerminalHaSwitched
 from .terminal_ha_switched_reason import TerminalHaSwitchedReason
 from .terminal_instruments import TerminalInstruments
+from .terminal_journal import TerminalJournal
+from .terminal_journal_from import TerminalJournalFrom
+from .terminal_journal_stopped_type_1 import TerminalJournalStoppedType1
+from .terminal_journal_stopped_type_2_type_1 import TerminalJournalStoppedType2Type1
+from .terminal_journal_stopped_type_3_type_1 import TerminalJournalStoppedType3Type1
 from .terminal_operation import TerminalOperation
 from .terminal_operation_changed import TerminalOperationChanged
 from .terminal_operation_changed_forced_stop import TerminalOperationChangedForcedStop
@@ -392,6 +423,9 @@ __all__ = (
     "AccountSnapshotMessage",
     "AccountSnapshotType0",
     "BookMessage",
+    "BrokerCatalogue",
+    "BrokerCatalogueList",
+    "BrokerCatalogueSource",
     "Candle",
     "CandleList",
     "CandleListSource",
@@ -463,9 +497,14 @@ __all__ = (
     "ExpertAdvisorUpload",
     "ExpertAdvisorUploadFilesItem",
     "GetCandlesTf",
-    "ListMaintenanceState",
-    "ListWebhookFailuresState",
+    "JournalLine",
+    "ListMaintenanceStateItem",
+    "ListTerminalsStateItem",
+    "ListWebhookFailuresStateItem",
     "MaintenanceService",
+    "MaintenanceWindowChanged",
+    "MaintenanceWindowChangedChange",
+    "MaintenanceWindowChangedState",
     "MdCandleClosed",
     "MdCandleClosedTimeframe",
     "MdStatusMessage",
@@ -537,6 +576,7 @@ __all__ = (
     "Symbol",
     "SymbolFillingModesType0Item",
     "SymbolPage",
+    "SymbolPageSource",
     "SymbolQuote",
     "SymbolSpecChanged",
     "SymbolSpecChangedAfterType0",
@@ -593,6 +633,9 @@ __all__ = (
     "TenantTerminalConditionsAdditionalPropertyAttributedToType1",
     "TenantTerminalConditionsAdditionalPropertyAttributedToType2Type1",
     "TenantTerminalConditionsAdditionalPropertyAttributedToType3Type1",
+    "TenantTerminalConditionsAdditionalPropertyRefusalKindType1",
+    "TenantTerminalConditionsAdditionalPropertyRefusalKindType2Type1",
+    "TenantTerminalConditionsAdditionalPropertyRefusalKindType3Type1",
     "TenantTerminalConditionsAdditionalPropertyStatus",
     "TenantTerminalHa",
     "TenantTerminalHaFallbackState",
@@ -609,10 +652,14 @@ __all__ = (
     "TenantTerminalReplicaRoleType1",
     "TenantTerminalReplicaRoleType2Type1",
     "TenantTerminalReplicaRoleType3Type1",
+    "TenantTerminalServerKindType1",
+    "TenantTerminalServerKindType2Type1",
+    "TenantTerminalServerKindType3Type1",
     "TenantTerminalState",
     "TerminalConditionChanged",
     "TerminalConditionChangedAttributedTo",
     "TerminalConditionChangedCondition",
+    "TerminalConditionChangedRefusalKind",
     "TerminalCreate",
     "TerminalCreateLabels",
     "TerminalCreateRedundancy",
@@ -625,6 +672,11 @@ __all__ = (
     "TerminalHaSwitched",
     "TerminalHaSwitchedReason",
     "TerminalInstruments",
+    "TerminalJournal",
+    "TerminalJournalFrom",
+    "TerminalJournalStoppedType1",
+    "TerminalJournalStoppedType2Type1",
+    "TerminalJournalStoppedType3Type1",
     "TerminalOperation",
     "TerminalOperationChanged",
     "TerminalOperationChangedForcedStop",

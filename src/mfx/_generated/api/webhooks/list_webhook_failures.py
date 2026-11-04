@@ -7,7 +7,7 @@ import httpx
 from ... import errors
 from ...client import AuthenticatedClient, Client
 from ...models.error import Error
-from ...models.list_webhook_failures_state import ListWebhookFailuresState
+from ...models.list_webhook_failures_state_item import ListWebhookFailuresStateItem
 from ...models.webhook_failure_page import WebhookFailurePage
 from ...types import UNSET, Response, Unset
 
@@ -15,15 +15,18 @@ from ...types import UNSET, Response, Unset
 def _get_kwargs(
     id: UUID,
     *,
-    state: Union[Unset, ListWebhookFailuresState] = UNSET,
+    state: Union[Unset, list[ListWebhookFailuresStateItem]] = UNSET,
     cursor: Union[Unset, str] = UNSET,
     limit: Union[Unset, int] = 50,
 ) -> dict[str, Any]:
     params: dict[str, Any] = {}
 
-    json_state: Union[Unset, str] = UNSET
+    json_state: Union[Unset, list[str]] = UNSET
     if not isinstance(state, Unset):
-        json_state = state.value
+        json_state = []
+        for state_item_data in state:
+            state_item = state_item_data.value
+            json_state.append(state_item)
 
     params["state"] = json_state
 
@@ -72,7 +75,7 @@ def sync_detailed(
     id: UUID,
     *,
     client: Union[AuthenticatedClient, Client],
-    state: Union[Unset, ListWebhookFailuresState] = UNSET,
+    state: Union[Unset, list[ListWebhookFailuresStateItem]] = UNSET,
     cursor: Union[Unset, str] = UNSET,
     limit: Union[Unset, int] = 50,
 ) -> Response[Union[Error, WebhookFailurePage]]:
@@ -80,7 +83,7 @@ def sync_detailed(
 
     Args:
         id (UUID):
-        state (Union[Unset, ListWebhookFailuresState]):
+        state (Union[Unset, list[ListWebhookFailuresStateItem]]):
         cursor (Union[Unset, str]):
         limit (Union[Unset, int]):  Default: 50.
 
@@ -110,7 +113,7 @@ def sync(
     id: UUID,
     *,
     client: Union[AuthenticatedClient, Client],
-    state: Union[Unset, ListWebhookFailuresState] = UNSET,
+    state: Union[Unset, list[ListWebhookFailuresStateItem]] = UNSET,
     cursor: Union[Unset, str] = UNSET,
     limit: Union[Unset, int] = 50,
 ) -> Optional[Union[Error, WebhookFailurePage]]:
@@ -118,7 +121,7 @@ def sync(
 
     Args:
         id (UUID):
-        state (Union[Unset, ListWebhookFailuresState]):
+        state (Union[Unset, list[ListWebhookFailuresStateItem]]):
         cursor (Union[Unset, str]):
         limit (Union[Unset, int]):  Default: 50.
 
@@ -143,7 +146,7 @@ async def asyncio_detailed(
     id: UUID,
     *,
     client: Union[AuthenticatedClient, Client],
-    state: Union[Unset, ListWebhookFailuresState] = UNSET,
+    state: Union[Unset, list[ListWebhookFailuresStateItem]] = UNSET,
     cursor: Union[Unset, str] = UNSET,
     limit: Union[Unset, int] = 50,
 ) -> Response[Union[Error, WebhookFailurePage]]:
@@ -151,7 +154,7 @@ async def asyncio_detailed(
 
     Args:
         id (UUID):
-        state (Union[Unset, ListWebhookFailuresState]):
+        state (Union[Unset, list[ListWebhookFailuresStateItem]]):
         cursor (Union[Unset, str]):
         limit (Union[Unset, int]):  Default: 50.
 
@@ -179,7 +182,7 @@ async def asyncio(
     id: UUID,
     *,
     client: Union[AuthenticatedClient, Client],
-    state: Union[Unset, ListWebhookFailuresState] = UNSET,
+    state: Union[Unset, list[ListWebhookFailuresStateItem]] = UNSET,
     cursor: Union[Unset, str] = UNSET,
     limit: Union[Unset, int] = 50,
 ) -> Optional[Union[Error, WebhookFailurePage]]:
@@ -187,7 +190,7 @@ async def asyncio(
 
     Args:
         id (UUID):
-        state (Union[Unset, ListWebhookFailuresState]):
+        state (Union[Unset, list[ListWebhookFailuresStateItem]]):
         cursor (Union[Unset, str]):
         limit (Union[Unset, int]):  Default: 50.
 

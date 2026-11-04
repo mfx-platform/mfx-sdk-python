@@ -34,7 +34,7 @@ T = TypeVar("T", bound="Symbol")
 
 @_attrs_define
 class Symbol:
-    """
+    r"""
     Attributes:
         symbol (str):
         description (str):
@@ -85,6 +85,17 @@ class Symbol:
             pip_value_per_lot: it moves with price and is not in spec_hash.
         filling_modes (Union[None, Unset, list[SymbolFillingModesType0Item]]): The fill policies the broker allows
             besides return (SYMBOL_FILLING_MODE flags: fill or kill, immediate or cancel, book or cancel).
+        path (Union[None, Unset, str]): Where the broker files the symbol (SYMBOL_PATH), e.g. Shares\US\NVDA. Null when
+            the broker leaves it empty; never inferred
+        isin (Union[None, Unset, str]): SYMBOL_ISIN, as the broker fills it; null when empty
+        exchange (Union[None, Unset, str]): SYMBOL_EXCHANGE; null when empty
+        category (Union[None, Unset, str]): SYMBOL_CATEGORY, the broker's own free text; null when empty
+        currency_base (Union[None, Unset, str]): SYMBOL_CURRENCY_BASE; null when empty
+        basis (Union[None, Unset, str]): SYMBOL_BASIS, the underlying asset of a derivative; null when empty
+        calc_mode (Union[None, Unset, str]): SYMBOL_TRADE_CALC_MODE as MetaTrader names it, lower-case without its
+            prefix (forex, futures, cfd, cfdindex, cfdleverage, forex_no_leverage, exch_stocks, exch_futures, exch_options,
+            exch_options_margin, exch_bonds, exch_stocks_moex, exch_bonds_moex, serv_collateral); a number without a name is
+            given as its digits
     """
 
     symbol: str
@@ -118,6 +129,13 @@ class Symbol:
     margin_maintenance: Union[None, Unset, str] = UNSET
     margin_per_lot: Union[None, Unset, str] = UNSET
     filling_modes: Union[None, Unset, list[SymbolFillingModesType0Item]] = UNSET
+    path: Union[None, Unset, str] = UNSET
+    isin: Union[None, Unset, str] = UNSET
+    exchange: Union[None, Unset, str] = UNSET
+    category: Union[None, Unset, str] = UNSET
+    currency_base: Union[None, Unset, str] = UNSET
+    basis: Union[None, Unset, str] = UNSET
+    calc_mode: Union[None, Unset, str] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -255,6 +273,48 @@ class Symbol:
         else:
             filling_modes = self.filling_modes
 
+        path: Union[None, Unset, str]
+        if isinstance(self.path, Unset):
+            path = UNSET
+        else:
+            path = self.path
+
+        isin: Union[None, Unset, str]
+        if isinstance(self.isin, Unset):
+            isin = UNSET
+        else:
+            isin = self.isin
+
+        exchange: Union[None, Unset, str]
+        if isinstance(self.exchange, Unset):
+            exchange = UNSET
+        else:
+            exchange = self.exchange
+
+        category: Union[None, Unset, str]
+        if isinstance(self.category, Unset):
+            category = UNSET
+        else:
+            category = self.category
+
+        currency_base: Union[None, Unset, str]
+        if isinstance(self.currency_base, Unset):
+            currency_base = UNSET
+        else:
+            currency_base = self.currency_base
+
+        basis: Union[None, Unset, str]
+        if isinstance(self.basis, Unset):
+            basis = UNSET
+        else:
+            basis = self.basis
+
+        calc_mode: Union[None, Unset, str]
+        if isinstance(self.calc_mode, Unset):
+            calc_mode = UNSET
+        else:
+            calc_mode = self.calc_mode
+
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
@@ -303,6 +363,20 @@ class Symbol:
             field_dict["margin_per_lot"] = margin_per_lot
         if filling_modes is not UNSET:
             field_dict["filling_modes"] = filling_modes
+        if path is not UNSET:
+            field_dict["path"] = path
+        if isin is not UNSET:
+            field_dict["isin"] = isin
+        if exchange is not UNSET:
+            field_dict["exchange"] = exchange
+        if category is not UNSET:
+            field_dict["category"] = category
+        if currency_base is not UNSET:
+            field_dict["currency_base"] = currency_base
+        if basis is not UNSET:
+            field_dict["basis"] = basis
+        if calc_mode is not UNSET:
+            field_dict["calc_mode"] = calc_mode
 
         return field_dict
 
@@ -540,6 +614,69 @@ class Symbol:
 
         filling_modes = _parse_filling_modes(d.pop("filling_modes", UNSET))
 
+        def _parse_path(data: object) -> Union[None, Unset, str]:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(Union[None, Unset, str], data)
+
+        path = _parse_path(d.pop("path", UNSET))
+
+        def _parse_isin(data: object) -> Union[None, Unset, str]:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(Union[None, Unset, str], data)
+
+        isin = _parse_isin(d.pop("isin", UNSET))
+
+        def _parse_exchange(data: object) -> Union[None, Unset, str]:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(Union[None, Unset, str], data)
+
+        exchange = _parse_exchange(d.pop("exchange", UNSET))
+
+        def _parse_category(data: object) -> Union[None, Unset, str]:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(Union[None, Unset, str], data)
+
+        category = _parse_category(d.pop("category", UNSET))
+
+        def _parse_currency_base(data: object) -> Union[None, Unset, str]:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(Union[None, Unset, str], data)
+
+        currency_base = _parse_currency_base(d.pop("currency_base", UNSET))
+
+        def _parse_basis(data: object) -> Union[None, Unset, str]:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(Union[None, Unset, str], data)
+
+        basis = _parse_basis(d.pop("basis", UNSET))
+
+        def _parse_calc_mode(data: object) -> Union[None, Unset, str]:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(Union[None, Unset, str], data)
+
+        calc_mode = _parse_calc_mode(d.pop("calc_mode", UNSET))
+
         symbol = cls(
             symbol=symbol,
             description=description,
@@ -570,6 +707,13 @@ class Symbol:
             margin_maintenance=margin_maintenance,
             margin_per_lot=margin_per_lot,
             filling_modes=filling_modes,
+            path=path,
+            isin=isin,
+            exchange=exchange,
+            category=category,
+            currency_base=currency_base,
+            basis=basis,
+            calc_mode=calc_mode,
         )
 
         symbol.additional_properties = d

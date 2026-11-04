@@ -105,8 +105,11 @@ def sync_detailed(
     tradeable), pip_value_per_lot, spec_hash, trade sessions and derived status
 
      Read from the tenant's own terminals on that server. MFX holds no broker accounts and never shares
-    one tenant's catalogue with another. A server where the tenant runs no terminal answers 409
-    (`state_error`, details.reason `no_terminal_on_server`), never an empty list.
+    one tenant's catalogue with another. A server and account type where your terminals reported a
+    catalogue and none runs any more is answered from the last report, with `source: last_known` and
+    each row's `refreshed_at`. A server you have never run a terminal on answers 409 (`state_error`,
+    details.reason `no_terminal_on_server`), never an empty list: start a Read only terminal there with
+    your own login.
 
     Args:
         id (str):
@@ -162,8 +165,11 @@ def sync(
     tradeable), pip_value_per_lot, spec_hash, trade sessions and derived status
 
      Read from the tenant's own terminals on that server. MFX holds no broker accounts and never shares
-    one tenant's catalogue with another. A server where the tenant runs no terminal answers 409
-    (`state_error`, details.reason `no_terminal_on_server`), never an empty list.
+    one tenant's catalogue with another. A server and account type where your terminals reported a
+    catalogue and none runs any more is answered from the last report, with `source: last_known` and
+    each row's `refreshed_at`. A server you have never run a terminal on answers 409 (`state_error`,
+    details.reason `no_terminal_on_server`), never an empty list: start a Read only terminal there with
+    your own login.
 
     Args:
         id (str):
@@ -214,8 +220,11 @@ async def asyncio_detailed(
     tradeable), pip_value_per_lot, spec_hash, trade sessions and derived status
 
      Read from the tenant's own terminals on that server. MFX holds no broker accounts and never shares
-    one tenant's catalogue with another. A server where the tenant runs no terminal answers 409
-    (`state_error`, details.reason `no_terminal_on_server`), never an empty list.
+    one tenant's catalogue with another. A server and account type where your terminals reported a
+    catalogue and none runs any more is answered from the last report, with `source: last_known` and
+    each row's `refreshed_at`. A server you have never run a terminal on answers 409 (`state_error`,
+    details.reason `no_terminal_on_server`), never an empty list: start a Read only terminal there with
+    your own login.
 
     Args:
         id (str):
@@ -269,8 +278,11 @@ async def asyncio(
     tradeable), pip_value_per_lot, spec_hash, trade sessions and derived status
 
      Read from the tenant's own terminals on that server. MFX holds no broker accounts and never shares
-    one tenant's catalogue with another. A server where the tenant runs no terminal answers 409
-    (`state_error`, details.reason `no_terminal_on_server`), never an empty list.
+    one tenant's catalogue with another. A server and account type where your terminals reported a
+    catalogue and none runs any more is answered from the last report, with `source: last_known` and
+    each row's `refreshed_at`. A server you have never run a terminal on answers 409 (`state_error`,
+    details.reason `no_terminal_on_server`), never an empty list: start a Read only terminal there with
+    your own login.
 
     Args:
         id (str):

@@ -6,7 +6,7 @@ import httpx
 from ... import errors
 from ...client import AuthenticatedClient, Client
 from ...models.error import Error
-from ...models.list_maintenance_state import ListMaintenanceState
+from ...models.list_maintenance_state_item import ListMaintenanceStateItem
 from ...models.tenant_maintenance_page import TenantMaintenancePage
 from ...types import UNSET, Response, Unset
 
@@ -15,7 +15,7 @@ def _get_kwargs(
     *,
     cursor: Union[Unset, str] = UNSET,
     limit: Union[Unset, int] = 50,
-    state: Union[Unset, ListMaintenanceState] = UNSET,
+    state: Union[Unset, list[ListMaintenanceStateItem]] = UNSET,
 ) -> dict[str, Any]:
     params: dict[str, Any] = {}
 
@@ -23,9 +23,12 @@ def _get_kwargs(
 
     params["limit"] = limit
 
-    json_state: Union[Unset, str] = UNSET
+    json_state: Union[Unset, list[str]] = UNSET
     if not isinstance(state, Unset):
-        json_state = state.value
+        json_state = []
+        for state_item_data in state:
+            state_item = state_item_data.value
+            json_state.append(state_item)
 
     params["state"] = json_state
 
@@ -69,7 +72,7 @@ def sync_detailed(
     client: Union[AuthenticatedClient, Client],
     cursor: Union[Unset, str] = UNSET,
     limit: Union[Unset, int] = 50,
-    state: Union[Unset, ListMaintenanceState] = UNSET,
+    state: Union[Unset, list[ListMaintenanceStateItem]] = UNSET,
 ) -> Response[Union[Error, TenantMaintenancePage]]:
     """Planned maintenance on your terminals - windows scheduled, in progress and recently ended
 
@@ -82,7 +85,7 @@ def sync_detailed(
     Args:
         cursor (Union[Unset, str]):
         limit (Union[Unset, int]):  Default: 50.
-        state (Union[Unset, ListMaintenanceState]):
+        state (Union[Unset, list[ListMaintenanceStateItem]]):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -110,7 +113,7 @@ def sync(
     client: Union[AuthenticatedClient, Client],
     cursor: Union[Unset, str] = UNSET,
     limit: Union[Unset, int] = 50,
-    state: Union[Unset, ListMaintenanceState] = UNSET,
+    state: Union[Unset, list[ListMaintenanceStateItem]] = UNSET,
 ) -> Optional[Union[Error, TenantMaintenancePage]]:
     """Planned maintenance on your terminals - windows scheduled, in progress and recently ended
 
@@ -123,7 +126,7 @@ def sync(
     Args:
         cursor (Union[Unset, str]):
         limit (Union[Unset, int]):  Default: 50.
-        state (Union[Unset, ListMaintenanceState]):
+        state (Union[Unset, list[ListMaintenanceStateItem]]):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -146,7 +149,7 @@ async def asyncio_detailed(
     client: Union[AuthenticatedClient, Client],
     cursor: Union[Unset, str] = UNSET,
     limit: Union[Unset, int] = 50,
-    state: Union[Unset, ListMaintenanceState] = UNSET,
+    state: Union[Unset, list[ListMaintenanceStateItem]] = UNSET,
 ) -> Response[Union[Error, TenantMaintenancePage]]:
     """Planned maintenance on your terminals - windows scheduled, in progress and recently ended
 
@@ -159,7 +162,7 @@ async def asyncio_detailed(
     Args:
         cursor (Union[Unset, str]):
         limit (Union[Unset, int]):  Default: 50.
-        state (Union[Unset, ListMaintenanceState]):
+        state (Union[Unset, list[ListMaintenanceStateItem]]):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -185,7 +188,7 @@ async def asyncio(
     client: Union[AuthenticatedClient, Client],
     cursor: Union[Unset, str] = UNSET,
     limit: Union[Unset, int] = 50,
-    state: Union[Unset, ListMaintenanceState] = UNSET,
+    state: Union[Unset, list[ListMaintenanceStateItem]] = UNSET,
 ) -> Optional[Union[Error, TenantMaintenancePage]]:
     """Planned maintenance on your terminals - windows scheduled, in progress and recently ended
 
@@ -198,7 +201,7 @@ async def asyncio(
     Args:
         cursor (Union[Unset, str]):
         limit (Union[Unset, int]):  Default: 50.
-        state (Union[Unset, ListMaintenanceState]):
+        state (Union[Unset, list[ListMaintenanceStateItem]]):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.

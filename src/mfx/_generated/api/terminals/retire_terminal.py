@@ -65,8 +65,12 @@ def sync_detailed(
      A terminal that is ACTIVE, OFFLINE, PARKED or still PROVISIONING (waiting for its login, for example
     for a credential) drains: its cell stops it and deletes its folder, and it is RETIRED when the cell
     confirms, or by the platform's deadline when the cell never held it. One that is REQUESTED, FAILED
-    or DRAINED is RETIRED at once. One that is LOGGING_IN is refused (409 `state_error`) until its login
-    settles, a few minutes at most. One already DRAINING or RETIRED is answered as it is.
+    or DRAINED is RETIRED at once. One that is LOGGING_IN drains as PROVISIONING does: its cell stops
+    the login and deletes its folder. A login ends by itself within 15 minutes: FAILED when it has not
+    completed, at once when the broker refuses it. A FAILED terminal is tried again after
+    `terminals.login_cooloff_minutes` (30), at most `terminals.login_cycles_per_day` (3) times a day,
+    never after a refusal; retire the FAILED terminals you no longer need. MFX retires none of yours by
+    itself. One already DRAINING or RETIRED is answered as it is.
 
     Args:
         id (UUID):
@@ -103,8 +107,12 @@ def sync(
      A terminal that is ACTIVE, OFFLINE, PARKED or still PROVISIONING (waiting for its login, for example
     for a credential) drains: its cell stops it and deletes its folder, and it is RETIRED when the cell
     confirms, or by the platform's deadline when the cell never held it. One that is REQUESTED, FAILED
-    or DRAINED is RETIRED at once. One that is LOGGING_IN is refused (409 `state_error`) until its login
-    settles, a few minutes at most. One already DRAINING or RETIRED is answered as it is.
+    or DRAINED is RETIRED at once. One that is LOGGING_IN drains as PROVISIONING does: its cell stops
+    the login and deletes its folder. A login ends by itself within 15 minutes: FAILED when it has not
+    completed, at once when the broker refuses it. A FAILED terminal is tried again after
+    `terminals.login_cooloff_minutes` (30), at most `terminals.login_cycles_per_day` (3) times a day,
+    never after a refusal; retire the FAILED terminals you no longer need. MFX retires none of yours by
+    itself. One already DRAINING or RETIRED is answered as it is.
 
     Args:
         id (UUID):
@@ -136,8 +144,12 @@ async def asyncio_detailed(
      A terminal that is ACTIVE, OFFLINE, PARKED or still PROVISIONING (waiting for its login, for example
     for a credential) drains: its cell stops it and deletes its folder, and it is RETIRED when the cell
     confirms, or by the platform's deadline when the cell never held it. One that is REQUESTED, FAILED
-    or DRAINED is RETIRED at once. One that is LOGGING_IN is refused (409 `state_error`) until its login
-    settles, a few minutes at most. One already DRAINING or RETIRED is answered as it is.
+    or DRAINED is RETIRED at once. One that is LOGGING_IN drains as PROVISIONING does: its cell stops
+    the login and deletes its folder. A login ends by itself within 15 minutes: FAILED when it has not
+    completed, at once when the broker refuses it. A FAILED terminal is tried again after
+    `terminals.login_cooloff_minutes` (30), at most `terminals.login_cycles_per_day` (3) times a day,
+    never after a refusal; retire the FAILED terminals you no longer need. MFX retires none of yours by
+    itself. One already DRAINING or RETIRED is answered as it is.
 
     Args:
         id (UUID):
@@ -172,8 +184,12 @@ async def asyncio(
      A terminal that is ACTIVE, OFFLINE, PARKED or still PROVISIONING (waiting for its login, for example
     for a credential) drains: its cell stops it and deletes its folder, and it is RETIRED when the cell
     confirms, or by the platform's deadline when the cell never held it. One that is REQUESTED, FAILED
-    or DRAINED is RETIRED at once. One that is LOGGING_IN is refused (409 `state_error`) until its login
-    settles, a few minutes at most. One already DRAINING or RETIRED is answered as it is.
+    or DRAINED is RETIRED at once. One that is LOGGING_IN drains as PROVISIONING does: its cell stops
+    the login and deletes its folder. A login ends by itself within 15 minutes: FAILED when it has not
+    completed, at once when the broker refuses it. A FAILED terminal is tried again after
+    `terminals.login_cooloff_minutes` (30), at most `terminals.login_cycles_per_day` (3) times a day,
+    never after a refusal; retire the FAILED terminals you no longer need. MFX retires none of yours by
+    itself. One already DRAINING or RETIRED is answered as it is.
 
     Args:
         id (UUID):

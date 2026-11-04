@@ -62,13 +62,14 @@ from mfx._generated.api.webhooks import (
 from mfx._generated.api.webhooks import (
     update_webhook as _update,
 )
-from mfx._generated.models.list_webhook_failures_state import ListWebhookFailuresState
+from mfx._generated.models.list_webhook_failures_state_item import ListWebhookFailuresStateItem
 from mfx._generated.models.webhook_endpoint_create import WebhookEndpointCreate
 from mfx._generated.models.webhook_endpoint_update import WebhookEndpointUpdate
 from mfx._generated.models.webhook_endpoint_update_status import WebhookEndpointUpdateStatus
 from mfx._generated.models.webhook_replay import WebhookReplay
 from mfx._generated.types import UNSET
 from mfx.errors import MfxError
+from mfx.pages import states_param
 from mfx.secrets import Secret
 
 if TYPE_CHECKING:  # pragma: no cover - typing only
@@ -260,17 +261,23 @@ class Webhooks:
         return accepted  # type: ignore[no-any-return]
 
     async def failures(
-        self, endpoint_id: Id, *, state: FailureState | None = None, limit: int | None = None
+        self,
+        endpoint_id: Id,
+        *,
+        state: FailureState | Sequence[FailureState] | None = None,
+        limit: int | None = None,
     ) -> AsyncIterator[WebhookFailure]:
         """What did not arrive: each failed event with every attempt on it, following the cursor
-        to the end. ``state`` narrows to ``retrying``, ``dead`` (gave up) or ``delivered``."""
+        to the end. ``state`` narrows to ``retrying``, ``dead`` (gave up) or ``delivered``, or to a
+        sequence of them, sent as one comma-separated value."""
+        wanted = states_param(state, ListWebhookFailuresStateItem)
         cursor: str | None = None
 
         def call(after: str | None) -> Awaitable[Any]:
             return _failures.asyncio_detailed(
                 id=_uuid(endpoint_id),
                 client=self._client.generated,
-                state=UNSET if state is None else ListWebhookFailuresState(state),
+                state=wanted,
                 cursor=UNSET if after is None else after,
                 limit=UNSET if limit is None else limit,
             )
