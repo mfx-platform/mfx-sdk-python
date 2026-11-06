@@ -54,7 +54,8 @@ class TerminalConditionChanged:
             since (datetime.datetime): When it took this status, UTC
             attributed_to (TerminalConditionChangedAttributedTo): As `Condition.attributed_to`: `broker` for a broker's feed
                 fault, empty when not attributed
-            broker_words (Union[Unset, str]): As `Condition.broker_words`; empty unless the reason is `login_refused`
+            broker_words (Union[Unset, str]): As `Condition.broker_words`: the broker's own words, at most 120 characters;
+                empty unless the reason is `login_refused`
             refusal_kind (Union[Unset, TerminalConditionChangedRefusalKind]): As `Condition.refusal_kind`; empty unless the
                 reason is `login_refused`
     """

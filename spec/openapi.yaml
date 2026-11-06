@@ -56,6 +56,38 @@ tags:
 - name: usage
   description: The calling key's and its tenant's limits, where each comes from, and how much is in use
     (acct:read)
+- name: risk
+  description: |
+    Risk Management: the tenant's own rules for its accounts, evaluated by MFX Hub, and only
+    the actions the tenant authorised (risk:read / risk:write / risk:override). MFX Hub recommends no
+    setting and no trade.
+
+    **Thresholds, not caps.** A loss limit is a threshold you set, not a guaranteed cap: the broker
+    fills a stop at the price it gets, and a gap, slippage or a slow broker can take an account past
+    a limit before an action completes. **Only orders sent through MFX Hub can be refused before the
+    broker.** Orders from the broker's app, a web terminal, an expert advisor or another application
+    are seen in the next account read and can only be reacted to. **Held by the broker or by MFX.**
+    Every exit-plan step says which: a broker-held step survives MFX Hub being down; an MFX-held step
+    needs the cell and the terminal running.
+
+    **The pre-trade check.** An entry (`placeOrder`) on an account with an active policy or an
+    enrolled challenge is checked before its command exists. A refusal is 422 `risk_refused` with
+    `details: {reason, rule, policy_id, version, used, limit, would_be}`; `reason` is one of
+    `risk_entries_blocked`, `risk_daily_loss`, `risk_drawdown`, `risk_exposure_gross`,
+    `risk_exposure_symbol`, `risk_open_count`, `risk_loss_at_stops`, `risk_no_stop`,
+    `risk_outside_schedule`, `risk_inputs_stale` and `risk_check_unavailable`. Nothing is sent to the
+    terminal. A close, a partial close, a close-by, a cancel and a trailing stop are never refused
+    by a rule, even on stale inputs. A repeated Idempotency-Key returns the original command before
+    any rule is checked.
+
+    **Relaxing protection** (a higher limit, a removed action, a wider window, ending an
+    activation, clearing a breach, pausing managed actions) needs a key with `risk:override` and a
+    `reason`; otherwise 403 `risk_override_required`. **The entitlement.** Risk Management is the
+    plan entitlement `risk_management` with its own details; a tenant without it is
+    answered 403 `feature_not_entitled` on every route here.
+
+    **The equity series** is the account channel the stream already carries (`account.snapshot`,
+    `account.marks`) and, stored, `getRiskEquity`.
 - name: stream
   description: Multiplexed WebSocket stream — md, candles, events, results
 - name: webhooks
@@ -179,7 +211,14 @@ x-error-catalogue:
     status: 409
     retryable: false
     cause: The farm named is not one the tenant's plan uses.
-    action: Name a farm from the farms list, or leave the farm out.
+    action: Name a farm from the farms list.
+  - code: farm_required
+    kind: http
+    status: 422
+    retryable: false
+    cause: A tenant with its own farms created a terminal without naming one; it chooses the farm, the
+      platform does not.
+    action: Name one of the farms in details.farms (or GET /farms) as farm_id and send the request again.
   - code: quota_exceeded
     kind: http
     status: 409
@@ -835,6 +874,8 @@ components:
             placement_error: 409. The terminal cannot be placed
             no_farm: 409. No farm the tenant can use fits the terminal; `details.why`
             farm_not_in_plan: 409. The farm named is not one the tenant's plan uses
+            farm_required: 422. A tenant with its own farms named no farm; `details.farms` lists its farms
+              taking terminals, `{id, slug}`
             quota_exceeded: 409. A quota of the tenant's plan is reached; `details` has the quota and
               what is in use
             no_room: 409. The terminal's cell cannot carry it at what is asked
@@ -923,6 +964,28 @@ components:
           type: string
           description: slug or code
           whichever the target uses as its human name: null
+    Age:
+      type: object
+      description: An observation with its age. `seconds` is null when the observation is missing — which
+        reads as UNKNOWN, never as zero and never as fresh (L14, L36, L43, guardrail 15).
+      required:
+      - at
+      - seconds
+      properties:
+        at:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        seconds:
+          type:
+          - integer
+          - 'null'
+        stale:
+          type: boolean
+          description: 'The observation is older than its metric''s freshness bound, so it is unknown.
+            For a cell''s heartbeat the bound is the heartbeat''s red line (`vitals.heartbeat_age_s.red`):
+            the list, the Overview and the tile turn at the moment the SLA says down.'
     ConditionStatus:
       type: string
       description: Tri-state on purpose. `unknown` is what an unreachable agent produces, and collapsing
@@ -1180,10 +1243,11 @@ components:
         farm_id:
           type: string
           format: uuid
-          description: 'Optional. Omitted, the platform chooses: your own ACTIVE farms first, then shared
-            ones (GET /farms lists both), offering the usages this terminal needs, in the server''s region,
-            with room; the oldest wins a tie. The choice is on the answer as `farm`. None fits is 409
-            no_farm'
+          description: 'The farm the terminal goes to. Required for a tenant with its own farms (enterprise
+            and system plans): omitted, it is 422 farm_required listing them. Optional for a standard
+            tenant: omitted, the platform chooses among the shared farms (GET /farms lists them) offering
+            the usages this terminal needs, with room; the oldest wins a tie. The choice is on the answer
+            as `farm`. None fits is 409 no_farm'
         broker_id:
           type: string
           format: uuid
@@ -2681,7 +2745,8 @@ components:
             not attributed'
         broker_words:
           type: string
-          description: As `Condition.broker_words`; empty unless the reason is `login_refused`
+          description: 'As `Condition.broker_words`: the broker''s own words, at most 120 characters;
+            empty unless the reason is `login_refused`'
         refusal_kind:
           type: string
           enum:
@@ -5643,13 +5708,16 @@ components:
           type:
           - object
           - 'null'
-          description: The spec before (digits, contract_size, volume_min, volume_step, volume_max, trade_mode,
-            margin_currency, pip_value_per_lot, trade_sessions, description), decimals as strings
+          description: 'The symbol before (digits, contract_size, volume_min, volume_step, volume_max,
+            trade_mode, margin_currency, pip_value_per_lot, trade_sessions, description, the broker facts
+            and the identity fields), decimals as strings. By change: added, null; came_back, as last
+            stored before it vanished; spec, trading, sessions, description and identity, as stored before
+            the report; removed, as last stored'
         after:
           type:
           - object
           - 'null'
-          description: The spec after, same shape; null for a removal
+          description: The symbol after, same shape, as the report left it; null for a removal
         observed_at:
           type: string
           format: date-time
@@ -7073,6 +7141,2342 @@ components:
           items:
             $ref: '#/components/schemas/EaTrialFigure'
           description: The seven, as judged
+    RiskAmount:
+      type: object
+      description: A limit as money in the account currency, or as a percentage of the rule's reference;
+        exactly one
+      properties:
+        amount:
+          type: string
+          pattern: ^-?[0-9]+(\.[0-9]+)?$
+        pct:
+          type: string
+          pattern: ^-?[0-9]+(\.[0-9]+)?$
+    RiskActionKind:
+      type: string
+      description: An action a rule may take, each authorised separately. close_positions needs close_scope
+      enum:
+      - notify
+      - block_entries
+      - cancel_pending
+      - close_positions
+    RiskActions:
+      type: object
+      required:
+      - kinds
+      properties:
+        kinds:
+          type: array
+          minItems: 1
+          uniqueItems: true
+          items:
+            $ref: '#/components/schemas/RiskActionKind'
+        cancel_scope:
+          type: string
+          enum:
+          - mfx_pending
+          - all_pending
+          description: Which pending orders cancel_pending reaches
+        close_scope:
+          type: string
+          enum:
+          - mfx_positions
+          - all_positions
+          description: Which positions close_positions reaches; previewed before the version is saved
+    RiskDailyLoss:
+      type: object
+      required:
+      - limit
+      - basis
+      - warn_at
+      - act_at
+      - check_entries
+      - actions
+      properties:
+        limit:
+          $ref: '#/components/schemas/RiskAmount'
+        basis:
+          type: string
+          enum:
+          - start_balance
+          - start_equity
+          - higher_of_both
+        warn_at:
+          $ref: '#/components/schemas/RiskAmount'
+        act_at:
+          $ref: '#/components/schemas/RiskAmount'
+        check_entries:
+          type: boolean
+          description: Refuse an entry whose loss at its stop would take the day past act_at (risk_daily_loss)
+        actions:
+          $ref: '#/components/schemas/RiskActions'
+    RiskDrawdown:
+      type: object
+      required:
+      - kind
+      - limit
+      - initial
+      - warn_at
+      - act_at
+      - actions
+      properties:
+        kind:
+          type: string
+          enum:
+          - static
+          - trailing
+        limit:
+          $ref: '#/components/schemas/RiskAmount'
+        initial:
+          type: string
+          pattern: ^-?[0-9]+(\.[0-9]+)?$
+          description: 'The reference: the balance at activation, or a stated account size'
+        peak_basis:
+          type: string
+          enum:
+          - equity
+          - balance
+          description: trailing only
+        peak_when:
+          type: string
+          enum:
+          - intraday
+          - end_of_day
+          description: 'trailing only: every read, or at each reset'
+        warn_at:
+          $ref: '#/components/schemas/RiskAmount'
+        act_at:
+          $ref: '#/components/schemas/RiskAmount'
+        actions:
+          $ref: '#/components/schemas/RiskActions'
+    RiskExposure:
+      type: object
+      properties:
+        gross_limit:
+          type: string
+          pattern: ^-?[0-9]+(\.[0-9]+)?$
+        per_symbol_limit:
+          type: string
+          pattern: ^-?[0-9]+(\.[0-9]+)?$
+        include_pending:
+          type: boolean
+        max_positions:
+          type: integer
+          minimum: 0
+        max_pending:
+          type: integer
+          minimum: 0
+    RiskLossAtStops:
+      type: object
+      required:
+      - limit
+      - no_stop
+      properties:
+        limit:
+          $ref: '#/components/schemas/RiskAmount'
+        no_stop:
+          type: string
+          enum:
+          - refuse
+          - count_notional
+    RiskSchedule:
+      type: object
+      required:
+      - mode
+      - zone
+      - windows
+      properties:
+        mode:
+          type: string
+          enum:
+          - allowed
+          - blocked
+        zone:
+          type: string
+          description: An IANA time zone, or broker for the broker's clock
+        windows:
+          type: array
+          minItems: 1
+          items:
+            type: object
+            required:
+            - days
+            - from
+            - to
+            properties:
+              days:
+                type: array
+                minItems: 1
+                items:
+                  type: string
+                  enum:
+                  - mon
+                  - tue
+                  - wed
+                  - thu
+                  - fri
+                  - sat
+                  - sun
+              from:
+                type: string
+                pattern: ^[0-2][0-9]:[0-5][0-9]$
+              to:
+                type: string
+                pattern: ^[0-2][0-9]:[0-5][0-9]$
+    RiskProfile:
+      type: object
+      description: 'A template the tenant confirmed: it filled the rules and adds its own labelled rules.
+        Updating a template never changes an active version'
+      required:
+      - name
+      - version
+      - confirmed_at
+      properties:
+        name:
+          type: string
+          maxLength: 200
+        version:
+          type: string
+          maxLength: 64
+        confirmed_at:
+          type: string
+          format: date-time
+        profit_target:
+          $ref: '#/components/schemas/RiskAmount'
+        min_trading_days:
+          type: integer
+          minimum: 0
+        consistency:
+          type:
+          - string
+          - 'null'
+          maxLength: 500
+          description: The tenant's own words; shown, not evaluated
+        on_target:
+          $ref: '#/components/schemas/RiskActions'
+    RiskRules:
+      type: object
+      additionalProperties: false
+      description: Every rule is optional; a rule present is evaluated. Nothing has a default the platform
+        chose
+      properties:
+        daily_loss:
+          $ref: '#/components/schemas/RiskDailyLoss'
+        drawdown:
+          $ref: '#/components/schemas/RiskDrawdown'
+        exposure:
+          $ref: '#/components/schemas/RiskExposure'
+        loss_at_stops:
+          $ref: '#/components/schemas/RiskLossAtStops'
+        schedule:
+          $ref: '#/components/schemas/RiskSchedule'
+        profile:
+          $ref: '#/components/schemas/RiskProfile'
+    RiskReset:
+      type: object
+      required:
+      - zone
+      properties:
+        zone:
+          type: string
+          description: broker (midnight on the broker's clock) or an IANA zone with its daylight saving
+    RiskPolicyCreate:
+      type: object
+      required:
+      - name
+      - rules
+      - reset
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        rules:
+          $ref: '#/components/schemas/RiskRules'
+        reset:
+          $ref: '#/components/schemas/RiskReset'
+    RiskPolicyVersionCreate:
+      type: object
+      required:
+      - rules
+      - reset
+      properties:
+        rules:
+          $ref: '#/components/schemas/RiskRules'
+        reset:
+          $ref: '#/components/schemas/RiskReset'
+        reason:
+          type:
+          - string
+          - 'null'
+          maxLength: 500
+    RiskPolicyVersion:
+      type: object
+      required:
+      - policy_id
+      - version
+      - rules
+      - reset
+      - relaxes
+      - changes
+      - created_at
+      - reason
+      properties:
+        policy_id:
+          type: string
+          format: uuid
+        version:
+          type: integer
+          minimum: 1
+        rules:
+          $ref: '#/components/schemas/RiskRules'
+        reset:
+          $ref: '#/components/schemas/RiskReset'
+        relaxes:
+          type: boolean
+          description: 'Against the version before it: a limit rose, an action was removed, or a window
+            widened'
+        changes:
+          type: array
+          items:
+            type: object
+            required:
+            - path
+            - from
+            - to
+            properties:
+              path:
+                type: string
+              from: {}
+              to: {}
+        created_at:
+          type: string
+          format: date-time
+        reason:
+          type:
+          - string
+          - 'null'
+    RiskPolicyVersionPage:
+      type: object
+      required:
+      - items
+      - next_cursor
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/RiskPolicyVersion'
+        next_cursor:
+          type:
+          - string
+          - 'null'
+        returned:
+          type: integer
+    RiskPolicy:
+      type: object
+      required:
+      - id
+      - name
+      - state
+      - current_version
+      - accounts
+      - created_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        state:
+          type: string
+          enum:
+          - active
+          - archived
+        current_version:
+          $ref: '#/components/schemas/RiskPolicyVersion'
+        accounts:
+          type: array
+          items:
+            type: object
+            required:
+            - terminal_id
+            - version
+            - state
+            properties:
+              terminal_id:
+                type: string
+                format: uuid
+              version:
+                type: integer
+              state:
+                type: string
+                enum:
+                - active
+                - paused
+        created_at:
+          type: string
+          format: date-time
+    RiskPolicyPage:
+      type: object
+      required:
+      - items
+      - next_cursor
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/RiskPolicy'
+        next_cursor:
+          type:
+          - string
+          - 'null'
+        returned:
+          type: integer
+    RiskActivate:
+      type: object
+      required:
+      - terminal_ids
+      - version
+      properties:
+        terminal_ids:
+          type: array
+          minItems: 1
+          maxItems: 500
+          uniqueItems: true
+          items:
+            type: string
+            format: uuid
+        version:
+          type: integer
+          minimum: 1
+        reason:
+          type:
+          - string
+          - 'null'
+          maxLength: 500
+          description: Needed for an account where the version relaxes the one in force
+    RiskActivationResult:
+      type: object
+      required:
+      - results
+      properties:
+        results:
+          type: array
+          items:
+            type: object
+            required:
+            - terminal_id
+            - outcome
+            - reason
+            properties:
+              terminal_id:
+                type: string
+                format: uuid
+              outcome:
+                type: string
+                enum:
+                - done
+                - unchanged
+                - refused
+              reason:
+                type:
+                - string
+                - 'null'
+                description: 'Why it was refused, as an error code: risk_override_required, not_found,
+                  quota_exceeded'
+    RiskReason:
+      type: object
+      required:
+      - reason
+      properties:
+        reason:
+          type: string
+          minLength: 1
+          maxLength: 500
+    RiskClear:
+      type: object
+      required:
+      - rule
+      - reason
+      properties:
+        rule:
+          type: string
+          enum:
+          - daily_loss
+          - drawdown
+          - restriction
+        reason:
+          type: string
+          minLength: 1
+          maxLength: 500
+    RiskCoverageKind:
+      type: object
+      required:
+      - state
+      - reason
+      - since
+      properties:
+        state:
+          type: string
+          enum:
+          - healthy
+          - degraded
+          - disconnected
+          - unknown
+        reason:
+          type:
+          - string
+          - 'null'
+          description: Why it is not healthy, in words the tenant can act on
+        since:
+          type:
+          - string
+          - 'null'
+          format: date-time
+    RiskCoverage:
+      type: object
+      description: Per kind. A green terminal is not full coverage
+      required:
+      - monitoring
+      - pre_trade
+      - broker_held
+      - managed_actions
+      - detector
+      properties:
+        monitoring:
+          $ref: '#/components/schemas/RiskCoverageKind'
+        pre_trade:
+          $ref: '#/components/schemas/RiskCoverageKind'
+        broker_held:
+          $ref: '#/components/schemas/RiskCoverageKind'
+        managed_actions:
+          $ref: '#/components/schemas/RiskCoverageKind'
+        detector:
+          type:
+          - string
+          - 'null'
+          enum:
+          - cell
+          - ingest
+          - null
+          description: 'Which reads the rules are evaluated on: the cell''s monitor, or the platform''s
+            copy of the account reads'
+    RiskDailyLossFigure:
+      type: object
+      required:
+      - used
+      - limit
+      - warn_at
+      - act_at
+      - reference
+      - basis
+      - day_start_at
+      - next_reset_at
+      - late
+      properties:
+        used:
+          type:
+          - string
+          - 'null'
+        limit:
+          type:
+          - string
+          - 'null'
+        warn_at:
+          type:
+          - string
+          - 'null'
+        act_at:
+          type:
+          - string
+          - 'null'
+        reference:
+          type:
+          - string
+          - 'null'
+        basis:
+          type: string
+          enum:
+          - start_balance
+          - start_equity
+          - higher_of_both
+        day_start_at:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        next_reset_at:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        late:
+          type: boolean
+          description: The day's first read came after the reset's late line; start_balance was rebuilt
+            from deal history
+    RiskDrawdownFigure:
+      type: object
+      required:
+      - used
+      - limit
+      - warn_at
+      - act_at
+      - kind
+      - peak
+      - peak_at
+      - initial
+      properties:
+        used:
+          type:
+          - string
+          - 'null'
+        limit:
+          type:
+          - string
+          - 'null'
+        warn_at:
+          type:
+          - string
+          - 'null'
+        act_at:
+          type:
+          - string
+          - 'null'
+        kind:
+          type: string
+          enum:
+          - static
+          - trailing
+        peak:
+          type:
+          - string
+          - 'null'
+        peak_at:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        initial:
+          type: string
+    RiskAccount:
+      type: object
+      required:
+      - terminal_id
+      - policy
+      - activation_state
+      - daily_loss
+      - drawdown
+      - exposure
+      - open_breaches
+      - restriction
+      - coverage
+      - inputs
+      - challenges
+      properties:
+        terminal_id:
+          type: string
+          format: uuid
+        policy:
+          type:
+          - object
+          - 'null'
+          required:
+          - id
+          - version
+          properties:
+            id:
+              type: string
+              format: uuid
+            version:
+              type: integer
+        activation_state:
+          type: string
+          enum:
+          - active
+          - paused
+          - none
+        daily_loss:
+          oneOf:
+          - $ref: '#/components/schemas/RiskDailyLossFigure'
+          - type: 'null'
+        drawdown:
+          oneOf:
+          - $ref: '#/components/schemas/RiskDrawdownFigure'
+          - type: 'null'
+        exposure:
+          type: object
+          required:
+          - gross
+          - gross_limit
+          - reserved
+          - by_symbol
+          - positions
+          - pending
+          properties:
+            gross:
+              type:
+              - string
+              - 'null'
+            gross_limit:
+              type:
+              - string
+              - 'null'
+            reserved:
+              type: string
+              description: Held for entries whose outcome is not known yet
+            by_symbol:
+              type: array
+              items:
+                type: object
+                required:
+                - symbol
+                - gross
+                properties:
+                  symbol:
+                    type: string
+                  gross:
+                    type: string
+                  limit:
+                    type:
+                    - string
+                    - 'null'
+            positions:
+              type: integer
+            pending:
+              type: integer
+        open_breaches:
+          type: array
+          items:
+            type: object
+            required:
+            - rule
+            - at
+            - clears
+            properties:
+              rule:
+                type: string
+              at:
+                type: string
+                format: date-time
+              clears:
+                type: string
+                enum:
+                - at_reset
+                - by_override
+        restriction:
+          type: object
+          required:
+          - state
+          - rule
+          - since
+          properties:
+            state:
+              type: string
+              enum:
+              - none
+              - entries_blocked
+            rule:
+              type:
+              - string
+              - 'null'
+            since:
+              type:
+              - string
+              - 'null'
+              format: date-time
+        coverage:
+          $ref: '#/components/schemas/RiskCoverage'
+        inputs:
+          type: object
+          required:
+          - account_read
+          properties:
+            account_read:
+              $ref: '#/components/schemas/Age'
+        challenges:
+          type: array
+          items:
+            type: object
+            required:
+            - id
+            - name
+            - state
+            properties:
+              id:
+                type: string
+                format: uuid
+              name:
+                type: string
+              state:
+                type: string
+    RiskAccountPage:
+      type: object
+      required:
+      - items
+      - next_cursor
+      - stats
+      properties:
+        stats:
+          type: object
+          required:
+          - accounts
+          - protected
+          - restricted
+          - degraded
+          - actions_today
+          - unresolved
+          properties:
+            accounts:
+              type: integer
+            protected:
+              type: integer
+              description: Accounts with an active policy or an enrolled challenge
+            restricted:
+              type: integer
+            degraded:
+              type: integer
+            actions_today:
+              type: integer
+            unresolved:
+              type: integer
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/RiskAccount'
+        next_cursor:
+          type:
+          - string
+          - 'null'
+        returned:
+          type: integer
+    RiskEquitySeries:
+      type: object
+      required:
+      - terminal_id
+      - currency
+      - points
+      properties:
+        terminal_id:
+          type: string
+          format: uuid
+        currency:
+          type:
+          - string
+          - 'null'
+        points:
+          type: array
+          items:
+            type: object
+            required:
+            - at
+            - equity
+            - balance
+            properties:
+              at:
+                type: string
+                format: date-time
+              equity:
+                type: string
+              balance:
+                type: string
+    RiskCoverageSummary:
+      type: object
+      required:
+      - counts
+      - not_healthy
+      properties:
+        counts:
+          type: object
+          description: For each kind (monitoring, pre_trade, broker_held, managed_actions), how many accounts
+            are in each state
+          additionalProperties:
+            type: object
+            additionalProperties:
+              type: integer
+        not_healthy:
+          type: array
+          items:
+            type: object
+            required:
+            - terminal_id
+            - kind
+            - state
+            - reason
+            properties:
+              terminal_id:
+                type: string
+                format: uuid
+              kind:
+                type: string
+              state:
+                type: string
+              reason:
+                type:
+                - string
+                - 'null'
+    RiskBudget:
+      type: object
+      required:
+      - kind
+      - value
+      properties:
+        kind:
+          type: string
+          enum:
+          - pct_of_balance
+          - pct_of_equity
+          - amount
+        value:
+          type: string
+          pattern: ^-?[0-9]+(\.[0-9]+)?$
+    RiskProposedOrder:
+      type: object
+      required:
+      - symbol
+      - side
+      - type
+      - volume
+      properties:
+        symbol:
+          type: string
+        side:
+          type: string
+          enum:
+          - buy
+          - sell
+        type:
+          type: string
+          enum:
+          - market
+          - limit
+          - stop
+          - stop_limit
+        volume:
+          type: string
+          pattern: ^-?[0-9]+(\.[0-9]+)?$
+        price:
+          type:
+          - string
+          - 'null'
+        sl:
+          type:
+          - string
+          - 'null'
+        tp:
+          type:
+          - string
+          - 'null'
+    RiskRuleCheck:
+      type: object
+      required:
+      - rule
+      - verdict
+      - used
+      - would_be
+      - limit
+      - reason
+      properties:
+        rule:
+          type: string
+        verdict:
+          type: string
+          enum:
+          - pass
+          - refuse
+          - not_applicable
+        used:
+          type:
+          - string
+          - 'null'
+        would_be:
+          type:
+          - string
+          - 'null'
+        limit:
+          type:
+          - string
+          - 'null'
+        reason:
+          type:
+          - string
+          - 'null'
+          description: The refusal reason the pre-trade check would answer
+    RiskPreviewRequest:
+      type: object
+      required:
+      - terminal_id
+      - symbol
+      - side
+      - entry_type
+      - sl
+      - budget
+      properties:
+        terminal_id:
+          type: string
+          format: uuid
+        symbol:
+          type: string
+        side:
+          type: string
+          enum:
+          - buy
+          - sell
+        entry_type:
+          type: string
+          enum:
+          - market
+          - limit
+          - stop
+        entry_price:
+          type:
+          - string
+          - 'null'
+          description: Needed for limit and stop; market uses the current price
+        sl:
+          type: string
+          pattern: ^-?[0-9]+(\.[0-9]+)?$
+        tp:
+          type:
+          - string
+          - 'null'
+        budget:
+          $ref: '#/components/schemas/RiskBudget'
+        slippage:
+          type:
+          - string
+          - 'null'
+          description: A price distance the caller assumes; null is none
+        assumptions:
+          type: object
+          properties:
+            commission_per_lot_round_trip:
+              type: string
+              pattern: ^-?[0-9]+(\.[0-9]+)?$
+          description: Costs the specification does not give, stated by the caller
+    RiskPreview:
+      type: object
+      required:
+      - volume
+      - volume_unrounded
+      - reason
+      - budget
+      - loss_at_stop
+      - commission
+      - slippage
+      - estimated_loss
+      - reward_to_risk
+      - margin_required
+      - free_margin_after
+      - checks
+      - verdict
+      - assumptions
+      - inputs
+      - expires_at
+      properties:
+        volume:
+          type:
+          - string
+          - 'null'
+          description: Rounded down to the step; null when even the minimum is over the budget
+        volume_unrounded:
+          type:
+          - string
+          - 'null'
+        reason:
+          type:
+          - string
+          - 'null'
+          enum:
+          - volume_min_over_budget
+          - null
+        budget:
+          type: string
+        loss_at_stop:
+          type:
+          - string
+          - 'null'
+        commission:
+          type:
+          - string
+          - 'null'
+        slippage:
+          type:
+          - string
+          - 'null'
+        estimated_loss:
+          type:
+          - string
+          - 'null'
+        reward_to_risk:
+          type:
+          - string
+          - 'null'
+          description: Net of commission; null without a take profit
+        margin_required:
+          type:
+          - string
+          - 'null'
+        free_margin_after:
+          type:
+          - string
+          - 'null'
+        checks:
+          type: array
+          items:
+            $ref: '#/components/schemas/RiskRuleCheck'
+        verdict:
+          type: string
+          enum:
+          - allow
+          - refuse
+        assumptions:
+          type: array
+          items:
+            type: string
+          description: What the figures assume that the broker did not give
+        inputs:
+          type: object
+          required:
+          - account_read
+          - quote
+          - specification
+          properties:
+            account_read:
+              $ref: '#/components/schemas/Age'
+            quote:
+              $ref: '#/components/schemas/Age'
+            specification:
+              $ref: '#/components/schemas/Age'
+        expires_at:
+          type: string
+          format: date-time
+    RiskCheckRequest:
+      type: object
+      required:
+      - terminal_id
+      - order
+      properties:
+        terminal_id:
+          type: string
+          format: uuid
+        order:
+          $ref: '#/components/schemas/RiskProposedOrder'
+    RiskCheckResult:
+      type: object
+      required:
+      - verdict
+      - reason
+      - checks
+      properties:
+        verdict:
+          type: string
+          enum:
+          - allow
+          - refuse
+        reason:
+          type:
+          - string
+          - 'null'
+        checks:
+          type: array
+          items:
+            $ref: '#/components/schemas/RiskRuleCheck'
+    RiskPlanStepSpec:
+      type: object
+      required:
+      - trigger
+      - action
+      - held_by
+      properties:
+        trigger:
+          type: object
+          required:
+          - kind
+          properties:
+            kind:
+              type: string
+              enum:
+              - filled
+              - r
+              - price
+              - money
+              - pct
+              - after_step
+            value:
+              type:
+              - string
+              - 'null'
+              description: The level in R, a price, money or percent; null for filled and after_step
+            step:
+              type:
+              - integer
+              - 'null'
+              description: 'after_step: the step it follows'
+        action:
+          type: object
+          required:
+          - kind
+          properties:
+            kind:
+              type: string
+              enum:
+              - set_stops
+              - move_stop
+              - close_part
+              - trail
+            sl:
+              type:
+              - string
+              - 'null'
+              description: 'set_stops and move_stop: a price, or entry for the entry price'
+            tp:
+              type:
+              - string
+              - 'null'
+            plus_costs:
+              type: boolean
+              description: 'move_stop to entry: add the known costs'
+            pct:
+              type:
+              - string
+              - 'null'
+              description: 'close_part: percent'
+            pct_of:
+              type:
+              - string
+              - 'null'
+              enum:
+              - original
+              - remaining
+              - null
+            distance:
+              type:
+              - string
+              - 'null'
+              description: 'trail: the trailing stop''s distance'
+        held_by:
+          type: string
+          enum:
+          - broker
+          - mfx
+          description: 'broker: survives MFX Hub being down. mfx: needs the cell and the terminal'
+    RiskPlanStep:
+      type: object
+      required:
+      - n
+      - trigger
+      - action
+      - held_by
+      - state
+      - outcome
+      - command_id
+      properties:
+        trigger:
+          type: object
+          required:
+          - kind
+          properties:
+            kind:
+              type: string
+              enum:
+              - filled
+              - r
+              - price
+              - money
+              - pct
+              - after_step
+            value:
+              type:
+              - string
+              - 'null'
+              description: The level in R, a price, money or percent; null for filled and after_step
+            step:
+              type:
+              - integer
+              - 'null'
+              description: 'after_step: the step it follows'
+        action:
+          type: object
+          required:
+          - kind
+          properties:
+            kind:
+              type: string
+              enum:
+              - set_stops
+              - move_stop
+              - close_part
+              - trail
+            sl:
+              type:
+              - string
+              - 'null'
+              description: 'set_stops and move_stop: a price, or entry for the entry price'
+            tp:
+              type:
+              - string
+              - 'null'
+            plus_costs:
+              type: boolean
+              description: 'move_stop to entry: add the known costs'
+            pct:
+              type:
+              - string
+              - 'null'
+              description: 'close_part: percent'
+            pct_of:
+              type:
+              - string
+              - 'null'
+              enum:
+              - original
+              - remaining
+              - null
+            distance:
+              type:
+              - string
+              - 'null'
+              description: 'trail: the trailing stop''s distance'
+        held_by:
+          type: string
+          enum:
+          - broker
+          - mfx
+          description: 'broker: survives MFX Hub being down. mfx: needs the cell and the terminal'
+        n:
+          type: integer
+          minimum: 1
+        state:
+          type: string
+          enum:
+          - waiting
+          - armed
+          - done
+          - partly
+          - failed
+          - unresolved
+          - skipped
+        outcome:
+          type:
+          - string
+          - 'null'
+          description: What happened, in words, with the broker's reason where there is one
+        command_id:
+          type:
+          - string
+          - 'null'
+          format: uuid
+    RiskPlanCreate:
+      type: object
+      required:
+      - terminal_id
+      - steps
+      properties:
+        terminal_id:
+          type: string
+          format: uuid
+        ticket:
+          type:
+          - string
+          - 'null'
+          pattern: ^[0-9]+$
+          description: An open position; or give order
+        order:
+          $ref: '#/components/schemas/RiskProposedOrder'
+        steps:
+          type: array
+          minItems: 1
+          maxItems: 20
+          items:
+            $ref: '#/components/schemas/RiskPlanStepSpec'
+        replace:
+          type: boolean
+          default: false
+          description: Take over a position another manager holds
+    RiskPlanAmend:
+      type: object
+      required:
+      - steps
+      properties:
+        steps:
+          type: array
+          minItems: 1
+          maxItems: 20
+          items:
+            $ref: '#/components/schemas/RiskPlanStepSpec'
+        reason:
+          type:
+          - string
+          - 'null'
+          maxLength: 500
+    RiskPlan:
+      type: object
+      required:
+      - id
+      - terminal_id
+      - ticket
+      - version
+      - state
+      - one_r
+      - entry_price
+      - initial_sl
+      - original_volume
+      - steps
+      - command_id
+      - created_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        terminal_id:
+          type: string
+          format: uuid
+        ticket:
+          type:
+          - string
+          - 'null'
+          description: null until the order becomes a position
+        version:
+          type: integer
+        state:
+          type: string
+          enum:
+          - draft
+          - armed
+          - managing
+          - paused
+          - completed
+          - failed
+          - ended
+        reason:
+          type:
+          - string
+          - 'null'
+          description: 'Why paused, failed or ended: stop_changed, position_closed, terminal_retired,
+            by_tenant'
+        one_r:
+          type:
+          - string
+          - 'null'
+          description: The initial risk in money, recorded at arm; never redefined
+        entry_price:
+          type:
+          - string
+          - 'null'
+        initial_sl:
+          type:
+          - string
+          - 'null'
+        original_volume:
+          type:
+          - string
+          - 'null'
+        steps:
+          type: array
+          items:
+            $ref: '#/components/schemas/RiskPlanStep'
+        command_id:
+          type:
+          - string
+          - 'null'
+          format: uuid
+          description: The command that placed the order, when the plan came with one
+        created_at:
+          type: string
+          format: date-time
+    RiskPlanPage:
+      type: object
+      required:
+      - items
+      - next_cursor
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/RiskPlan'
+        next_cursor:
+          type:
+          - string
+          - 'null'
+        returned:
+          type: integer
+    RiskPeriodKind:
+      type: string
+      description: day and week are 24 h and 7 days from the start; date and the -to-date kinds are calendar
+        periods on the challenge's clock; lifetime never resets
+      enum:
+      - day
+      - date
+      - week
+      - week-to-date
+      - month
+      - month-to-date
+      - quarter
+      - quarter-to-date
+      - year
+      - year-to-date
+      - lifetime
+    RiskChallengeRules:
+      type: object
+      required:
+      - daily_loss
+      - max_drawdown
+      - profit_target
+      - min_trading_days
+      - period_days
+      - clock
+      - period_kinds
+      - on_fail
+      properties:
+        daily_loss:
+          type: object
+          required:
+          - limit
+          - basis
+          properties:
+            limit:
+              $ref: '#/components/schemas/RiskAmount'
+            basis:
+              type: string
+              enum:
+              - start_balance
+              - start_equity
+              - higher_of_both
+        max_drawdown:
+          type: object
+          required:
+          - kind
+          - limit
+          properties:
+            kind:
+              type: string
+              enum:
+              - static
+              - trailing
+            limit:
+              $ref: '#/components/schemas/RiskAmount'
+        profit_target:
+          $ref: '#/components/schemas/RiskAmount'
+        min_trading_days:
+          type: integer
+          minimum: 0
+        period_days:
+          type:
+          - integer
+          - 'null'
+          minimum: 1
+          description: 'null: no end'
+        clock:
+          type: string
+          description: broker or an IANA zone
+        period_kinds:
+          type: array
+          minItems: 1
+          uniqueItems: true
+          items:
+            $ref: '#/components/schemas/RiskPeriodKind'
+        on_fail:
+          $ref: '#/components/schemas/RiskActions'
+    RiskChallengeCreate:
+      type: object
+      required:
+      - name
+      - rules
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        rules:
+          $ref: '#/components/schemas/RiskChallengeRules'
+    RiskChallenge:
+      type: object
+      required:
+      - id
+      - name
+      - state
+      - version
+      - rules
+      - counts
+      - created_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        state:
+          type: string
+          enum:
+          - active
+          - archived
+        version:
+          type: integer
+        rules:
+          $ref: '#/components/schemas/RiskChallengeRules'
+        counts:
+          type: object
+          required:
+          - in_progress
+          - passed
+          - failed
+          - ended
+          properties:
+            in_progress:
+              type: integer
+            passed:
+              type: integer
+            failed:
+              type: integer
+            ended:
+              type: integer
+        created_at:
+          type: string
+          format: date-time
+    RiskChallengePage:
+      type: object
+      required:
+      - items
+      - next_cursor
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/RiskChallenge'
+        next_cursor:
+          type:
+          - string
+          - 'null'
+        returned:
+          type: integer
+    RiskEnrol:
+      type: object
+      required:
+      - terminal_ids
+      properties:
+        terminal_ids:
+          type: array
+          minItems: 1
+          maxItems: 500
+          uniqueItems: true
+          items:
+            type: string
+            format: uuid
+    RiskChallengeAccount:
+      type: object
+      required:
+      - terminal_id
+      - version
+      - state
+      - started_at
+      - period_ends_at
+      - start_balance
+      - day_pnl
+      - daily_loss_used
+      - drawdown_used
+      - profit_pct
+      - trading_days
+      - result
+      properties:
+        terminal_id:
+          type: string
+          format: uuid
+        version:
+          type: integer
+        state:
+          type: string
+          enum:
+          - in_progress
+          - passed
+          - failed
+          - ended
+        started_at:
+          type: string
+          format: date-time
+        period_ends_at:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        start_balance:
+          type: string
+        day_pnl:
+          type:
+          - string
+          - 'null'
+        daily_loss_used:
+          type:
+          - string
+          - 'null'
+        drawdown_used:
+          type:
+          - string
+          - 'null'
+        profit_pct:
+          type:
+          - string
+          - 'null'
+        trading_days:
+          type: integer
+        result:
+          type:
+          - object
+          - 'null'
+          required:
+          - rule
+          - at
+          properties:
+            rule:
+              type:
+              - string
+              - 'null'
+              description: The rule that failed it; null on a pass
+            at:
+              type: string
+              format: date-time
+    RiskPeriod:
+      type: object
+      required:
+      - kind
+      - start
+      - end
+      - state
+      - stats
+      properties:
+        kind:
+          $ref: '#/components/schemas/RiskPeriodKind'
+        start:
+          type: string
+          format: date-time
+        end:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        state:
+          type: string
+          enum:
+          - open
+          - closed
+        stats:
+          type: object
+          required:
+          - start_equity
+          - end_equity
+          - start_balance
+          - end_balance
+          - profit
+          - max_drawdown
+          - max_drawdown_at
+          - days_traded
+          - worst_daily_loss
+          properties:
+            start_equity:
+              type:
+              - string
+              - 'null'
+            end_equity:
+              type:
+              - string
+              - 'null'
+            start_balance:
+              type:
+              - string
+              - 'null'
+            end_balance:
+              type:
+              - string
+              - 'null'
+            profit:
+              type:
+              - string
+              - 'null'
+            max_drawdown:
+              type:
+              - string
+              - 'null'
+            max_drawdown_at:
+              type:
+              - string
+              - 'null'
+              format: date-time
+            days_traded:
+              type: integer
+            worst_daily_loss:
+              type:
+              - string
+              - 'null'
+    RiskChallengeAccountDetail:
+      type: object
+      required:
+      - terminal_id
+      - version
+      - state
+      - started_at
+      - period_ends_at
+      - start_balance
+      - day_pnl
+      - daily_loss_used
+      - drawdown_used
+      - profit_pct
+      - trading_days
+      - result
+      - periods
+      properties:
+        terminal_id:
+          type: string
+          format: uuid
+        version:
+          type: integer
+        state:
+          type: string
+          enum:
+          - in_progress
+          - passed
+          - failed
+          - ended
+        started_at:
+          type: string
+          format: date-time
+        period_ends_at:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        start_balance:
+          type: string
+        day_pnl:
+          type:
+          - string
+          - 'null'
+        daily_loss_used:
+          type:
+          - string
+          - 'null'
+        drawdown_used:
+          type:
+          - string
+          - 'null'
+        profit_pct:
+          type:
+          - string
+          - 'null'
+        trading_days:
+          type: integer
+        result:
+          type:
+          - object
+          - 'null'
+          required:
+          - rule
+          - at
+          properties:
+            rule:
+              type:
+              - string
+              - 'null'
+              description: The rule that failed it; null on a pass
+            at:
+              type: string
+              format: date-time
+        periods:
+          type: array
+          items:
+            $ref: '#/components/schemas/RiskPeriod'
+    RiskChallengeAccountPage:
+      type: object
+      required:
+      - items
+      - next_cursor
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/RiskChallengeAccount'
+        next_cursor:
+          type:
+          - string
+          - 'null'
+        returned:
+          type: integer
+    RiskActivityKind:
+      type: string
+      enum:
+      - warning
+      - breach
+      - clear
+      - action
+      - refusal
+      - policy_change
+      - plan_change
+      - challenge_result
+      - reset
+      - override
+      - outside_entry
+    RiskOutcome:
+      type: string
+      enum:
+      - running
+      - completed
+      - partly
+      - unresolved
+      - failed
+      - recorded
+      - delivered
+    RiskActivity:
+      type: object
+      required:
+      - id
+      - at
+      - terminal_id
+      - kind
+      - rule
+      - policy
+      - plan_id
+      - challenge_id
+      - summary
+      - outcome
+      - items
+      - evidence
+      - by
+      properties:
+        id:
+          type: string
+          format: uuid
+        at:
+          type: string
+          format: date-time
+        terminal_id:
+          type:
+          - string
+          - 'null'
+          format: uuid
+          description: null for a row about several accounts (a daily reset)
+        kind:
+          $ref: '#/components/schemas/RiskActivityKind'
+        rule:
+          type:
+          - string
+          - 'null'
+        policy:
+          type:
+          - object
+          - 'null'
+          properties:
+            id:
+              type: string
+              format: uuid
+            version:
+              type: integer
+        plan_id:
+          type:
+          - string
+          - 'null'
+          format: uuid
+        challenge_id:
+          type:
+          - string
+          - 'null'
+          format: uuid
+        summary:
+          type: string
+          description: What happened, in words
+        outcome:
+          $ref: '#/components/schemas/RiskOutcome'
+        items:
+          type: array
+          items:
+            type: object
+            required:
+            - ticket
+            - command_id
+            - outcome
+            - reason
+            properties:
+              ticket:
+                type:
+                - string
+                - 'null'
+              command_id:
+                type:
+                - string
+                - 'null'
+                format: uuid
+              outcome:
+                type: string
+                enum:
+                - pending
+                - succeeded
+                - failed
+                - unresolved
+                - skipped
+              reason:
+                type:
+                - string
+                - 'null'
+        evidence:
+          type: object
+          additionalProperties: true
+          description: The inputs the decision read, with their times
+        by:
+          type:
+          - string
+          - 'null'
+          description: 'Who changed something: a key id, or operator; null for the platform'
+    RiskActivityPage:
+      type: object
+      required:
+      - items
+      - next_cursor
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/RiskActivity'
+        next_cursor:
+          type:
+          - string
+          - 'null'
+        returned:
+          type: integer
+    RiskRuleEvent:
+      type: object
+      description: '`data` of `risk.rule_warning`, `risk.rule_breached` and `risk.rule_cleared`'
+      required:
+      - schema_version
+      - terminal_id
+      - rule
+      - policy_id
+      - version
+      - used
+      - limit
+      - level
+      - actions
+      - at
+      properties:
+        schema_version:
+          type: string
+        terminal_id:
+          type: string
+          format: uuid
+        rule:
+          type: string
+        policy_id:
+          type:
+          - string
+          - 'null'
+          format: uuid
+        challenge_id:
+          type:
+          - string
+          - 'null'
+          format: uuid
+        version:
+          type: integer
+        used:
+          type:
+          - string
+          - 'null'
+        limit:
+          type:
+          - string
+          - 'null'
+        level:
+          type: string
+          enum:
+          - warn
+          - act
+          - cleared
+        actions:
+          type: array
+          items:
+            $ref: '#/components/schemas/RiskActionKind'
+        cleared_by:
+          type:
+          - string
+          - 'null'
+          enum:
+          - reset
+          - override
+          - below_warn
+          - null
+        at:
+          type: string
+          format: date-time
+    RiskActionCompleted:
+      type: object
+      description: '`data` of `risk.action_completed`: sent at each change of an action, with every account''s
+        and item''s outcome'
+      required:
+      - schema_version
+      - action_id
+      - kind
+      - state
+      - accounts
+      - unresolved
+      - at
+      properties:
+        schema_version:
+          type: string
+        action_id:
+          type: string
+          format: uuid
+        kind:
+          type: string
+          enum:
+          - block_entries
+          - cancel_pending
+          - close_positions
+          - close_part
+          - move_stop
+          - set_stops
+        state:
+          type: string
+          enum:
+          - running
+          - completed
+          - partly
+          - unresolved
+          - failed
+        accounts:
+          type: array
+          items:
+            type: object
+            required:
+            - terminal_id
+            - outcome
+            properties:
+              terminal_id:
+                type: string
+                format: uuid
+              outcome:
+                type: string
+        unresolved:
+          type: array
+          items:
+            type: object
+            required:
+            - terminal_id
+            - ticket
+            - command_id
+            properties:
+              terminal_id:
+                type: string
+                format: uuid
+              ticket:
+                type: string
+              command_id:
+                type: string
+                format: uuid
+              reserved:
+                type:
+                - string
+                - 'null'
+        at:
+          type: string
+          format: date-time
+    RiskCoverageChanged:
+      type: object
+      description: '`data` of `risk.coverage_changed`'
+      required:
+      - schema_version
+      - terminal_id
+      - kind
+      - from
+      - to
+      - reason
+      - at
+      properties:
+        schema_version:
+          type: string
+        terminal_id:
+          type: string
+          format: uuid
+        kind:
+          type: string
+          enum:
+          - monitoring
+          - pre_trade
+          - broker_held
+          - managed_actions
+        from:
+          type: string
+          enum:
+          - healthy
+          - degraded
+          - disconnected
+          - unknown
+        to:
+          type: string
+          enum:
+          - healthy
+          - degraded
+          - disconnected
+          - unknown
+        reason:
+          type:
+          - string
+          - 'null'
+        at:
+          type: string
+          format: date-time
+    RiskPlanStepEvent:
+      type: object
+      description: '`data` of `risk.plan_step`: a step changed state, or the plan did'
+      required:
+      - schema_version
+      - plan_id
+      - terminal_id
+      - ticket
+      - version
+      - step
+      - state
+      - plan_state
+      - outcome
+      - at
+      properties:
+        schema_version:
+          type: string
+        plan_id:
+          type: string
+          format: uuid
+        terminal_id:
+          type: string
+          format: uuid
+        ticket:
+          type:
+          - string
+          - 'null'
+        version:
+          type: integer
+        step:
+          type:
+          - integer
+          - 'null'
+        state:
+          type:
+          - string
+          - 'null'
+          enum:
+          - waiting
+          - armed
+          - done
+          - partly
+          - failed
+          - unresolved
+          - skipped
+          - null
+        plan_state:
+          type: string
+          enum:
+          - draft
+          - armed
+          - managing
+          - paused
+          - completed
+          - failed
+          - ended
+        outcome:
+          type:
+          - string
+          - 'null'
+        at:
+          type: string
+          format: date-time
+    RiskPolicyActivated:
+      type: object
+      description: '`data` of `risk.policy_activated`: an account''s policy version changed, or it was
+        ended'
+      required:
+      - schema_version
+      - terminal_id
+      - policy_id
+      - version
+      - previous_version
+      - relaxes
+      - at
+      properties:
+        schema_version:
+          type: string
+        terminal_id:
+          type: string
+          format: uuid
+        policy_id:
+          type:
+          - string
+          - 'null'
+          format: uuid
+        version:
+          type:
+          - integer
+          - 'null'
+        previous_version:
+          type:
+          - integer
+          - 'null'
+        relaxes:
+          type: boolean
+        at:
+          type: string
+          format: date-time
+    RiskProgrammeResult:
+      type: object
+      description: '`data` of `risk.programme_result`: an enrolled account passed, failed or ended'
+      required:
+      - schema_version
+      - challenge_id
+      - version
+      - terminal_id
+      - result
+      - rule
+      - at
+      properties:
+        schema_version:
+          type: string
+        challenge_id:
+          type: string
+          format: uuid
+        version:
+          type: integer
+        terminal_id:
+          type: string
+          format: uuid
+        result:
+          type: string
+          enum:
+          - passed
+          - failed
+          - ended
+        rule:
+          type:
+          - string
+          - 'null'
+        at:
+          type: string
+          format: date-time
+    RiskPeriodClosed:
+      type: object
+      description: '`data` of `risk.period_closed`: one period of one enrolled account, with its statistics'
+      required:
+      - schema_version
+      - challenge_id
+      - terminal_id
+      - period
+      - at
+      properties:
+        schema_version:
+          type: string
+        challenge_id:
+          type: string
+          format: uuid
+        terminal_id:
+          type: string
+          format: uuid
+        period:
+          $ref: '#/components/schemas/RiskPeriod'
+        at:
+          type: string
+          format: date-time
 paths:
   /terminals:
     post:
@@ -7086,16 +9490,18 @@ paths:
         (422), a farm that does not carry the usages (409), a redundancy the farm does not offer (409).
         The credential is submitted separately (`POST /terminals/{id}/credentials`), so a terminal can
         exist before its login does. Several terminals may use the same broker login, on every plan: the
-        limits are checked when the credential is submitted. `farm_id` is optional: omitted, the platform
-        chooses a farm and says which on the answer; none fits is 409 `no_farm`, with `details.why` one
-        of `no_usage` (no farm you can use offers what this terminal needs), `no_region` (none in the
-        server''s region) or `no_room`. `refresh_ms` faster than the farm''s rate is 422 with `details.allowed`;
-        with no farm named, only farms that allow the rate are considered. A changed rate a cell cannot
-        carry is the PATCH''s 409 `no_room`; create queues the terminal for placement. The tenant''s plan
-        decides the farm: enterprise and system tenants'' terminals go to their own farms, standard tenants''
-        to the shared farms. A named farm outside the plan is 409 `farm_not_in_plan`; with no farm named
-        the platform chooses within the plan. A tenant already at its terminal quota is 409 `quota_exceeded`
-        with `details {quota, in_use}`.'
+        limits are checked when the credential is submitted. A tenant with its own farms (enterprise and
+        system plans) names the farm of every terminal: omitted, it is 422 `farm_required` with `details.farms`
+        listing its farms taking terminals. For a standard tenant `farm_id` is optional: omitted, the
+        platform chooses a shared farm and says which on the answer; none fits is 409 `no_farm`, with
+        `details.why` one of `no_usage` (no farm you can use offers what this terminal needs), `no_region`
+        (none in the server''s region) or `no_room`. `refresh_ms` faster than the farm''s rate is 422
+        with `details.allowed`; with no farm named, only farms that allow the rate are considered. A changed
+        rate a cell cannot carry is the PATCH''s 409 `no_room`; create queues the terminal for placement.
+        The tenant''s plan decides the farm: enterprise and system tenants'' terminals go to their own
+        farms, standard tenants'' to the shared farms. A named farm outside the plan is 409 `farm_not_in_plan`;
+        with no farm named a standard tenant is given a shared farm. A tenant already at its terminal
+        quota is 409 `quota_exceeded` with `details {quota, in_use}`.'
       x-scope: term:write
       parameters:
       - $ref: '#/components/parameters/idempotencyKey'
@@ -7118,10 +9524,11 @@ paths:
               schema:
                 $ref: '#/components/schemas/TenantTerminal'
         '422':
-          description: validation_error — the request names no broker or server MFX lists (an unknown
-            or retired broker, a server of another broker), or asks a farm for a usage it does not offer.
+          description: 'validation_error — the request names no broker or server MFX lists (an unknown
+            or retired broker, a server of another broker), or asks a farm for a usage it does not offer;
+            farm_required — a tenant with its own farms named no farm (details `{farms: [{id, slug}]}`).
             Rejected at request time, never passed to a terminal. A listed broker or server that MFX cannot
-            use now is the 409 below
+            use now is the 409 below'
           content:
             application/json:
               schema:
@@ -8978,6 +11385,809 @@ paths:
                 $ref: '#/components/schemas/TenantMaintenanceTerminalPage'
         default:
           $ref: '#/components/responses/Error'
+  /risk/policies:
+    get:
+      tags:
+      - risk
+      operationId: listRiskPolicies
+      summary: The tenant's account policies, newest first
+      x-scope: risk:read
+      parameters:
+      - $ref: '#/components/parameters/cursor'
+      - $ref: '#/components/parameters/limit'
+      - name: state
+        in: query
+        required: false
+        schema:
+          type: string
+          enum:
+          - active
+          - archived
+      responses:
+        '200':
+          description: policies
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RiskPolicyPage'
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      tags:
+      - risk
+      operationId: createRiskPolicy
+      summary: Create a policy; its first version holds the rules. Nothing is in force until it is activated
+        on accounts
+      x-scope: risk:write
+      parameters:
+      - $ref: '#/components/parameters/idempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RiskPolicyCreate'
+      responses:
+        '201':
+          description: the policy and its version 1
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RiskPolicy'
+        default:
+          $ref: '#/components/responses/Error'
+  /risk/policies/{id}:
+    parameters:
+    - $ref: '#/components/parameters/pathId'
+    get:
+      tags:
+      - risk
+      operationId: getRiskPolicy
+      summary: A policy, its current version and the accounts it is active on
+      x-scope: risk:read
+      responses:
+        '200':
+          description: the policy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RiskPolicy'
+        default:
+          $ref: '#/components/responses/Error'
+  /risk/policies/{id}/versions:
+    parameters:
+    - $ref: '#/components/parameters/pathId'
+    get:
+      tags:
+      - risk
+      operationId: listRiskPolicyVersions
+      summary: Every version of a policy, newest first; a version never changes
+      x-scope: risk:read
+      parameters:
+      - $ref: '#/components/parameters/cursor'
+      - $ref: '#/components/parameters/limit'
+      responses:
+        '200':
+          description: versions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RiskPolicyVersionPage'
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      tags:
+      - risk
+      operationId: createRiskPolicyVersion
+      summary: A new version of a policy, with what changed and whether it relaxes protection. Accounts
+        keep the version in force until it is activated
+      x-scope: risk:write
+      parameters:
+      - $ref: '#/components/parameters/idempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RiskPolicyVersionCreate'
+      responses:
+        '201':
+          description: the new version
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RiskPolicyVersion'
+        default:
+          $ref: '#/components/responses/Error'
+  /risk/policies/{id}/versions/{version}:
+    parameters:
+    - $ref: '#/components/parameters/pathId'
+    - name: version
+      in: path
+      required: true
+      schema:
+        type: integer
+        minimum: 1
+    get:
+      tags:
+      - risk
+      operationId: getRiskPolicyVersion
+      summary: One version of a policy
+      x-scope: risk:read
+      responses:
+        '200':
+          description: the version
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RiskPolicyVersion'
+        default:
+          $ref: '#/components/responses/Error'
+  /risk/policies/{id}/activate:
+    parameters:
+    - $ref: '#/components/parameters/pathId'
+    post:
+      tags:
+      - risk
+      operationId: activateRiskPolicy
+      summary: Put a version in force on accounts; each account's outcome is answered separately
+      description: An account holds one active policy. Activating a version that relaxes the one in force
+        on an account needs `risk:override` and a `reason`, for that account. Takes effect on the next
+        account read. `risk.policy_activated` is sent for each account that changed.
+      x-scope: risk:write
+      parameters:
+      - $ref: '#/components/parameters/idempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RiskActivate'
+      responses:
+        '200':
+          description: one outcome per account
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RiskActivationResult'
+        default:
+          $ref: '#/components/responses/Error'
+  /risk/accounts:
+    get:
+      tags:
+      - risk
+      operationId: listRiskAccounts
+      summary: Every account of the tenant with its allowance, drawdown, exposure, restriction and coverage
+      x-scope: risk:read
+      parameters:
+      - $ref: '#/components/parameters/cursor'
+      - $ref: '#/components/parameters/limit'
+      - name: coverage
+        in: query
+        required: false
+        schema:
+          type: string
+          enum:
+          - healthy
+          - degraded
+          - disconnected
+          - unknown
+          - no_rules
+      - name: restriction
+        in: query
+        required: false
+        schema:
+          type: string
+          enum:
+          - none
+          - entries_blocked
+      - name: sort
+        in: query
+        required: false
+        schema:
+          type: string
+          enum:
+          - daily_loss_used
+          - drawdown_used
+          - exposure
+          - inputs_age
+          default: daily_loss_used
+      responses:
+        '200':
+          description: accounts, the stats row first
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RiskAccountPage'
+        default:
+          $ref: '#/components/responses/Error'
+  /risk/accounts/{id}:
+    parameters:
+    - $ref: '#/components/parameters/terminalId'
+    get:
+      tags:
+      - risk
+      operationId: getRiskAccount
+      summary: One account's figures, each with the inputs and their times
+      x-scope: risk:read
+      responses:
+        '200':
+          description: the account
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RiskAccount'
+        default:
+          $ref: '#/components/responses/Error'
+  /risk/accounts/{id}/deactivate:
+    parameters:
+    - $ref: '#/components/parameters/terminalId'
+    post:
+      tags:
+      - risk
+      operationId: deactivateRiskAccount
+      summary: End the account's activation; no rule applies to it afterwards
+      x-scope: risk:override
+      parameters:
+      - $ref: '#/components/parameters/idempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RiskReason'
+      responses:
+        '200':
+          description: the account as it now is
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RiskAccount'
+        default:
+          $ref: '#/components/responses/Error'
+  /risk/accounts/{id}/clear:
+    parameters:
+    - $ref: '#/components/parameters/terminalId'
+    post:
+      tags:
+      - risk
+      operationId: clearRiskBreach
+      summary: Clear a breach or lift a restriction before it would clear by itself; a drawdown breach
+        clears only this way
+      x-scope: risk:override
+      parameters:
+      - $ref: '#/components/parameters/idempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RiskClear'
+      responses:
+        '200':
+          description: the account as it now is; risk.rule_cleared is sent
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RiskAccount'
+        default:
+          $ref: '#/components/responses/Error'
+  /risk/accounts/{id}/equity:
+    parameters:
+    - $ref: '#/components/parameters/terminalId'
+    get:
+      tags:
+      - risk
+      operationId: getRiskEquity
+      summary: The account's equity and balance series from the stored account reads (one a minute and
+        on every change)
+      x-scope: risk:read
+      parameters:
+      - name: from
+        in: query
+        required: true
+        schema:
+          type: string
+          format: date-time
+      - name: to
+        in: query
+        required: false
+        schema:
+          type: string
+          format: date-time
+        description: defaults to now; at most 31 days after from (422 window_too_wide)
+      responses:
+        '200':
+          description: the series
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RiskEquitySeries'
+        default:
+          $ref: '#/components/responses/Error'
+  /risk/coverage:
+    get:
+      tags:
+      - risk
+      operationId: getRiskCoverage
+      summary: Coverage counts by kind and state, and every account where a kind is not healthy
+      x-scope: risk:read
+      responses:
+        '200':
+          description: coverage
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RiskCoverageSummary'
+        default:
+          $ref: '#/components/responses/Error'
+  /risk/planner/preview:
+    post:
+      tags:
+      - risk
+      operationId: previewRiskPlan
+      summary: Size a trade from a risk budget with the broker's specification and check it against every
+        rule; nothing is sent to the broker
+      description: 'Read-only: no Idempotency-Key. The volume is rounded down to the symbol''s step and
+        never enlarges the budget; when the symbol''s minimum volume costs more than the budget no volume
+        is offered (`reason: volume_min_over_budget`). A cost the specification does not give is 422 `validation_error`
+        with `details.reason = assumption_required` until the caller states it. The answer expires at
+        `expires_at` or when the price moves `risk.preview_max_move_points`.'
+      x-scope: risk:read
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RiskPreviewRequest'
+      responses:
+        '200':
+          description: the proposed order and every rule's check
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RiskPreview'
+        default:
+          $ref: '#/components/responses/Error'
+  /risk/planner/check:
+    post:
+      tags:
+      - risk
+      operationId: checkRiskOrder
+      summary: Check an order already sized against every rule, exactly as the pre-trade check would;
+        nothing is sent
+      x-scope: risk:read
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RiskCheckRequest'
+      responses:
+        '200':
+          description: the verdict and every rule's check
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RiskCheckResult'
+        default:
+          $ref: '#/components/responses/Error'
+  /risk/plans:
+    get:
+      tags:
+      - risk
+      operationId: listRiskPlans
+      summary: The tenant's exit plans, newest first
+      x-scope: risk:read
+      parameters:
+      - $ref: '#/components/parameters/cursor'
+      - $ref: '#/components/parameters/limit'
+      - name: terminal_id
+        in: query
+        required: false
+        schema:
+          type: string
+          format: uuid
+      - name: state
+        in: query
+        required: false
+        schema:
+          type: string
+          enum:
+          - draft
+          - armed
+          - managing
+          - paused
+          - completed
+          - failed
+          - ended
+      responses:
+        '200':
+          description: plans
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RiskPlanPage'
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      tags:
+      - risk
+      operationId: createRiskPlan
+      summary: An exit plan on an open position, or an order placed with its plan (checked as any entry;
+        managing when the position opens)
+      description: 'A position has one manager. A plan on a position that already has one (a plan or a
+        standalone trailing stop) needs `replace: true`, or is 409 `conflict` with `details.reason = position_managed`
+        and `details.manager`. A plan with a trailing step owns its trailing stop. With `order`, the answer
+        carries the command that places it.'
+      x-scope: risk:write
+      parameters:
+      - $ref: '#/components/parameters/idempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RiskPlanCreate'
+      responses:
+        '201':
+          description: the plan
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RiskPlan'
+        default:
+          $ref: '#/components/responses/Error'
+  /risk/plans/{id}:
+    parameters:
+    - $ref: '#/components/parameters/pathId'
+    get:
+      tags:
+      - risk
+      operationId: getRiskPlan
+      summary: An exit plan, each step with who holds it, its state and its outcome
+      x-scope: risk:read
+      responses:
+        '200':
+          description: the plan
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RiskPlan'
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      tags:
+      - risk
+      operationId: endRiskPlan
+      summary: End the plan; broker-held stops stay where they are
+      x-scope: risk:write
+      parameters:
+      - $ref: '#/components/parameters/idempotencyKey'
+      responses:
+        '200':
+          description: the plan, ended
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RiskPlan'
+        default:
+          $ref: '#/components/responses/Error'
+  /risk/plans/{id}/amend:
+    parameters:
+    - $ref: '#/components/parameters/pathId'
+    post:
+      tags:
+      - risk
+      operationId: amendRiskPlan
+      summary: A new version of the plan's steps; the protection in place stays until it is accepted
+      x-scope: risk:write
+      parameters:
+      - $ref: '#/components/parameters/idempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RiskPlanAmend'
+      responses:
+        '200':
+          description: the plan at its new version
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RiskPlan'
+        default:
+          $ref: '#/components/responses/Error'
+  /risk/plans/{id}/pause:
+    parameters:
+    - $ref: '#/components/parameters/pathId'
+    post:
+      tags:
+      - risk
+      operationId: pauseRiskPlan
+      summary: Pause the plan's MFX-held steps; broker-held protection stays
+      x-scope: risk:override
+      parameters:
+      - $ref: '#/components/parameters/idempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RiskReason'
+      responses:
+        '200':
+          description: the plan, paused
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RiskPlan'
+        default:
+          $ref: '#/components/responses/Error'
+  /risk/plans/{id}/resume:
+    parameters:
+    - $ref: '#/components/parameters/pathId'
+    post:
+      tags:
+      - risk
+      operationId: resumeRiskPlan
+      summary: Resume the plan's MFX-held steps
+      x-scope: risk:write
+      parameters:
+      - $ref: '#/components/parameters/idempotencyKey'
+      responses:
+        '200':
+          description: the plan, managing again
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RiskPlan'
+        default:
+          $ref: '#/components/responses/Error'
+  /risk/challenges:
+    get:
+      tags:
+      - risk
+      operationId: listRiskChallenges
+      summary: The tenant's challenges, each with its counts in progress, passed, failed and ended
+      x-scope: risk:read
+      parameters:
+      - $ref: '#/components/parameters/cursor'
+      - $ref: '#/components/parameters/limit'
+      responses:
+        '200':
+          description: challenges
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RiskChallengePage'
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      tags:
+      - risk
+      operationId: createRiskChallenge
+      summary: A challenge and its first rule set version
+      x-scope: risk:write
+      parameters:
+      - $ref: '#/components/parameters/idempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RiskChallengeCreate'
+      responses:
+        '201':
+          description: the challenge
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RiskChallenge'
+        default:
+          $ref: '#/components/responses/Error'
+  /risk/challenges/{id}:
+    parameters:
+    - $ref: '#/components/parameters/pathId'
+    get:
+      tags:
+      - risk
+      operationId: getRiskChallenge
+      summary: A challenge, its current rule set and its counts
+      x-scope: risk:read
+      responses:
+        '200':
+          description: the challenge
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RiskChallenge'
+        default:
+          $ref: '#/components/responses/Error'
+  /risk/challenges/{id}/versions:
+    parameters:
+    - $ref: '#/components/parameters/pathId'
+    post:
+      tags:
+      - risk
+      operationId: createRiskChallengeVersion
+      summary: A new rule set version, for accounts enrolled after it; an account already running keeps
+        its version
+      x-scope: risk:write
+      parameters:
+      - $ref: '#/components/parameters/idempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RiskChallengeRules'
+      responses:
+        '201':
+          description: the challenge at its new version
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RiskChallenge'
+        default:
+          $ref: '#/components/responses/Error'
+  /risk/challenges/{id}/accounts:
+    parameters:
+    - $ref: '#/components/parameters/pathId'
+    get:
+      tags:
+      - risk
+      operationId: listRiskChallengeAccounts
+      summary: The challenge's accounts and their results; this list, paged, is the export
+      x-scope: risk:read
+      parameters:
+      - $ref: '#/components/parameters/cursor'
+      - $ref: '#/components/parameters/limit'
+      - name: state
+        in: query
+        required: false
+        schema:
+          type: string
+          enum:
+          - in_progress
+          - passed
+          - failed
+          - ended
+      - name: rule
+        in: query
+        required: false
+        description: the rule that failed it
+        schema:
+          type: string
+          enum:
+          - daily_loss
+          - max_drawdown
+      - name: below_min_days
+        in: query
+        required: false
+        schema:
+          type: boolean
+      - name: sort
+        in: query
+        required: false
+        schema:
+          type: string
+          enum:
+          - daily_loss_used
+          - drawdown
+          - profit
+          - trading_days
+          - period_ends_at
+          default: daily_loss_used
+      responses:
+        '200':
+          description: accounts
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RiskChallengeAccountPage'
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      tags:
+      - risk
+      operationId: enrolRiskChallengeAccounts
+      summary: Enrol accounts in the challenge's current version; each account's outcome separately
+      x-scope: risk:write
+      parameters:
+      - $ref: '#/components/parameters/idempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RiskEnrol'
+      responses:
+        '200':
+          description: one outcome per account
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RiskActivationResult'
+        default:
+          $ref: '#/components/responses/Error'
+  /risk/challenges/{id}/accounts/{terminal_id}:
+    parameters:
+    - $ref: '#/components/parameters/pathId'
+    - name: terminal_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - risk
+      operationId: getRiskChallengeAccount
+      summary: One enrolled account, its result and its period statistics
+      x-scope: risk:read
+      responses:
+        '200':
+          description: the account in the challenge
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RiskChallengeAccountDetail'
+        default:
+          $ref: '#/components/responses/Error'
+  /risk/activity:
+    get:
+      tags:
+      - risk
+      operationId: listRiskActivity
+      summary: Every warning, breach, action and its outcome, policy and plan change, unresolved first,
+        with evidence
+      x-scope: risk:read
+      parameters:
+      - $ref: '#/components/parameters/cursor'
+      - $ref: '#/components/parameters/limit'
+      - name: kind
+        in: query
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: array
+          items:
+            $ref: '#/components/schemas/RiskActivityKind'
+      - name: terminal_id
+        in: query
+        required: false
+        schema:
+          type: string
+          format: uuid
+      - name: outcome
+        in: query
+        required: false
+        schema:
+          $ref: '#/components/schemas/RiskOutcome'
+      - name: from
+        in: query
+        required: false
+        schema:
+          type: string
+          format: date-time
+      - name: to
+        in: query
+        required: false
+        schema:
+          type: string
+          format: date-time
+      responses:
+        '200':
+          description: entries, unresolved first, then newest first
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RiskActivityPage'
+        default:
+          $ref: '#/components/responses/Error'
   /stream:
     get:
       tags:
@@ -9033,6 +12243,15 @@ paths:
       - md.subscription_degraded
       - md.subscription_recovered
       - maintenance.window_changed
+      - risk.rule_warning
+      - risk.rule_breached
+      - risk.rule_cleared
+      - risk.action_completed
+      - risk.coverage_changed
+      - risk.plan_step
+      - risk.policy_activated
+      - risk.programme_result
+      - risk.period_closed
       - webhook.endpoint_paused
       - webhook.endpoint_resumed
       - webhook.test
@@ -9112,6 +12331,24 @@ paths:
           $ref: '#/components/schemas/SymbolSpecChanged'
         maintenance.window_changed:
           $ref: '#/components/schemas/MaintenanceWindowChanged'
+        risk.rule_warning:
+          $ref: '#/components/schemas/RiskRuleEvent'
+        risk.rule_breached:
+          $ref: '#/components/schemas/RiskRuleEvent'
+        risk.rule_cleared:
+          $ref: '#/components/schemas/RiskRuleEvent'
+        risk.action_completed:
+          $ref: '#/components/schemas/RiskActionCompleted'
+        risk.coverage_changed:
+          $ref: '#/components/schemas/RiskCoverageChanged'
+        risk.plan_step:
+          $ref: '#/components/schemas/RiskPlanStepEvent'
+        risk.policy_activated:
+          $ref: '#/components/schemas/RiskPolicyActivated'
+        risk.programme_result:
+          $ref: '#/components/schemas/RiskProgrammeResult'
+        risk.period_closed:
+          $ref: '#/components/schemas/RiskPeriodClosed'
       responses:
         '101':
           description: switching protocols

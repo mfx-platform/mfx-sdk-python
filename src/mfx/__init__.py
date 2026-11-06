@@ -17,6 +17,7 @@ Execution methods never raise across the boundary; read methods raise the typed 
         )
 """
 
+from mfx._version import __version__
 from mfx.client import Budget, CallTiming, MfxClient
 from mfx.errors import (
     AuthError,
@@ -118,5 +119,3 @@ __all__ = [
     "telemetry_of",
     "verify",
 ]
-
-__version__ = "0.11.0"

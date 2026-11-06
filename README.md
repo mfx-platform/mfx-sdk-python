@@ -139,13 +139,46 @@ Every tenant operation in the API has a typed method here except these, which yo
 with the same request signing (`mfx.signing`). A test keeps this table equal to the API, so it
 cannot drift.
 
+Risk Management's operations (`/risk/...`) are here until the SDK's risk client is released; the
+platform serves each one as its part is built.
+
 <!-- rest-only:start -->
 | Operation | Route |
 |---|---|
+| `activateRiskPolicy` | `POST /risk/policies/{id}/activate` |
+| `amendRiskPlan` | `POST /risk/plans/{id}/amend` |
 | `cancelTerminalOperation` | `DELETE /terminals/{id}/operations/{operation_id}` |
+| `checkRiskOrder` | `POST /risk/planner/check` |
+| `clearRiskBreach` | `POST /risk/accounts/{id}/clear` |
 | `createRedisPushConnector` | `POST /connectors/redis-push` |
+| `createRiskChallenge` | `POST /risk/challenges` |
+| `createRiskChallengeVersion` | `POST /risk/challenges/{id}/versions` |
+| `createRiskPlan` | `POST /risk/plans` |
+| `createRiskPolicy` | `POST /risk/policies` |
+| `createRiskPolicyVersion` | `POST /risk/policies/{id}/versions` |
+| `deactivateRiskAccount` | `POST /risk/accounts/{id}/deactivate` |
+| `endRiskPlan` | `DELETE /risk/plans/{id}` |
+| `enrolRiskChallengeAccounts` | `POST /risk/challenges/{id}/accounts` |
 | `getExpertAdvisorParameters` | `GET /terminals/{id}/expert-advisor/parameters` |
+| `getRiskAccount` | `GET /risk/accounts/{id}` |
+| `getRiskChallenge` | `GET /risk/challenges/{id}` |
+| `getRiskChallengeAccount` | `GET /risk/challenges/{id}/accounts/{terminal_id}` |
+| `getRiskCoverage` | `GET /risk/coverage` |
+| `getRiskEquity` | `GET /risk/accounts/{id}/equity` |
+| `getRiskPlan` | `GET /risk/plans/{id}` |
+| `getRiskPolicy` | `GET /risk/policies/{id}` |
+| `getRiskPolicyVersion` | `GET /risk/policies/{id}/versions/{version}` |
+| `listRiskAccounts` | `GET /risk/accounts` |
+| `listRiskActivity` | `GET /risk/activity` |
+| `listRiskChallengeAccounts` | `GET /risk/challenges/{id}/accounts` |
+| `listRiskChallenges` | `GET /risk/challenges` |
+| `listRiskPlans` | `GET /risk/plans` |
+| `listRiskPolicies` | `GET /risk/policies` |
+| `listRiskPolicyVersions` | `GET /risk/policies/{id}/versions` |
+| `pauseRiskPlan` | `POST /risk/plans/{id}/pause` |
+| `previewRiskPlan` | `POST /risk/planner/preview` |
 | `putExpertAdvisorParameters` | `PUT /terminals/{id}/expert-advisor/parameters` |
+| `resumeRiskPlan` | `POST /risk/plans/{id}/resume` |
 | `setTerminalHa` | `POST /terminals/{id}/ha` |
 | `updateTerminal` | `PATCH /terminals/{id}` |
 <!-- rest-only:end -->

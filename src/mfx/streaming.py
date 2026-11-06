@@ -46,6 +46,7 @@ from types import TracebackType
 from typing import TYPE_CHECKING, Any, Final, Literal, Protocol, Self
 from uuid import UUID
 
+from mfx._version import USER_AGENT
 from mfx.errors import AuthError, MfxError, error_for
 
 if TYPE_CHECKING:
@@ -465,7 +466,10 @@ class MfxStream:
         )
 
     async def _open(self) -> None:
-        headers = self._client.signature.headers_for("GET", _path_of(self._url))
+        headers = {
+            **self._client.signature.headers_for("GET", _path_of(self._url)),
+            "User-Agent": USER_AGENT,
+        }
         self._connection = await self._connect(self._url, headers)
 
     async def _reopen(self, closed: StreamClosed) -> bool:

@@ -80,15 +80,18 @@ def sync_detailed(
     that does not carry the usages (409), a redundancy the farm does not offer (409). The credential is
     submitted separately (`POST /terminals/{id}/credentials`), so a terminal can exist before its login
     does. Several terminals may use the same broker login, on every plan: the limits are checked when
-    the credential is submitted. `farm_id` is optional: omitted, the platform chooses a farm and says
-    which on the answer; none fits is 409 `no_farm`, with `details.why` one of `no_usage` (no farm you
-    can use offers what this terminal needs), `no_region` (none in the server's region) or `no_room`.
-    `refresh_ms` faster than the farm's rate is 422 with `details.allowed`; with no farm named, only
-    farms that allow the rate are considered. A changed rate a cell cannot carry is the PATCH's 409
-    `no_room`; create queues the terminal for placement. The tenant's plan decides the farm: enterprise
-    and system tenants' terminals go to their own farms, standard tenants' to the shared farms. A named
-    farm outside the plan is 409 `farm_not_in_plan`; with no farm named the platform chooses within the
-    plan. A tenant already at its terminal quota is 409 `quota_exceeded` with `details {quota, in_use}`.
+    the credential is submitted. A tenant with its own farms (enterprise and system plans) names the
+    farm of every terminal: omitted, it is 422 `farm_required` with `details.farms` listing its farms
+    taking terminals. For a standard tenant `farm_id` is optional: omitted, the platform chooses a
+    shared farm and says which on the answer; none fits is 409 `no_farm`, with `details.why` one of
+    `no_usage` (no farm you can use offers what this terminal needs), `no_region` (none in the server's
+    region) or `no_room`. `refresh_ms` faster than the farm's rate is 422 with `details.allowed`; with
+    no farm named, only farms that allow the rate are considered. A changed rate a cell cannot carry is
+    the PATCH's 409 `no_room`; create queues the terminal for placement. The tenant's plan decides the
+    farm: enterprise and system tenants' terminals go to their own farms, standard tenants' to the
+    shared farms. A named farm outside the plan is 409 `farm_not_in_plan`; with no farm named a standard
+    tenant is given a shared farm. A tenant already at its terminal quota is 409 `quota_exceeded` with
+    `details {quota, in_use}`.
 
     Args:
         idempotency_key (str):
@@ -128,15 +131,18 @@ def sync(
     that does not carry the usages (409), a redundancy the farm does not offer (409). The credential is
     submitted separately (`POST /terminals/{id}/credentials`), so a terminal can exist before its login
     does. Several terminals may use the same broker login, on every plan: the limits are checked when
-    the credential is submitted. `farm_id` is optional: omitted, the platform chooses a farm and says
-    which on the answer; none fits is 409 `no_farm`, with `details.why` one of `no_usage` (no farm you
-    can use offers what this terminal needs), `no_region` (none in the server's region) or `no_room`.
-    `refresh_ms` faster than the farm's rate is 422 with `details.allowed`; with no farm named, only
-    farms that allow the rate are considered. A changed rate a cell cannot carry is the PATCH's 409
-    `no_room`; create queues the terminal for placement. The tenant's plan decides the farm: enterprise
-    and system tenants' terminals go to their own farms, standard tenants' to the shared farms. A named
-    farm outside the plan is 409 `farm_not_in_plan`; with no farm named the platform chooses within the
-    plan. A tenant already at its terminal quota is 409 `quota_exceeded` with `details {quota, in_use}`.
+    the credential is submitted. A tenant with its own farms (enterprise and system plans) names the
+    farm of every terminal: omitted, it is 422 `farm_required` with `details.farms` listing its farms
+    taking terminals. For a standard tenant `farm_id` is optional: omitted, the platform chooses a
+    shared farm and says which on the answer; none fits is 409 `no_farm`, with `details.why` one of
+    `no_usage` (no farm you can use offers what this terminal needs), `no_region` (none in the server's
+    region) or `no_room`. `refresh_ms` faster than the farm's rate is 422 with `details.allowed`; with
+    no farm named, only farms that allow the rate are considered. A changed rate a cell cannot carry is
+    the PATCH's 409 `no_room`; create queues the terminal for placement. The tenant's plan decides the
+    farm: enterprise and system tenants' terminals go to their own farms, standard tenants' to the
+    shared farms. A named farm outside the plan is 409 `farm_not_in_plan`; with no farm named a standard
+    tenant is given a shared farm. A tenant already at its terminal quota is 409 `quota_exceeded` with
+    `details {quota, in_use}`.
 
     Args:
         idempotency_key (str):
@@ -171,15 +177,18 @@ async def asyncio_detailed(
     that does not carry the usages (409), a redundancy the farm does not offer (409). The credential is
     submitted separately (`POST /terminals/{id}/credentials`), so a terminal can exist before its login
     does. Several terminals may use the same broker login, on every plan: the limits are checked when
-    the credential is submitted. `farm_id` is optional: omitted, the platform chooses a farm and says
-    which on the answer; none fits is 409 `no_farm`, with `details.why` one of `no_usage` (no farm you
-    can use offers what this terminal needs), `no_region` (none in the server's region) or `no_room`.
-    `refresh_ms` faster than the farm's rate is 422 with `details.allowed`; with no farm named, only
-    farms that allow the rate are considered. A changed rate a cell cannot carry is the PATCH's 409
-    `no_room`; create queues the terminal for placement. The tenant's plan decides the farm: enterprise
-    and system tenants' terminals go to their own farms, standard tenants' to the shared farms. A named
-    farm outside the plan is 409 `farm_not_in_plan`; with no farm named the platform chooses within the
-    plan. A tenant already at its terminal quota is 409 `quota_exceeded` with `details {quota, in_use}`.
+    the credential is submitted. A tenant with its own farms (enterprise and system plans) names the
+    farm of every terminal: omitted, it is 422 `farm_required` with `details.farms` listing its farms
+    taking terminals. For a standard tenant `farm_id` is optional: omitted, the platform chooses a
+    shared farm and says which on the answer; none fits is 409 `no_farm`, with `details.why` one of
+    `no_usage` (no farm you can use offers what this terminal needs), `no_region` (none in the server's
+    region) or `no_room`. `refresh_ms` faster than the farm's rate is 422 with `details.allowed`; with
+    no farm named, only farms that allow the rate are considered. A changed rate a cell cannot carry is
+    the PATCH's 409 `no_room`; create queues the terminal for placement. The tenant's plan decides the
+    farm: enterprise and system tenants' terminals go to their own farms, standard tenants' to the
+    shared farms. A named farm outside the plan is 409 `farm_not_in_plan`; with no farm named a standard
+    tenant is given a shared farm. A tenant already at its terminal quota is 409 `quota_exceeded` with
+    `details {quota, in_use}`.
 
     Args:
         idempotency_key (str):
@@ -217,15 +226,18 @@ async def asyncio(
     that does not carry the usages (409), a redundancy the farm does not offer (409). The credential is
     submitted separately (`POST /terminals/{id}/credentials`), so a terminal can exist before its login
     does. Several terminals may use the same broker login, on every plan: the limits are checked when
-    the credential is submitted. `farm_id` is optional: omitted, the platform chooses a farm and says
-    which on the answer; none fits is 409 `no_farm`, with `details.why` one of `no_usage` (no farm you
-    can use offers what this terminal needs), `no_region` (none in the server's region) or `no_room`.
-    `refresh_ms` faster than the farm's rate is 422 with `details.allowed`; with no farm named, only
-    farms that allow the rate are considered. A changed rate a cell cannot carry is the PATCH's 409
-    `no_room`; create queues the terminal for placement. The tenant's plan decides the farm: enterprise
-    and system tenants' terminals go to their own farms, standard tenants' to the shared farms. A named
-    farm outside the plan is 409 `farm_not_in_plan`; with no farm named the platform chooses within the
-    plan. A tenant already at its terminal quota is 409 `quota_exceeded` with `details {quota, in_use}`.
+    the credential is submitted. A tenant with its own farms (enterprise and system plans) names the
+    farm of every terminal: omitted, it is 422 `farm_required` with `details.farms` listing its farms
+    taking terminals. For a standard tenant `farm_id` is optional: omitted, the platform chooses a
+    shared farm and says which on the answer; none fits is 409 `no_farm`, with `details.why` one of
+    `no_usage` (no farm you can use offers what this terminal needs), `no_region` (none in the server's
+    region) or `no_room`. `refresh_ms` faster than the farm's rate is 422 with `details.allowed`; with
+    no farm named, only farms that allow the rate are considered. A changed rate a cell cannot carry is
+    the PATCH's 409 `no_room`; create queues the terminal for placement. The tenant's plan decides the
+    farm: enterprise and system tenants' terminals go to their own farms, standard tenants' to the
+    shared farms. A named farm outside the plan is 409 `farm_not_in_plan`; with no farm named a standard
+    tenant is given a shared farm. A tenant already at its terminal quota is 409 `quota_exceeded` with
+    `details {quota, in_use}`.
 
     Args:
         idempotency_key (str):

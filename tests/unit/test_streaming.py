@@ -133,7 +133,13 @@ async def test_the_upgrade_is_signed_like_every_other_request_and_points_at_the_
 
     assert transport.urls == ["wss://ws.dev.mfxhub.com/v1/stream"]
     signed = transport.headers[0]
-    assert set(signed) == {"X-MFX-Key", "X-MFX-Timestamp", "X-MFX-Nonce", "X-MFX-Signature"}
+    assert set(signed) == {
+        "X-MFX-Key",
+        "X-MFX-Timestamp",
+        "X-MFX-Nonce",
+        "X-MFX-Signature",
+        "User-Agent",  # the SDK's name, beside the signature (test_user_agent.py)
+    }
     assert signed["X-MFX-Key"] == client.key_id
     assert transport.last.closed, "leaving the block closes the socket"
 

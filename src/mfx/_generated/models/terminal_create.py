@@ -33,9 +33,10 @@ class TerminalCreate:
     Attributes:
         broker_id (UUID):
         server_id (UUID): Must belong to broker_id; an unsupported server is 422
-        farm_id (Union[Unset, UUID]): Optional. Omitted, the platform chooses: your own ACTIVE farms first, then shared
-            ones (GET /farms lists both), offering the usages this terminal needs, in the server's region, with room; the
-            oldest wins a tie. The choice is on the answer as `farm`. None fits is 409 no_farm
+        farm_id (Union[Unset, UUID]): The farm the terminal goes to. Required for a tenant with its own farms
+            (enterprise and system plans): omitted, it is 422 farm_required listing them. Optional for a standard tenant:
+            omitted, the platform chooses among the shared farms (GET /farms lists them) offering the usages this terminal
+            needs, with room; the oldest wins a tie. The choice is on the answer as `farm`. None fits is 409 no_farm
         streaming (Union[Unset, bool]): Publishes quotes (usage quote_streaming) Default: False.
         execution (Union[Unset, bool]): Accepts orders; needs a master credential Default: False.
         instruments (Union[Unset, list[str]]): Symbols to watch, in the broker's own names (e.g. EURUSD.sd). The farm's

@@ -12,6 +12,7 @@ from .account_profile_type_0_account_type import AccountProfileType0AccountType
 from .account_profile_type_0_margin_mode import AccountProfileType0MarginMode
 from .account_snapshot_message import AccountSnapshotMessage
 from .account_snapshot_type_0 import AccountSnapshotType0
+from .age import Age
 from .book_message import BookMessage
 from .broker_catalogue import BrokerCatalogue
 from .broker_catalogue_list import BrokerCatalogueList
@@ -105,6 +106,14 @@ from .expert_advisor_upload_files_item import ExpertAdvisorUploadFilesItem
 from .get_candles_tf import GetCandlesTf
 from .journal_line import JournalLine
 from .list_maintenance_state_item import ListMaintenanceStateItem
+from .list_risk_accounts_coverage import ListRiskAccountsCoverage
+from .list_risk_accounts_restriction import ListRiskAccountsRestriction
+from .list_risk_accounts_sort import ListRiskAccountsSort
+from .list_risk_challenge_accounts_rule import ListRiskChallengeAccountsRule
+from .list_risk_challenge_accounts_sort import ListRiskChallengeAccountsSort
+from .list_risk_challenge_accounts_state import ListRiskChallengeAccountsState
+from .list_risk_plans_state import ListRiskPlansState
+from .list_risk_policies_state import ListRiskPoliciesState
 from .list_terminals_state_item import ListTerminalsStateItem
 from .list_webhook_failures_state_item import ListWebhookFailuresStateItem
 from .maintenance_service import MaintenanceService
@@ -185,6 +194,184 @@ from .position_side import PositionSide
 from .position_trailing_stop_changed import PositionTrailingStopChanged
 from .position_trailing_stop_changed_state import PositionTrailingStopChangedState
 from .ref import Ref
+from .risk_account import RiskAccount
+from .risk_account_activation_state import RiskAccountActivationState
+from .risk_account_challenges_item import RiskAccountChallengesItem
+from .risk_account_exposure import RiskAccountExposure
+from .risk_account_exposure_by_symbol_item import RiskAccountExposureBySymbolItem
+from .risk_account_inputs import RiskAccountInputs
+from .risk_account_open_breaches_item import RiskAccountOpenBreachesItem
+from .risk_account_open_breaches_item_clears import RiskAccountOpenBreachesItemClears
+from .risk_account_page import RiskAccountPage
+from .risk_account_page_stats import RiskAccountPageStats
+from .risk_account_policy_type_0 import RiskAccountPolicyType0
+from .risk_account_restriction import RiskAccountRestriction
+from .risk_account_restriction_state import RiskAccountRestrictionState
+from .risk_action_completed import RiskActionCompleted
+from .risk_action_completed_accounts_item import RiskActionCompletedAccountsItem
+from .risk_action_completed_kind import RiskActionCompletedKind
+from .risk_action_completed_state import RiskActionCompletedState
+from .risk_action_completed_unresolved_item import RiskActionCompletedUnresolvedItem
+from .risk_action_kind import RiskActionKind
+from .risk_actions import RiskActions
+from .risk_actions_cancel_scope import RiskActionsCancelScope
+from .risk_actions_close_scope import RiskActionsCloseScope
+from .risk_activate import RiskActivate
+from .risk_activation_result import RiskActivationResult
+from .risk_activation_result_results_item import RiskActivationResultResultsItem
+from .risk_activation_result_results_item_outcome import (
+    RiskActivationResultResultsItemOutcome,
+)
+from .risk_activity import RiskActivity
+from .risk_activity_evidence import RiskActivityEvidence
+from .risk_activity_items_item import RiskActivityItemsItem
+from .risk_activity_items_item_outcome import RiskActivityItemsItemOutcome
+from .risk_activity_kind import RiskActivityKind
+from .risk_activity_page import RiskActivityPage
+from .risk_activity_policy_type_0 import RiskActivityPolicyType0
+from .risk_amount import RiskAmount
+from .risk_budget import RiskBudget
+from .risk_budget_kind import RiskBudgetKind
+from .risk_challenge import RiskChallenge
+from .risk_challenge_account import RiskChallengeAccount
+from .risk_challenge_account_detail import RiskChallengeAccountDetail
+from .risk_challenge_account_detail_result_type_0 import (
+    RiskChallengeAccountDetailResultType0,
+)
+from .risk_challenge_account_detail_state import RiskChallengeAccountDetailState
+from .risk_challenge_account_page import RiskChallengeAccountPage
+from .risk_challenge_account_result_type_0 import RiskChallengeAccountResultType0
+from .risk_challenge_account_state import RiskChallengeAccountState
+from .risk_challenge_counts import RiskChallengeCounts
+from .risk_challenge_create import RiskChallengeCreate
+from .risk_challenge_page import RiskChallengePage
+from .risk_challenge_rules import RiskChallengeRules
+from .risk_challenge_rules_daily_loss import RiskChallengeRulesDailyLoss
+from .risk_challenge_rules_daily_loss_basis import RiskChallengeRulesDailyLossBasis
+from .risk_challenge_rules_max_drawdown import RiskChallengeRulesMaxDrawdown
+from .risk_challenge_rules_max_drawdown_kind import RiskChallengeRulesMaxDrawdownKind
+from .risk_challenge_state import RiskChallengeState
+from .risk_check_request import RiskCheckRequest
+from .risk_check_result import RiskCheckResult
+from .risk_check_result_verdict import RiskCheckResultVerdict
+from .risk_clear import RiskClear
+from .risk_clear_rule import RiskClearRule
+from .risk_coverage import RiskCoverage
+from .risk_coverage_changed import RiskCoverageChanged
+from .risk_coverage_changed_from import RiskCoverageChangedFrom
+from .risk_coverage_changed_kind import RiskCoverageChangedKind
+from .risk_coverage_changed_to import RiskCoverageChangedTo
+from .risk_coverage_detector_type_1 import RiskCoverageDetectorType1
+from .risk_coverage_detector_type_2_type_1 import RiskCoverageDetectorType2Type1
+from .risk_coverage_detector_type_3_type_1 import RiskCoverageDetectorType3Type1
+from .risk_coverage_kind import RiskCoverageKind
+from .risk_coverage_kind_state import RiskCoverageKindState
+from .risk_coverage_summary import RiskCoverageSummary
+from .risk_coverage_summary_counts import RiskCoverageSummaryCounts
+from .risk_coverage_summary_counts_additional_property import (
+    RiskCoverageSummaryCountsAdditionalProperty,
+)
+from .risk_coverage_summary_not_healthy_item import RiskCoverageSummaryNotHealthyItem
+from .risk_daily_loss import RiskDailyLoss
+from .risk_daily_loss_basis import RiskDailyLossBasis
+from .risk_daily_loss_figure import RiskDailyLossFigure
+from .risk_daily_loss_figure_basis import RiskDailyLossFigureBasis
+from .risk_drawdown import RiskDrawdown
+from .risk_drawdown_figure import RiskDrawdownFigure
+from .risk_drawdown_figure_kind import RiskDrawdownFigureKind
+from .risk_drawdown_kind import RiskDrawdownKind
+from .risk_drawdown_peak_basis import RiskDrawdownPeakBasis
+from .risk_drawdown_peak_when import RiskDrawdownPeakWhen
+from .risk_enrol import RiskEnrol
+from .risk_equity_series import RiskEquitySeries
+from .risk_equity_series_points_item import RiskEquitySeriesPointsItem
+from .risk_exposure import RiskExposure
+from .risk_loss_at_stops import RiskLossAtStops
+from .risk_loss_at_stops_no_stop import RiskLossAtStopsNoStop
+from .risk_outcome import RiskOutcome
+from .risk_period import RiskPeriod
+from .risk_period_closed import RiskPeriodClosed
+from .risk_period_kind import RiskPeriodKind
+from .risk_period_state import RiskPeriodState
+from .risk_period_stats import RiskPeriodStats
+from .risk_plan import RiskPlan
+from .risk_plan_amend import RiskPlanAmend
+from .risk_plan_create import RiskPlanCreate
+from .risk_plan_page import RiskPlanPage
+from .risk_plan_state import RiskPlanState
+from .risk_plan_step import RiskPlanStep
+from .risk_plan_step_action import RiskPlanStepAction
+from .risk_plan_step_action_kind import RiskPlanStepActionKind
+from .risk_plan_step_action_pct_of_type_1 import RiskPlanStepActionPctOfType1
+from .risk_plan_step_action_pct_of_type_2_type_1 import (
+    RiskPlanStepActionPctOfType2Type1,
+)
+from .risk_plan_step_action_pct_of_type_3_type_1 import (
+    RiskPlanStepActionPctOfType3Type1,
+)
+from .risk_plan_step_event import RiskPlanStepEvent
+from .risk_plan_step_event_plan_state import RiskPlanStepEventPlanState
+from .risk_plan_step_event_state_type_1 import RiskPlanStepEventStateType1
+from .risk_plan_step_event_state_type_2_type_1 import RiskPlanStepEventStateType2Type1
+from .risk_plan_step_event_state_type_3_type_1 import RiskPlanStepEventStateType3Type1
+from .risk_plan_step_held_by import RiskPlanStepHeldBy
+from .risk_plan_step_spec import RiskPlanStepSpec
+from .risk_plan_step_spec_action import RiskPlanStepSpecAction
+from .risk_plan_step_spec_action_kind import RiskPlanStepSpecActionKind
+from .risk_plan_step_spec_action_pct_of_type_1 import RiskPlanStepSpecActionPctOfType1
+from .risk_plan_step_spec_action_pct_of_type_2_type_1 import (
+    RiskPlanStepSpecActionPctOfType2Type1,
+)
+from .risk_plan_step_spec_action_pct_of_type_3_type_1 import (
+    RiskPlanStepSpecActionPctOfType3Type1,
+)
+from .risk_plan_step_spec_held_by import RiskPlanStepSpecHeldBy
+from .risk_plan_step_spec_trigger import RiskPlanStepSpecTrigger
+from .risk_plan_step_spec_trigger_kind import RiskPlanStepSpecTriggerKind
+from .risk_plan_step_state import RiskPlanStepState
+from .risk_plan_step_trigger import RiskPlanStepTrigger
+from .risk_plan_step_trigger_kind import RiskPlanStepTriggerKind
+from .risk_policy import RiskPolicy
+from .risk_policy_accounts_item import RiskPolicyAccountsItem
+from .risk_policy_accounts_item_state import RiskPolicyAccountsItemState
+from .risk_policy_activated import RiskPolicyActivated
+from .risk_policy_create import RiskPolicyCreate
+from .risk_policy_page import RiskPolicyPage
+from .risk_policy_state import RiskPolicyState
+from .risk_policy_version import RiskPolicyVersion
+from .risk_policy_version_changes_item import RiskPolicyVersionChangesItem
+from .risk_policy_version_create import RiskPolicyVersionCreate
+from .risk_policy_version_page import RiskPolicyVersionPage
+from .risk_preview import RiskPreview
+from .risk_preview_inputs import RiskPreviewInputs
+from .risk_preview_reason_type_1 import RiskPreviewReasonType1
+from .risk_preview_reason_type_2_type_1 import RiskPreviewReasonType2Type1
+from .risk_preview_reason_type_3_type_1 import RiskPreviewReasonType3Type1
+from .risk_preview_request import RiskPreviewRequest
+from .risk_preview_request_assumptions import RiskPreviewRequestAssumptions
+from .risk_preview_request_entry_type import RiskPreviewRequestEntryType
+from .risk_preview_request_side import RiskPreviewRequestSide
+from .risk_preview_verdict import RiskPreviewVerdict
+from .risk_profile import RiskProfile
+from .risk_programme_result import RiskProgrammeResult
+from .risk_programme_result_result import RiskProgrammeResultResult
+from .risk_proposed_order import RiskProposedOrder
+from .risk_proposed_order_side import RiskProposedOrderSide
+from .risk_proposed_order_type import RiskProposedOrderType
+from .risk_reason import RiskReason
+from .risk_reset import RiskReset
+from .risk_rule_check import RiskRuleCheck
+from .risk_rule_check_verdict import RiskRuleCheckVerdict
+from .risk_rule_event import RiskRuleEvent
+from .risk_rule_event_cleared_by_type_1 import RiskRuleEventClearedByType1
+from .risk_rule_event_cleared_by_type_2_type_1 import RiskRuleEventClearedByType2Type1
+from .risk_rule_event_cleared_by_type_3_type_1 import RiskRuleEventClearedByType3Type1
+from .risk_rule_event_level import RiskRuleEventLevel
+from .risk_rules import RiskRules
+from .risk_schedule import RiskSchedule
+from .risk_schedule_mode import RiskScheduleMode
+from .risk_schedule_windows_item import RiskScheduleWindowsItem
+from .risk_schedule_windows_item_days_item import RiskScheduleWindowsItemDaysItem
 from .spread import Spread
 from .spread_list import SpreadList
 from .symbol import Symbol
@@ -422,6 +609,7 @@ __all__ = (
     "AccountProfileType0MarginMode",
     "AccountSnapshotMessage",
     "AccountSnapshotType0",
+    "Age",
     "BookMessage",
     "BrokerCatalogue",
     "BrokerCatalogueList",
@@ -499,6 +687,14 @@ __all__ = (
     "GetCandlesTf",
     "JournalLine",
     "ListMaintenanceStateItem",
+    "ListRiskAccountsCoverage",
+    "ListRiskAccountsRestriction",
+    "ListRiskAccountsSort",
+    "ListRiskChallengeAccountsRule",
+    "ListRiskChallengeAccountsSort",
+    "ListRiskChallengeAccountsState",
+    "ListRiskPlansState",
+    "ListRiskPoliciesState",
     "ListTerminalsStateItem",
     "ListWebhookFailuresStateItem",
     "MaintenanceService",
@@ -571,6 +767,170 @@ __all__ = (
     "PositionTrailingStopChanged",
     "PositionTrailingStopChangedState",
     "Ref",
+    "RiskAccount",
+    "RiskAccountActivationState",
+    "RiskAccountChallengesItem",
+    "RiskAccountExposure",
+    "RiskAccountExposureBySymbolItem",
+    "RiskAccountInputs",
+    "RiskAccountOpenBreachesItem",
+    "RiskAccountOpenBreachesItemClears",
+    "RiskAccountPage",
+    "RiskAccountPageStats",
+    "RiskAccountPolicyType0",
+    "RiskAccountRestriction",
+    "RiskAccountRestrictionState",
+    "RiskActionCompleted",
+    "RiskActionCompletedAccountsItem",
+    "RiskActionCompletedKind",
+    "RiskActionCompletedState",
+    "RiskActionCompletedUnresolvedItem",
+    "RiskActionKind",
+    "RiskActions",
+    "RiskActionsCancelScope",
+    "RiskActionsCloseScope",
+    "RiskActivate",
+    "RiskActivationResult",
+    "RiskActivationResultResultsItem",
+    "RiskActivationResultResultsItemOutcome",
+    "RiskActivity",
+    "RiskActivityEvidence",
+    "RiskActivityItemsItem",
+    "RiskActivityItemsItemOutcome",
+    "RiskActivityKind",
+    "RiskActivityPage",
+    "RiskActivityPolicyType0",
+    "RiskAmount",
+    "RiskBudget",
+    "RiskBudgetKind",
+    "RiskChallenge",
+    "RiskChallengeAccount",
+    "RiskChallengeAccountDetail",
+    "RiskChallengeAccountDetailResultType0",
+    "RiskChallengeAccountDetailState",
+    "RiskChallengeAccountPage",
+    "RiskChallengeAccountResultType0",
+    "RiskChallengeAccountState",
+    "RiskChallengeCounts",
+    "RiskChallengeCreate",
+    "RiskChallengePage",
+    "RiskChallengeRules",
+    "RiskChallengeRulesDailyLoss",
+    "RiskChallengeRulesDailyLossBasis",
+    "RiskChallengeRulesMaxDrawdown",
+    "RiskChallengeRulesMaxDrawdownKind",
+    "RiskChallengeState",
+    "RiskCheckRequest",
+    "RiskCheckResult",
+    "RiskCheckResultVerdict",
+    "RiskClear",
+    "RiskClearRule",
+    "RiskCoverage",
+    "RiskCoverageChanged",
+    "RiskCoverageChangedFrom",
+    "RiskCoverageChangedKind",
+    "RiskCoverageChangedTo",
+    "RiskCoverageDetectorType1",
+    "RiskCoverageDetectorType2Type1",
+    "RiskCoverageDetectorType3Type1",
+    "RiskCoverageKind",
+    "RiskCoverageKindState",
+    "RiskCoverageSummary",
+    "RiskCoverageSummaryCounts",
+    "RiskCoverageSummaryCountsAdditionalProperty",
+    "RiskCoverageSummaryNotHealthyItem",
+    "RiskDailyLoss",
+    "RiskDailyLossBasis",
+    "RiskDailyLossFigure",
+    "RiskDailyLossFigureBasis",
+    "RiskDrawdown",
+    "RiskDrawdownFigure",
+    "RiskDrawdownFigureKind",
+    "RiskDrawdownKind",
+    "RiskDrawdownPeakBasis",
+    "RiskDrawdownPeakWhen",
+    "RiskEnrol",
+    "RiskEquitySeries",
+    "RiskEquitySeriesPointsItem",
+    "RiskExposure",
+    "RiskLossAtStops",
+    "RiskLossAtStopsNoStop",
+    "RiskOutcome",
+    "RiskPeriod",
+    "RiskPeriodClosed",
+    "RiskPeriodKind",
+    "RiskPeriodState",
+    "RiskPeriodStats",
+    "RiskPlan",
+    "RiskPlanAmend",
+    "RiskPlanCreate",
+    "RiskPlanPage",
+    "RiskPlanState",
+    "RiskPlanStep",
+    "RiskPlanStepAction",
+    "RiskPlanStepActionKind",
+    "RiskPlanStepActionPctOfType1",
+    "RiskPlanStepActionPctOfType2Type1",
+    "RiskPlanStepActionPctOfType3Type1",
+    "RiskPlanStepEvent",
+    "RiskPlanStepEventPlanState",
+    "RiskPlanStepEventStateType1",
+    "RiskPlanStepEventStateType2Type1",
+    "RiskPlanStepEventStateType3Type1",
+    "RiskPlanStepHeldBy",
+    "RiskPlanStepSpec",
+    "RiskPlanStepSpecAction",
+    "RiskPlanStepSpecActionKind",
+    "RiskPlanStepSpecActionPctOfType1",
+    "RiskPlanStepSpecActionPctOfType2Type1",
+    "RiskPlanStepSpecActionPctOfType3Type1",
+    "RiskPlanStepSpecHeldBy",
+    "RiskPlanStepSpecTrigger",
+    "RiskPlanStepSpecTriggerKind",
+    "RiskPlanStepState",
+    "RiskPlanStepTrigger",
+    "RiskPlanStepTriggerKind",
+    "RiskPolicy",
+    "RiskPolicyAccountsItem",
+    "RiskPolicyAccountsItemState",
+    "RiskPolicyActivated",
+    "RiskPolicyCreate",
+    "RiskPolicyPage",
+    "RiskPolicyState",
+    "RiskPolicyVersion",
+    "RiskPolicyVersionChangesItem",
+    "RiskPolicyVersionCreate",
+    "RiskPolicyVersionPage",
+    "RiskPreview",
+    "RiskPreviewInputs",
+    "RiskPreviewReasonType1",
+    "RiskPreviewReasonType2Type1",
+    "RiskPreviewReasonType3Type1",
+    "RiskPreviewRequest",
+    "RiskPreviewRequestAssumptions",
+    "RiskPreviewRequestEntryType",
+    "RiskPreviewRequestSide",
+    "RiskPreviewVerdict",
+    "RiskProfile",
+    "RiskProgrammeResult",
+    "RiskProgrammeResultResult",
+    "RiskProposedOrder",
+    "RiskProposedOrderSide",
+    "RiskProposedOrderType",
+    "RiskReason",
+    "RiskReset",
+    "RiskRuleCheck",
+    "RiskRuleCheckVerdict",
+    "RiskRuleEvent",
+    "RiskRuleEventClearedByType1",
+    "RiskRuleEventClearedByType2Type1",
+    "RiskRuleEventClearedByType3Type1",
+    "RiskRuleEventLevel",
+    "RiskRules",
+    "RiskSchedule",
+    "RiskScheduleMode",
+    "RiskScheduleWindowsItem",
+    "RiskScheduleWindowsItemDaysItem",
     "Spread",
     "SpreadList",
     "Symbol",

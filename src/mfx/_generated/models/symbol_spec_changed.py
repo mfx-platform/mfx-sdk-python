@@ -48,10 +48,13 @@ class SymbolSpecChanged:
                 description: the broker's long name changed; identity: path, isin, exchange, category, currency_base, basis or
                 calc_mode changed. MetaTrader has no rename: a renamed symbol is removed and added, and isin is how the two may
                 be matched
-            before (Union['SymbolSpecChangedBeforeType0', None]): The spec before (digits, contract_size, volume_min,
-                volume_step, volume_max, trade_mode, margin_currency, pip_value_per_lot, trade_sessions, description), decimals
-                as strings
-            after (Union['SymbolSpecChangedAfterType0', None]): The spec after, same shape; null for a removal
+            before (Union['SymbolSpecChangedBeforeType0', None]): The symbol before (digits, contract_size, volume_min,
+                volume_step, volume_max, trade_mode, margin_currency, pip_value_per_lot, trade_sessions, description, the broker
+                facts and the identity fields), decimals as strings. By change: added, null; came_back, as last stored before it
+                vanished; spec, trading, sessions, description and identity, as stored before the report; removed, as last
+                stored
+            after (Union['SymbolSpecChangedAfterType0', None]): The symbol after, same shape, as the report left it; null
+                for a removal
             observed_at (datetime.datetime): When the terminal read its list
     """
 

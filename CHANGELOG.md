@@ -7,6 +7,14 @@ surface; each such change is listed under **Changed** with what to do.
 
 ## Unreleased
 
+## 0.11.1
+
+### Added
+
+- Every request the SDK sends, and the stream's upgrade, carries
+  `User-Agent: mfx-sdk-python/<version>`, built from the package's own version. It replaced the
+  HTTP library's default name, so MFX Hub can tell which SDK and which version made each call.
+
 ## 0.11.0
 
 ### Added

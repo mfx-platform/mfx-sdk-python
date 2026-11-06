@@ -11,7 +11,7 @@ T = TypeVar("T", bound="SymbolSpecChangedAfterType0")
 
 @_attrs_define
 class SymbolSpecChangedAfterType0:
-    """The spec after, same shape; null for a removal"""
+    """The symbol after, same shape, as the report left it; null for a removal"""
 
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 

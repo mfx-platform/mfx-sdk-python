@@ -28,6 +28,7 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
 from mfx._generated.client import Client as GeneratedClient
 from mfx._generated.types import Response as GeneratedResponse
+from mfx._version import USER_AGENT
 from mfx.accounts import Accounts
 from mfx.catalog import Catalog
 from mfx.errors import (
@@ -128,6 +129,7 @@ class MfxClient:
         self._http = httpx.AsyncClient(
             base_url=base_url.rstrip("/"),
             auth=self._auth,
+            headers={"User-Agent": USER_AGENT},
             timeout=timeout_s,
             transport=transport,
             event_hooks={"response": [self._observe]},

@@ -11,8 +11,10 @@ T = TypeVar("T", bound="SymbolSpecChangedBeforeType0")
 
 @_attrs_define
 class SymbolSpecChangedBeforeType0:
-    """The spec before (digits, contract_size, volume_min, volume_step, volume_max, trade_mode, margin_currency,
-    pip_value_per_lot, trade_sessions, description), decimals as strings
+    """The symbol before (digits, contract_size, volume_min, volume_step, volume_max, trade_mode, margin_currency,
+    pip_value_per_lot, trade_sessions, description, the broker facts and the identity fields), decimals as strings. By
+    change: added, null; came_back, as last stored before it vanished; spec, trading, sessions, description and
+    identity, as stored before the report; removed, as last stored
 
     """
 
