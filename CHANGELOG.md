@@ -7,6 +7,18 @@ surface; each such change is listed under **Changed** with what to do.
 
 ## Unreleased
 
+## 0.12.0
+
+### Added
+
+- `mfx.event_of(message)` reads a stream message as a typed event, or None for any other type:
+  `OrderPlaced`, `OrderModified` and `OrderClosed` (with `reason` and, on a fill,
+  `position_ticket`), `PositionOpened` (with `order_ticket`), `PositionModified`,
+  `PositionClosed`, `TerminalStateChanged` and, from a `candles:` channel, `CandleClosed`. Ids are
+  UUIDs, tickets integers, prices, volumes and money Decimals, times aware UTC datetimes. The
+  platform's own words (side, order type, reasons, states, timeframe) stay text, so a word added
+  later still reads.
+
 ## 0.11.1
 
 ### Added

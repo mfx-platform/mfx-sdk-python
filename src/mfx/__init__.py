@@ -41,6 +41,17 @@ from mfx.errors import (
     UpstreamError,
     ValidationError,
 )
+from mfx.events import (
+    CandleClosed,
+    OrderClosed,
+    OrderModified,
+    OrderPlaced,
+    PositionClosed,
+    PositionModified,
+    PositionOpened,
+    TerminalStateChanged,
+    event_of,
+)
 from mfx.expert_advisors import EaRecord, EaTelemetry, EaTelemetryLost, telemetry_of
 from mfx.live_account import AccountView, LiveAccount
 from mfx.logging import MfxLogger, configure_logging, get_logger
@@ -62,6 +73,15 @@ from mfx.terminals import OFFLINE_IS_TEMPORARY, is_usable
 from mfx.webhooks import WebhookSignatureError, verify
 
 __all__ = [
+    "event_of",
+    "TerminalStateChanged",
+    "PositionOpened",
+    "PositionModified",
+    "PositionClosed",
+    "OrderPlaced",
+    "OrderModified",
+    "OrderClosed",
+    "CandleClosed",
     "OFFLINE_IS_TEMPORARY",
     "AuthError",
     "Budget",
