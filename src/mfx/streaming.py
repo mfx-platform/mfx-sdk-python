@@ -305,6 +305,8 @@ class MfxStream:
         self._max_reconnects = max_reconnects
         self._state = _State()
         self._connection: StreamConnection | None = None
+        #: Set by ``aclose``: a read that wakes to it ends, and a reconnect under way is given up.
+        self._closed = False
 
     @property
     def stats(self) -> StreamStats:
@@ -354,6 +356,7 @@ class MfxStream:
         await self._send({"op": "unsubscribe", "ch": channel})
 
     async def __aenter__(self) -> Self:
+        self._closed = False
         await self._open()
         return self
 
@@ -366,7 +369,11 @@ class MfxStream:
         await self.aclose()
 
     async def aclose(self) -> None:
-        """Close the stream's connection, if one is open. ``async with`` does this for you."""
+        """Close the stream for good, if it is open. ``async with`` does this for you.
+
+        A read that is waiting ends with nothing, and a reconnect under way is given up: closing
+        is the caller's decision, not a drop to recover from."""
+        self._closed = True
         connection, self._connection = self._connection, None
         if connection is not None:
             await connection.close()
@@ -394,7 +401,7 @@ class MfxStream:
             try:
                 raw = await connection.recv()
             except StreamClosed as closed:
-                if not await self._reopen(closed):
+                if self._closed or not await self._reopen(closed):
                     return None
                 continue
             event = self._interpret(raw)
@@ -500,9 +507,19 @@ class MfxStream:
         # The client's own jittered backoff, so the stream and the read path cannot disagree about
         # how hard this tenant leans on MFX while it is unwell.
         await self._client.pause(self._client.backoff_for(self._state.stats.reconnects))
+        if self._ended():  # closed while it waited
+            return False
         await self._open()
+        if self._ended():  # closed while the new connection was opening
+            await self.aclose()
+            return False
         await self._resubscribe()
         return True
+
+    def _ended(self) -> bool:
+        """Whether the caller closed the stream: read afresh, after an await, where a type checker
+        would otherwise take the flag to be what it was before."""
+        return self._closed
 
     async def _resubscribe(self) -> None:
         """Ask for everything again — resuming what replays, plain subscribing what does not."""

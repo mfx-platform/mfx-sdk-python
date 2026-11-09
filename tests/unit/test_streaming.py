@@ -8,6 +8,7 @@ admits it missed.
 
 from __future__ import annotations
 
+import asyncio
 import json
 from collections.abc import Mapping
 from typing import Any
@@ -75,6 +76,25 @@ class FakeTransport:
     @property
     def last(self) -> FakeSocket:
         return self.sockets[-1]
+
+
+class QuietSocket(FakeSocket):
+    """A connection the platform has nothing more to say on: a read waits until it is closed, and
+    then raises the close, as a real socket does."""
+
+    def __init__(self, frames: list[Any] | None = None) -> None:
+        super().__init__(frames or [])
+        self._shut = asyncio.Event()
+
+    async def recv(self) -> str:
+        if self._frames:
+            return await super().recv()
+        await self._shut.wait()
+        raise StreamClosed(1000, "closed by us")
+
+    async def close(self) -> None:
+        await super().close()
+        self._shut.set()
 
 
 def tick(channel: str, seq: int, bid: str = "1.09431") -> dict[str, Any]:
@@ -582,3 +602,58 @@ async def test_an_error_about_the_connection_is_still_raised(client: MfxClient) 
         with pytest.raises(MfxApiError, match="gone") as raised:
             await collect(stream, 3)
     assert raised.value.code == "auth_error"
+
+
+async def test_closing_the_stream_ends_a_waiting_read_and_a_reconnect_under_way(
+    client: MfxClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Given a stream with a read waiting on a quiet connection, one that has just lost its
+    connection and is waiting to reconnect, and one whose reconnect is opening
+    When the caller closes the stream
+    Then the waiting read ends with nothing, the reconnect is given up, and no connection is
+    opened (or the one being opened is closed) in place of the one the caller closed."""
+
+    # A read waiting on a quiet connection.
+    class Quiet(FakeTransport):
+        async def __call__(self, url: str, headers: Mapping[str, str]) -> FakeSocket:
+            frames = self._pending.pop(0) if self._pending else []
+            socket = QuietSocket(frames)
+            self.sockets.append(socket)
+            return socket
+
+    transport = Quiet([ack(Channel.EVENTS)])
+    async with client.stream(connect=transport, max_reconnects=3) as stream:
+        await stream.subscribe(Channel.EVENTS)
+        waiting = asyncio.ensure_future(anext(aiter(stream)))
+        await asyncio.sleep(0)
+        await stream.aclose()
+        with pytest.raises(StopAsyncIteration):
+            await asyncio.wait_for(waiting, timeout=2)
+    assert len(transport.sockets) == 1
+    assert stream.stats.reconnects == 0
+
+    # A connection lost, and the caller closes the stream while it waits to reconnect.
+    gone = FakeTransport([StreamClosed(4009, "lifetime reached")])
+    async with client.stream(connect=gone, max_reconnects=3) as stream:
+
+        async def close_while_waiting(_seconds: float) -> None:
+            await stream.aclose()
+
+        monkeypatch.setattr(client, "pause", close_while_waiting)
+        assert [m async for m in stream] == []
+    assert len(gone.sockets) == 1
+
+    # The caller closes the stream while the new connection is opening.
+    class Opening(FakeTransport):
+        async def __call__(self, url: str, headers: Mapping[str, str]) -> FakeSocket:
+            socket = await super().__call__(url, headers)
+            if len(self.sockets) == 2:  # noqa: PLR2004 - the reconnect
+                await stream.aclose()
+            return socket
+
+    opening = Opening([StreamClosed(4009, "lifetime reached")], [ack(Channel.EVENTS)])
+    monkeypatch.undo()
+    async with client.stream(connect=opening, max_reconnects=3) as stream:
+        assert [m async for m in stream] == []
+    assert len(opening.sockets) == 2
+    assert opening.sockets[1].closed

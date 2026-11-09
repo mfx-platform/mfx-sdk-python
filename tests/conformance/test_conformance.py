@@ -114,7 +114,30 @@ async def _call(client: mfx.MfxClient, op: str, args: dict[str, Any]) -> dict[st
         return {"bid": quote.bid, "ask": quote.ask, "age_s": quote.age_s, "state": str(quote.state)}
     if op == "stream.read":
         return await asyncio.wait_for(_read_stream(client, a["channels"], a["count"]), timeout=15)
+    if op == "stream.close_waiting":
+        return await asyncio.wait_for(_close_waiting(client, a["channels"]), timeout=15)
     raise AssertionError(f"this runner does not know the operation {op!r}")
+
+
+async def _close_waiting(client: mfx.MfxClient, channels: list[str]) -> dict[str, Any]:
+    """Leave a read waiting on a quiet stream, close the stream, and see whether the read ended.
+
+    The read has ended when it finishes within 2 s with nothing: no message, no error."""
+    async with client.stream(max_reconnects=3) as stream:
+        for channel in channels:
+            await stream.subscribe(channel)
+        waiting = asyncio.ensure_future(anext(aiter(stream)))
+        await asyncio.sleep(0.1)
+        await stream.aclose()
+        try:
+            await asyncio.wait_for(waiting, timeout=2)
+            ended = False  # it brought back something: that is not the end
+        except StopAsyncIteration:
+            ended = True
+        except (TimeoutError, Exception):
+            ended = False
+        stats = stream.stats
+    return {"ended": ended, "reconnects": stats.reconnects}
 
 
 async def _read_stream(client: mfx.MfxClient, channels: list[str], count: int) -> dict[str, Any]:

@@ -7,6 +7,19 @@ surface; each such change is listed under **Changed** with what to do.
 
 ## Unreleased
 
+## 0.12.1
+
+### Fixed
+
+- `stream.aclose()` ends the stream for good. A read waiting for a message (`async for`, or
+  `anext`) ends with nothing, and a reconnect under way is given up. Before, closing while a read
+  waited made the stream reconnect and keep delivering, so a script that closed its stream did not
+  end.
+
+### Changed
+
+- The SDK passes the shared SDK test suite 0.4.0, which adds four stream cases.
+
 ## 0.12.0
 
 ### Added
