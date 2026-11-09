@@ -8,6 +8,7 @@ from typing import (
     Optional,
     TextIO,
     TypeVar,
+    Union,
     cast,
 )
 
@@ -19,6 +20,7 @@ from ..models.usage_plan import UsagePlan
 from ..types import UNSET, Unset
 
 if TYPE_CHECKING:
+    from ..models.copy_usage import CopyUsage
     from ..models.usage_farms_item import UsageFarmsItem
     from ..models.usage_key import UsageKey
     from ..models.usage_lifecycle import UsageLifecycle
@@ -47,6 +49,9 @@ class Usage:
                 detach, drain) is refused by.
             webhooks (UsageWebhooks):
             as_of (datetime.datetime):
+            copy (Union[Unset, CopyUsage]): Copy Trading's limits of your plan. Copied orders are counted here and are
+                limited by these, not by commands_per_s: one leader deal may be copied to more followers at once than the
+                command burst allows.
     """
 
     plan: UsagePlan
@@ -57,9 +62,11 @@ class Usage:
     lifecycle: "UsageLifecycle"
     webhooks: "UsageWebhooks"
     as_of: datetime.datetime
+    copy: Union[Unset, "CopyUsage"] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
+        from ..models.copy_usage import CopyUsage
         from ..models.usage_farms_item import UsageFarmsItem
         from ..models.usage_key import UsageKey
         from ..models.usage_lifecycle import UsageLifecycle
@@ -86,6 +93,10 @@ class Usage:
 
         as_of = self.as_of.isoformat()
 
+        copy: Union[Unset, dict[str, Any]] = UNSET
+        if not isinstance(self.copy, Unset):
+            copy = self.copy.to_dict()
+
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
@@ -100,11 +111,14 @@ class Usage:
                 "as_of": as_of,
             }
         )
+        if copy is not UNSET:
+            field_dict["copy"] = copy
 
         return field_dict
 
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
+        from ..models.copy_usage import CopyUsage
         from ..models.usage_farms_item import UsageFarmsItem
         from ..models.usage_key import UsageKey
         from ..models.usage_lifecycle import UsageLifecycle
@@ -134,6 +148,13 @@ class Usage:
 
         as_of = isoparse(d.pop("as_of"))
 
+        _copy = d.pop("copy", UNSET)
+        copy: Union[Unset, CopyUsage]
+        if isinstance(_copy, Unset):
+            copy = UNSET
+        else:
+            copy = CopyUsage.from_dict(_copy)
+
         usage = cls(
             plan=plan,
             key=key,
@@ -143,6 +164,7 @@ class Usage:
             lifecycle=lifecycle,
             webhooks=webhooks,
             as_of=as_of,
+            copy=copy,
         )
 
         usage.additional_properties = d

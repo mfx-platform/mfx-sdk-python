@@ -25,8 +25,9 @@ class TerminalRestart:
         reason (str): Why; written to the audit log and sent to the cell
         queue (Union[Unset, bool]): When the ask is valid and refused only because the platform is busy (rule 2
             cooldown, 4 tenant rate, 5 tenant concurrency, 6 farm capacity), hold it and start it when it can, instead of
-            answering 429. The answer is then 202 with `state: QUEUED` and where it waits. Without it the 429 stays, as
-            before. A hold that could not end before the queue's deadline is refused at once either way Default: False.
+            answering 429. The answer is then 202 with `state: QUEUED` and where it waits. A valid ask always enters the
+            queue unless you send `false`, which keeps the 429 (orchestrator: requests enter the queue at once). A hold that
+            could not end before the queue's deadline is refused at once either way Default: True.
         confirm_open_positions (Union[Unset, bool]): Rule 3: required true when the terminal has open positions, or
             while the platform cannot yet tell (until the account's first snapshot has arrived), and only while the
             platform's open-position confirmation setting is on (it is off unless an operator turns it on). Off, it is not
@@ -34,7 +35,7 @@ class TerminalRestart:
     """
 
     reason: str
-    queue: Union[Unset, bool] = False
+    queue: Union[Unset, bool] = True
     confirm_open_positions: Union[Unset, bool] = False
 
     def to_dict(self) -> dict[str, Any]:

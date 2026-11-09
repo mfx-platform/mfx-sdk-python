@@ -2,6 +2,7 @@ from enum import Enum
 
 
 class OperationQueueHeldBy(str, Enum):
+    CELL_SLOTS = "cell_slots"
     COOLDOWN = "cooldown"
     FARM_CAPACITY = "farm_capacity"
     TENANT_CONCURRENCY = "tenant_concurrency"

@@ -106,7 +106,49 @@ def dropped_schemas(spec: dict[str, Any], generated: Path) -> list[str]:
     models = generated / "models"
     present = {path.stem for path in models.glob("*.py")} if models.is_dir() else set()
     declared = (spec.get("components") or {}).get("schemas") or {}
-    return sorted(name for name in declared if _module_name(name) not in present)
+    return sorted(
+        name
+        for name, schema in declared.items()
+        if not _inlined_alias(schema) and _module_name(name) not in present
+    )
+
+
+#: Scalar types the generator inlines where a `$ref` to them is used, writing no module.
+_SCALARS = frozenset({"string", "number", "integer", "boolean"})
+
+
+def _inlined_alias(schema: Any) -> bool:
+    """A named shape the generator inlines at each `$ref` instead of writing a module for it.
+
+    Two shapes, and only these. A scalar with no `enum`, such as `CopyDecimal` (a pattern string),
+    becomes the plain type. A bare union, a `oneOf` or `anyOf` of `$ref`s and nothing else, such as
+    `CopyExternalSignal`, becomes a `Union` of the members' own models. Neither is a dropped schema.
+    An `enum` still gets its own module, so it is still checked, and so is an object, an `allOf`,
+    or a `oneOf` beside properties or of inline members.
+    """
+    if not isinstance(schema, dict):
+        return False
+    if schema.get("type") in _SCALARS:
+        return "enum" not in schema
+    return _bare_union(schema)
+
+
+#: Keys a bare union may carry beside its `oneOf` or `anyOf`: text, and nothing that shapes it.
+_UNION_NOTES = frozenset({"description", "title", "discriminator", "nullable", "example"})
+
+
+def _bare_union(schema: dict[str, Any]) -> bool:
+    unions = [key for key in ("oneOf", "anyOf") if key in schema]
+    if len(unions) != 1:
+        return False
+    members = schema[unions[0]]
+    extra = set(schema) - {unions[0]} - _UNION_NOTES
+    return (
+        not extra
+        and isinstance(members, list)
+        and bool(members)
+        and all(isinstance(m, dict) and set(m) == {"$ref"} for m in members)
+    )
 
 
 def _module_name(schema: str) -> str:

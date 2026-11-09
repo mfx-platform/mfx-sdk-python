@@ -50,6 +50,7 @@ if TYPE_CHECKING:
     from ..models.tenant_terminal_conditions import TenantTerminalConditions
     from ..models.tenant_terminal_ha import TenantTerminalHa
     from ..models.tenant_terminal_labels import TenantTerminalLabels
+    from ..models.terminal_queue import TerminalQueue
 
 
 T = TypeVar("T", bound="TenantTerminal")
@@ -69,7 +70,10 @@ class TenantTerminal:
             it comes back by itself, or is moved after 15 minutes. DRAINED: you drained it; stopped and not billed, keeping
             its id, account and settings until you resume or retire it. PARKED: your account is suspended and its grace
             period ended; the terminal is stopped and keeps its settings, its place and its login. It returns to LOGGING_IN
-            by itself when your account is reinstated, or goes to DRAINING when it is retired.
+            by itself when your account is reinstated, or goes to DRAINING when it is retired. QUEUED: placed on a cell and
+            waiting for its turn to start. A cell starts terminals a few at a time so that the ones already running are not
+            slowed; `queue` says your place, when it is expected to start and why it waits. It is not trading yet; it starts
+            by itself.
         instruments (list[str]):
         created_at (datetime.datetime):
         same_login_terminals (Union[None, Unset, int]): How many of YOUR live terminals use this terminal's broker
@@ -84,6 +88,8 @@ class TenantTerminal:
         login_masked (Union[None, Unset, str]): e.g. ****3456; null until a credential is submitted
         offline_reason (Union[None, TenantTerminalOfflineReasonType1, TenantTerminalOfflineReasonType2Type1,
             TenantTerminalOfflineReasonType3Type1, Unset]): Why an OFFLINE terminal is offline; null in every other state
+        queue (Union['TerminalQueue', None, Unset]): Where a QUEUED terminal waits for its start: your place, when it is
+            expected to start and why it waits. Null in every other state
         state_since (Union[None, Unset, datetime.datetime]): When it entered this state (its creation when it has not
             moved)
         state_expected_s (Union[None, Unset, int]): How long this state usually takes; null for a settled state
@@ -127,6 +133,7 @@ class TenantTerminal:
         TenantTerminalOfflineReasonType3Type1,
         Unset,
     ] = UNSET
+    queue: Union["TerminalQueue", None, Unset] = UNSET
     state_since: Union[None, Unset, datetime.datetime] = UNSET
     state_expected_s: Union[None, Unset, int] = UNSET
     conditions: Union[Unset, "TenantTerminalConditions"] = UNSET
@@ -151,6 +158,7 @@ class TenantTerminal:
         from ..models.tenant_terminal_conditions import TenantTerminalConditions
         from ..models.tenant_terminal_ha import TenantTerminalHa
         from ..models.tenant_terminal_labels import TenantTerminalLabels
+        from ..models.terminal_queue import TerminalQueue
 
         id = str(self.id)
 
@@ -205,6 +213,14 @@ class TenantTerminal:
             offline_reason = self.offline_reason.value
         else:
             offline_reason = self.offline_reason
+
+        queue: Union[None, Unset, dict[str, Any]]
+        if isinstance(self.queue, Unset):
+            queue = UNSET
+        elif isinstance(self.queue, TerminalQueue):
+            queue = self.queue.to_dict()
+        else:
+            queue = self.queue
 
         state_since: Union[None, Unset, str]
         if isinstance(self.state_since, Unset):
@@ -293,6 +309,8 @@ class TenantTerminal:
             field_dict["login_masked"] = login_masked
         if offline_reason is not UNSET:
             field_dict["offline_reason"] = offline_reason
+        if queue is not UNSET:
+            field_dict["queue"] = queue
         if state_since is not UNSET:
             field_dict["state_since"] = state_since
         if state_expected_s is not UNSET:
@@ -324,6 +342,7 @@ class TenantTerminal:
         from ..models.tenant_terminal_conditions import TenantTerminalConditions
         from ..models.tenant_terminal_ha import TenantTerminalHa
         from ..models.tenant_terminal_labels import TenantTerminalLabels
+        from ..models.terminal_queue import TerminalQueue
 
         d = dict(src_dict)
         id = UUID(d.pop("id"))
@@ -461,6 +480,23 @@ class TenantTerminal:
             )
 
         offline_reason = _parse_offline_reason(d.pop("offline_reason", UNSET))
+
+        def _parse_queue(data: object) -> Union["TerminalQueue", None, Unset]:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, dict):
+                    raise TypeError()
+                queue_type_0 = TerminalQueue.from_dict(data)
+
+                return queue_type_0
+            except:  # noqa: E722
+                pass
+            return cast(Union["TerminalQueue", None, Unset], data)
+
+        queue = _parse_queue(d.pop("queue", UNSET))
 
         def _parse_state_since(data: object) -> Union[None, Unset, datetime.datetime]:
             if data is None:
@@ -615,6 +651,7 @@ class TenantTerminal:
             server_kind=server_kind,
             login_masked=login_masked,
             offline_reason=offline_reason,
+            queue=queue,
             state_since=state_since,
             state_expected_s=state_expected_s,
             conditions=conditions,

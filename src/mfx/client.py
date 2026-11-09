@@ -46,6 +46,7 @@ from mfx.md import MarketData
 from mfx.signing import MfxSignature, SigningKey
 from mfx.streaming import Connector, MfxStream, websockets_connector
 from mfx.terminals import Terminals
+from mfx.trading_accounts import TradingAccounts
 from mfx.usage import UsageReader
 from mfx.webhooks import Webhooks
 
@@ -142,6 +143,8 @@ class MfxClient:
         self.execution = Execution(self)
         self.catalog = Catalog(self)
         self.accounts = Accounts(self)
+        #: The trading accounts over every venue: an MT5 account, later a cTrader one.
+        self.trading_accounts = TradingAccounts(self)
         self.md = MarketData(self)
         self.usage = UsageReader(self)
         self.webhooks = Webhooks(self)

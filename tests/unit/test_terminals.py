@@ -424,12 +424,12 @@ async def test_a_stuck_terminal_is_restarted_through_the_sdk(
     )
     assert accepted_plain.state == "ACCEPTED"
     sent = body_of(mfx.requests[-1])
-    # `queue` is the contract's own default, sent as the generated model states
-    # it: a refusal for a busy platform stays a 429 unless the caller asks to be held.
+    # `queue` is the contract's own default, now true: a valid restart refused only because the
+    # platform is busy is held QUEUED and starts on its own by the terminal orchestrator.
     assert sent == {
         "reason": "it has stopped quoting",
         "confirm_open_positions": False,
-        "queue": False,
+        "queue": True,
     }
     assert mfx.requests[-1].url.path.endswith(f"/terminals/{TERMINAL_ID}/restart")
     assert mfx.requests[-1].headers["Idempotency-Key"] == "k1"

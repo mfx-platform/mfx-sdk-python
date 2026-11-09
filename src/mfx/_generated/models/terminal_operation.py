@@ -35,14 +35,15 @@ class TerminalOperation:
 
     Attributes:
         operation_id (UUID):
-        kind (TerminalOperationKind):
+        kind (TerminalOperationKind): swap (orchestrator): the terminal moved to its farm's newer image or MetaTrader
+            build, a stop and a cold start on its own cell, at the lowest priority of its cell's line
         terminal_id (UUID):
         state (TerminalOperationState): QUEUED is a state of the operation, never of the terminal: the terminal's own
             state and its lifecycle record are untouched while the operation waits. A queued operation ends by starting
             (ACCEPTED, then as before) or in one of four ways in which nothing ran: NOT_STARTED (its turn came and the
             guard, run again on the terminal as it was then, refused it; `step` carries the refusal's code), EXPIRED (still
-            waiting at `queue.expires_at`; it is never run late), CANCELLED, or SUPERSEDED (a stronger ask took its place;
-            `superseded_by`).
+            waiting at `queue.expires_at`; it is never run late; an item of a bulk action has no deadline and never
+            expires), CANCELLED, or SUPERSEDED (a stronger ask took its place; `superseded_by`).
         requested_by (str): key:<key id>, admin.<email> for an operator, system.healing for an automatic recovery step,
             or system.maintenance for a maintenance window's restart
         reason (str):
@@ -57,6 +58,8 @@ class TerminalOperation:
         queue (Union['OperationQueue', None, Unset]): Where it waits, while QUEUED. Kept as it last stood, with a null
             `position`, once it has left the line; null for an operation that never waited
         superseded_by (Union[None, UUID, Unset]): The operation that replaced this one; set only on SUPERSEDED
+        bulk_action_id (Union[None, UUID, Unset]): The bulk action it is an item of; null for an operation asked on its
+            own
     """
 
     operation_id: UUID
@@ -73,6 +76,7 @@ class TerminalOperation:
     finished_at: Union[None, datetime.datetime]
     queue: Union["OperationQueue", None, Unset] = UNSET
     superseded_by: Union[None, UUID, Unset] = UNSET
+    bulk_action_id: Union[None, UUID, Unset] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -134,6 +138,14 @@ class TerminalOperation:
         else:
             superseded_by = self.superseded_by
 
+        bulk_action_id: Union[None, Unset, str]
+        if isinstance(self.bulk_action_id, Unset):
+            bulk_action_id = UNSET
+        elif isinstance(self.bulk_action_id, UUID):
+            bulk_action_id = str(self.bulk_action_id)
+        else:
+            bulk_action_id = self.bulk_action_id
+
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
@@ -156,6 +168,8 @@ class TerminalOperation:
             field_dict["queue"] = queue
         if superseded_by is not UNSET:
             field_dict["superseded_by"] = superseded_by
+        if bulk_action_id is not UNSET:
+            field_dict["bulk_action_id"] = bulk_action_id
 
         return field_dict
 
@@ -266,6 +280,23 @@ class TerminalOperation:
 
         superseded_by = _parse_superseded_by(d.pop("superseded_by", UNSET))
 
+        def _parse_bulk_action_id(data: object) -> Union[None, UUID, Unset]:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                bulk_action_id_type_0 = UUID(data)
+
+                return bulk_action_id_type_0
+            except:  # noqa: E722
+                pass
+            return cast(Union[None, UUID, Unset], data)
+
+        bulk_action_id = _parse_bulk_action_id(d.pop("bulk_action_id", UNSET))
+
         terminal_operation = cls(
             operation_id=operation_id,
             kind=kind,
@@ -281,6 +312,7 @@ class TerminalOperation:
             finished_at=finished_at,
             queue=queue,
             superseded_by=superseded_by,
+            bulk_action_id=bulk_action_id,
         )
 
         terminal_operation.additional_properties = d

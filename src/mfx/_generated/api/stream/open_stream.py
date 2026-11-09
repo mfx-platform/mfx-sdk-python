@@ -58,7 +58,8 @@ def sync_detailed(
     by id (`StreamChannel`). Results and events carry a per-channel `seq` and are replayed on `resume`
     for up to 15 minutes; ticks and candles are not replayed. Account state travels on the terminal's
     own `account:{terminal_id}` channel, not on `events`: `account.snapshot` on every subscribe and
-    resume (a snapshot, never a replay), when the position set changes and every 60 s, and
+    resume (a snapshot, never a replay, and only a whole one: none is sent while the platform's copy
+    lists fewer positions than the account's count), when the position set changes and every 60 s, and
     `account.marks` in between. Account messages are samples: a slow client loses them before any event,
     and a `seq` gap means resume. `position.*`, `order.*` and `account.profile_changed` stay on
     `events`; fills stay on `results:{terminal_id}`. Market depth travels on `book:{server_id}:{symbol}`
@@ -98,7 +99,8 @@ def sync(
     by id (`StreamChannel`). Results and events carry a per-channel `seq` and are replayed on `resume`
     for up to 15 minutes; ticks and candles are not replayed. Account state travels on the terminal's
     own `account:{terminal_id}` channel, not on `events`: `account.snapshot` on every subscribe and
-    resume (a snapshot, never a replay), when the position set changes and every 60 s, and
+    resume (a snapshot, never a replay, and only a whole one: none is sent while the platform's copy
+    lists fewer positions than the account's count), when the position set changes and every 60 s, and
     `account.marks` in between. Account messages are samples: a slow client loses them before any event,
     and a `seq` gap means resume. `position.*`, `order.*` and `account.profile_changed` stay on
     `events`; fills stay on `results:{terminal_id}`. Market depth travels on `book:{server_id}:{symbol}`
@@ -134,7 +136,8 @@ async def asyncio_detailed(
     by id (`StreamChannel`). Results and events carry a per-channel `seq` and are replayed on `resume`
     for up to 15 minutes; ticks and candles are not replayed. Account state travels on the terminal's
     own `account:{terminal_id}` channel, not on `events`: `account.snapshot` on every subscribe and
-    resume (a snapshot, never a replay), when the position set changes and every 60 s, and
+    resume (a snapshot, never a replay, and only a whole one: none is sent while the platform's copy
+    lists fewer positions than the account's count), when the position set changes and every 60 s, and
     `account.marks` in between. Account messages are samples: a slow client loses them before any event,
     and a `seq` gap means resume. `position.*`, `order.*` and `account.profile_changed` stay on
     `events`; fills stay on `results:{terminal_id}`. Market depth travels on `book:{server_id}:{symbol}`
@@ -172,7 +175,8 @@ async def asyncio(
     by id (`StreamChannel`). Results and events carry a per-channel `seq` and are replayed on `resume`
     for up to 15 minutes; ticks and candles are not replayed. Account state travels on the terminal's
     own `account:{terminal_id}` channel, not on `events`: `account.snapshot` on every subscribe and
-    resume (a snapshot, never a replay), when the position set changes and every 60 s, and
+    resume (a snapshot, never a replay, and only a whole one: none is sent while the platform's copy
+    lists fewer positions than the account's count), when the position set changes and every 60 s, and
     `account.marks` in between. Account messages are samples: a slow client loses them before any event,
     and a `seq` gap means resume. `position.*`, `order.*` and `account.profile_changed` stay on
     `events`; fills stay on `results:{terminal_id}`. Market depth travels on `book:{server_id}:{symbol}`

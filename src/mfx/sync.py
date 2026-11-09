@@ -53,10 +53,12 @@ if TYPE_CHECKING:
     from mfx._generated.models.tenant_terminal import TenantTerminal
     from mfx._generated.models.terminal_journal import TerminalJournal
     from mfx._generated.models.tick_list import TickList
+    from mfx._generated.models.trading_account import TradingAccount
     from mfx._generated.models.usage import Usage
     from mfx.results import ExecutionResult
     from mfx.secrets import Secret
     from mfx.terminals import CredentialType, Id, Redundancy, TerminalStateName
+    from mfx.trading_accounts import AccountEnvironment, AccountStateName, VenueName
 
 __all__ = ["SyncMfxClient"]
 
@@ -156,6 +158,26 @@ class SyncMfxClient:
         return self._pages(
             lambda cursor: self._client.terminals.page(
                 cursor=cursor, limit=limit, label=label, state=state
+            )
+        )
+
+    def get_trading_account(self, account_id: Id) -> TradingAccount:
+        """Blocking form of :meth:`mfx.trading_accounts.TradingAccounts.get`."""
+        return self._run(lambda: self._client.trading_accounts.get(account_id))
+
+    def trading_accounts(
+        self,
+        *,
+        limit: int | None = None,
+        venue: VenueName | Sequence[VenueName] | None = None,
+        environment: AccountEnvironment | None = None,
+        state: AccountStateName | Sequence[AccountStateName] | None = None,
+    ) -> Iterator[TradingAccount]:
+        """Every trading account, following the cursor, as an ordinary iterator; narrowed as
+        :meth:`mfx.trading_accounts.TradingAccounts.page` describes."""
+        return self._pages(
+            lambda cursor: self._client.trading_accounts.page(
+                cursor=cursor, limit=limit, venue=venue, environment=environment, state=state
             )
         )
 

@@ -17,6 +17,12 @@ from .book_message import BookMessage
 from .broker_catalogue import BrokerCatalogue
 from .broker_catalogue_list import BrokerCatalogueList
 from .broker_catalogue_source import BrokerCatalogueSource
+from .bulk_action import BulkAction
+from .bulk_action_counts import BulkActionCounts
+from .bulk_action_kind import BulkActionKind
+from .bulk_action_refusal import BulkActionRefusal
+from .bulk_action_state import BulkActionState
+from .bulk_terminal_ask import BulkTerminalAsk
 from .candle import Candle
 from .candle_list import CandleList
 from .candle_list_source import CandleListSource
@@ -30,6 +36,89 @@ from .command_state import CommandState
 from .command_tickets import CommandTickets
 from .command_unknown import CommandUnknown
 from .condition_status import ConditionStatus
+from .copy_bounds import CopyBounds
+from .copy_copied import CopyCopied
+from .copy_copied_as import CopyCopiedAs
+from .copy_copied_as_side import CopyCopiedAsSide
+from .copy_drift import CopyDrift
+from .copy_external_close import CopyExternalClose
+from .copy_external_open import CopyExternalOpen
+from .copy_external_open_account_type_0 import CopyExternalOpenAccountType0
+from .copy_external_open_side import CopyExternalOpenSide
+from .copy_follower import CopyFollower
+from .copy_follower_create import CopyFollowerCreate
+from .copy_follower_create_symbol_map import CopyFollowerCreateSymbolMap
+from .copy_follower_page import CopyFollowerPage
+from .copy_follower_page_stats import CopyFollowerPageStats
+from .copy_follower_state import CopyFollowerState
+from .copy_follower_symbol_map import CopyFollowerSymbolMap
+from .copy_follower_update import CopyFollowerUpdate
+from .copy_follower_update_symbol_map import CopyFollowerUpdateSymbolMap
+from .copy_group import CopyGroup
+from .copy_group_create import CopyGroupCreate
+from .copy_group_members import CopyGroupMembers
+from .copy_group_members_result import CopyGroupMembersResult
+from .copy_group_members_result_results_item import CopyGroupMembersResultResultsItem
+from .copy_group_members_result_results_item_outcome import (
+    CopyGroupMembersResultResultsItemOutcome,
+)
+from .copy_group_page import CopyGroupPage
+from .copy_group_page_stats import CopyGroupPageStats
+from .copy_group_state import CopyGroupState
+from .copy_group_template import CopyGroupTemplate
+from .copy_group_update import CopyGroupUpdate
+from .copy_leader import CopyLeader
+from .copy_leader_copies import CopyLeaderCopies
+from .copy_leader_create import CopyLeaderCreate
+from .copy_leader_deal import CopyLeaderDeal
+from .copy_leader_deal_action import CopyLeaderDealAction
+from .copy_leader_deal_side import CopyLeaderDealSide
+from .copy_leader_filters import CopyLeaderFilters
+from .copy_leader_filters_side import CopyLeaderFiltersSide
+from .copy_leader_limits import CopyLeaderLimits
+from .copy_leader_page import CopyLeaderPage
+from .copy_leader_page_stats import CopyLeaderPageStats
+from .copy_leader_retire import CopyLeaderRetire
+from .copy_leader_source import CopyLeaderSource
+from .copy_leader_state import CopyLeaderState
+from .copy_leader_update import CopyLeaderUpdate
+from .copy_limit_kind import CopyLimitKind
+from .copy_log_entry import CopyLogEntry
+from .copy_log_entry_action import CopyLogEntryAction
+from .copy_log_entry_side import CopyLogEntrySide
+from .copy_log_page import CopyLogPage
+from .copy_log_page_stats import CopyLogPageStats
+from .copy_match import CopyMatch
+from .copy_options import CopyOptions
+from .copy_outcome import CopyOutcome
+from .copy_preview import CopyPreview
+from .copy_preview_inputs import CopyPreviewInputs
+from .copy_preview_refusal_type_0 import CopyPreviewRefusalType0
+from .copy_preview_request import CopyPreviewRequest
+from .copy_preview_request_rows_item import CopyPreviewRequestRowsItem
+from .copy_preview_request_symbol_map import CopyPreviewRequestSymbolMap
+from .copy_preview_rows_item import CopyPreviewRowsItem
+from .copy_reason import CopyReason
+from .copy_refused import CopyRefused
+from .copy_risk_limits import CopyRiskLimits
+from .copy_risk_limits_basis import CopyRiskLimitsBasis
+from .copy_scaling import CopyScaling
+from .copy_scaling_mode import CopyScalingMode
+from .copy_signal_accepted import CopySignalAccepted
+from .copy_stages import CopyStages
+from .copy_state_changed import CopyStateChanged
+from .copy_stopout import CopyStopout
+from .copy_stopout_closed_item import CopyStopoutClosedItem
+from .copy_stopout_event import CopyStopoutEvent
+from .copy_stopout_event_closed_item import CopyStopoutEventClosedItem
+from .copy_stopout_page import CopyStopoutPage
+from .copy_stopout_reset import CopyStopoutReset
+from .copy_stopout_reset_type_0 import CopyStopoutResetType0
+from .copy_stopout_state import CopyStopoutState
+from .copy_unfollow import CopyUnfollow
+from .copy_usage import CopyUsage
+from .copy_who_may_join import CopyWhoMayJoin
+from .copy_who_may_join_accounts import CopyWhoMayJoinAccounts
 from .credential_accepted import CredentialAccepted
 from .credential_accepted_cred_type import CredentialAcceptedCredType
 from .credential_accepted_takes_effect import CredentialAcceptedTakesEffect
@@ -105,6 +194,7 @@ from .expert_advisor_upload import ExpertAdvisorUpload
 from .expert_advisor_upload_files_item import ExpertAdvisorUploadFilesItem
 from .get_candles_tf import GetCandlesTf
 from .journal_line import JournalLine
+from .list_copy_log_sort import ListCopyLogSort
 from .list_maintenance_state_item import ListMaintenanceStateItem
 from .list_risk_accounts_coverage import ListRiskAccountsCoverage
 from .list_risk_accounts_restriction import ListRiskAccountsRestriction
@@ -115,6 +205,9 @@ from .list_risk_challenge_accounts_state import ListRiskChallengeAccountsState
 from .list_risk_plans_state import ListRiskPlansState
 from .list_risk_policies_state import ListRiskPoliciesState
 from .list_terminals_state_item import ListTerminalsStateItem
+from .list_trading_accounts_environment import ListTradingAccountsEnvironment
+from .list_trading_accounts_state_item import ListTradingAccountsStateItem
+from .list_trading_accounts_venue_item import ListTradingAccountsVenueItem
 from .list_webhook_failures_state_item import ListWebhookFailuresStateItem
 from .maintenance_service import MaintenanceService
 from .maintenance_window_changed import MaintenanceWindowChanged
@@ -156,6 +249,9 @@ from .operation_accepted_state import OperationAcceptedState
 from .operation_queue import OperationQueue
 from .operation_queue_class import OperationQueueClass
 from .operation_queue_held_by import OperationQueueHeldBy
+from .operation_queue_reason_type_1 import OperationQueueReasonType1
+from .operation_queue_reason_type_2_type_1 import OperationQueueReasonType2Type1
+from .operation_queue_reason_type_3_type_1 import OperationQueueReasonType3Type1
 from .order_closed import OrderClosed
 from .order_closed_order_type import OrderClosedOrderType
 from .order_closed_reason import OrderClosedReason
@@ -532,6 +628,10 @@ from .terminal_operation_changed_state import TerminalOperationChangedState
 from .terminal_operation_kind import TerminalOperationKind
 from .terminal_operation_state import TerminalOperationState
 from .terminal_operation_timeline_item import TerminalOperationTimelineItem
+from .terminal_queue import TerminalQueue
+from .terminal_queue_reason_type_1 import TerminalQueueReasonType1
+from .terminal_queue_reason_type_2_type_1 import TerminalQueueReasonType2Type1
+from .terminal_queue_reason_type_3_type_1 import TerminalQueueReasonType3Type1
 from .terminal_restart import TerminalRestart
 from .terminal_state_changed import TerminalStateChanged
 from .terminal_state_changed_from import TerminalStateChangedFrom
@@ -542,6 +642,26 @@ from .tick import Tick
 from .tick_list import TickList
 from .trade_session import TradeSession
 from .trade_session_day import TradeSessionDay
+from .trading_account import TradingAccount
+from .trading_account_broker import TradingAccountBroker
+from .trading_account_environment_type_1 import TradingAccountEnvironmentType1
+from .trading_account_environment_type_2_type_1 import (
+    TradingAccountEnvironmentType2Type1,
+)
+from .trading_account_environment_type_3_type_1 import (
+    TradingAccountEnvironmentType3Type1,
+)
+from .trading_account_page import TradingAccountPage
+from .trading_account_runners_item import TradingAccountRunnersItem
+from .trading_account_runners_item_role_type_1 import TradingAccountRunnersItemRoleType1
+from .trading_account_runners_item_role_type_2_type_1 import (
+    TradingAccountRunnersItemRoleType2Type1,
+)
+from .trading_account_runners_item_role_type_3_type_1 import (
+    TradingAccountRunnersItemRoleType3Type1,
+)
+from .trading_account_state import TradingAccountState
+from .trading_account_venue import TradingAccountVenue
 from .trailing_stop import TrailingStop
 from .trailing_stop_set import TrailingStopSet
 from .trailing_stop_state import TrailingStopState
@@ -571,6 +691,7 @@ from .usage_tenant_terminals import UsageTenantTerminals
 from .usage_tenant_terminals_source import UsageTenantTerminalsSource
 from .usage_webhooks import UsageWebhooks
 from .usage_webhooks_endpoints import UsageWebhooksEndpoints
+from .venue import Venue
 from .webhook_attempt import WebhookAttempt
 from .webhook_attempt_outcome import WebhookAttemptOutcome
 from .webhook_endpoint import WebhookEndpoint
@@ -614,6 +735,12 @@ __all__ = (
     "BrokerCatalogue",
     "BrokerCatalogueList",
     "BrokerCatalogueSource",
+    "BulkAction",
+    "BulkActionCounts",
+    "BulkActionKind",
+    "BulkActionRefusal",
+    "BulkActionState",
+    "BulkTerminalAsk",
     "Candle",
     "CandleList",
     "CandleListSource",
@@ -627,6 +754,87 @@ __all__ = (
     "CommandTickets",
     "CommandUnknown",
     "ConditionStatus",
+    "CopyBounds",
+    "CopyCopied",
+    "CopyCopiedAs",
+    "CopyCopiedAsSide",
+    "CopyDrift",
+    "CopyExternalClose",
+    "CopyExternalOpen",
+    "CopyExternalOpenAccountType0",
+    "CopyExternalOpenSide",
+    "CopyFollower",
+    "CopyFollowerCreate",
+    "CopyFollowerCreateSymbolMap",
+    "CopyFollowerPage",
+    "CopyFollowerPageStats",
+    "CopyFollowerState",
+    "CopyFollowerSymbolMap",
+    "CopyFollowerUpdate",
+    "CopyFollowerUpdateSymbolMap",
+    "CopyGroup",
+    "CopyGroupCreate",
+    "CopyGroupMembers",
+    "CopyGroupMembersResult",
+    "CopyGroupMembersResultResultsItem",
+    "CopyGroupMembersResultResultsItemOutcome",
+    "CopyGroupPage",
+    "CopyGroupPageStats",
+    "CopyGroupState",
+    "CopyGroupTemplate",
+    "CopyGroupUpdate",
+    "CopyLeader",
+    "CopyLeaderCopies",
+    "CopyLeaderCreate",
+    "CopyLeaderDeal",
+    "CopyLeaderDealAction",
+    "CopyLeaderDealSide",
+    "CopyLeaderFilters",
+    "CopyLeaderFiltersSide",
+    "CopyLeaderLimits",
+    "CopyLeaderPage",
+    "CopyLeaderPageStats",
+    "CopyLeaderRetire",
+    "CopyLeaderSource",
+    "CopyLeaderState",
+    "CopyLeaderUpdate",
+    "CopyLimitKind",
+    "CopyLogEntry",
+    "CopyLogEntryAction",
+    "CopyLogEntrySide",
+    "CopyLogPage",
+    "CopyLogPageStats",
+    "CopyMatch",
+    "CopyOptions",
+    "CopyOutcome",
+    "CopyPreview",
+    "CopyPreviewInputs",
+    "CopyPreviewRefusalType0",
+    "CopyPreviewRequest",
+    "CopyPreviewRequestRowsItem",
+    "CopyPreviewRequestSymbolMap",
+    "CopyPreviewRowsItem",
+    "CopyReason",
+    "CopyRefused",
+    "CopyRiskLimits",
+    "CopyRiskLimitsBasis",
+    "CopyScaling",
+    "CopyScalingMode",
+    "CopySignalAccepted",
+    "CopyStages",
+    "CopyStateChanged",
+    "CopyStopout",
+    "CopyStopoutClosedItem",
+    "CopyStopoutEvent",
+    "CopyStopoutEventClosedItem",
+    "CopyStopoutPage",
+    "CopyStopoutReset",
+    "CopyStopoutResetType0",
+    "CopyStopoutState",
+    "CopyUnfollow",
+    "CopyUsage",
+    "CopyWhoMayJoin",
+    "CopyWhoMayJoinAccounts",
     "CredentialAccepted",
     "CredentialAcceptedCredType",
     "CredentialAcceptedTakesEffect",
@@ -686,6 +894,7 @@ __all__ = (
     "ExpertAdvisorUploadFilesItem",
     "GetCandlesTf",
     "JournalLine",
+    "ListCopyLogSort",
     "ListMaintenanceStateItem",
     "ListRiskAccountsCoverage",
     "ListRiskAccountsRestriction",
@@ -696,6 +905,9 @@ __all__ = (
     "ListRiskPlansState",
     "ListRiskPoliciesState",
     "ListTerminalsStateItem",
+    "ListTradingAccountsEnvironment",
+    "ListTradingAccountsStateItem",
+    "ListTradingAccountsVenueItem",
     "ListWebhookFailuresStateItem",
     "MaintenanceService",
     "MaintenanceWindowChanged",
@@ -729,6 +941,9 @@ __all__ = (
     "OperationQueue",
     "OperationQueueClass",
     "OperationQueueHeldBy",
+    "OperationQueueReasonType1",
+    "OperationQueueReasonType2Type1",
+    "OperationQueueReasonType3Type1",
     "OrderClosed",
     "OrderClosedOrderType",
     "OrderClosedReason",
@@ -1045,6 +1260,10 @@ __all__ = (
     "TerminalOperationKind",
     "TerminalOperationState",
     "TerminalOperationTimelineItem",
+    "TerminalQueue",
+    "TerminalQueueReasonType1",
+    "TerminalQueueReasonType2Type1",
+    "TerminalQueueReasonType3Type1",
     "TerminalRestart",
     "TerminalStateChanged",
     "TerminalStateChangedFrom",
@@ -1055,6 +1274,18 @@ __all__ = (
     "TickList",
     "TradeSession",
     "TradeSessionDay",
+    "TradingAccount",
+    "TradingAccountBroker",
+    "TradingAccountEnvironmentType1",
+    "TradingAccountEnvironmentType2Type1",
+    "TradingAccountEnvironmentType3Type1",
+    "TradingAccountPage",
+    "TradingAccountRunnersItem",
+    "TradingAccountRunnersItemRoleType1",
+    "TradingAccountRunnersItemRoleType2Type1",
+    "TradingAccountRunnersItemRoleType3Type1",
+    "TradingAccountState",
+    "TradingAccountVenue",
     "TrailingStop",
     "TrailingStopSet",
     "TrailingStopState",
@@ -1078,6 +1309,7 @@ __all__ = (
     "UsageTenantTerminalsSource",
     "UsageWebhooks",
     "UsageWebhooksEndpoints",
+    "Venue",
     "WebhookAttempt",
     "WebhookAttemptOutcome",
     "WebhookEndpoint",

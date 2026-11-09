@@ -10,6 +10,7 @@ class TerminalStateChangedTo(str, Enum):
     OFFLINE = "OFFLINE"
     PARKED = "PARKED"
     PROVISIONING = "PROVISIONING"
+    QUEUED = "QUEUED"
     REQUESTED = "REQUESTED"
     RETIRED = "RETIRED"
 

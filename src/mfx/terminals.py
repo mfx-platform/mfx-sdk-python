@@ -14,6 +14,7 @@ Two rules show up in every signature here:
 
 from __future__ import annotations
 
+import datetime as dt
 from collections.abc import AsyncIterator, Mapping, Sequence
 from typing import TYPE_CHECKING, Literal
 from uuid import UUID
@@ -29,10 +30,22 @@ from mfx._generated.api.expert_advisors import (
     detach_expert_advisor as _detach_expert_advisor,
 )
 from mfx._generated.api.terminals import (
+    bulk_restart_terminals as _bulk_restart_terminals,
+)
+from mfx._generated.api.terminals import (
+    bulk_retire_terminals as _bulk_retire_terminals,
+)
+from mfx._generated.api.terminals import (
+    cancel_bulk_action as _cancel_bulk_action,
+)
+from mfx._generated.api.terminals import (
     create_terminal as _create_terminal,
 )
 from mfx._generated.api.terminals import (
     drain_terminal as _drain_terminal,
+)
+from mfx._generated.api.terminals import (
+    get_bulk_action as _get_bulk_action,
 )
 from mfx._generated.api.terminals import (
     get_terminal as _get_terminal,
@@ -58,6 +71,8 @@ from mfx._generated.api.terminals import (
 from mfx._generated.api.terminals import (
     retire_terminal as _retire_terminal,
 )
+from mfx._generated.models.bulk_action import BulkAction
+from mfx._generated.models.bulk_terminal_ask import BulkTerminalAsk
 from mfx._generated.models.credential_accepted import CredentialAccepted
 from mfx._generated.models.credential_submission import CredentialSubmission
 from mfx._generated.models.credential_submission_cred_type import CredentialSubmissionCredType
@@ -86,6 +101,7 @@ if TYPE_CHECKING:
 
 __all__ = [
     "OFFLINE_IS_TEMPORARY",
+    "ON_ITS_WAY",
     "OPERATION_FINAL",
     "TerminalStateName",
     "Terminals",
@@ -97,6 +113,7 @@ CredentialType = Literal["master", "investor"]
 #: The states ``terminals.page(state=...)`` and ``terminals.list(state=...)`` can narrow to.
 TerminalStateName = Literal[
     "REQUESTED",
+    "QUEUED",
     "PROVISIONING",
     "LOGGING_IN",
     "ACTIVE",
@@ -114,6 +131,12 @@ OPERATION_FINAL: frozenset[str] = frozenset(
 )
 _POLL_FROM_S = 2.0
 _POLL_CAP_S = 15.0
+#: A QUEUED terminal is read again at its expected start, but never less often than this.
+_QUEUED_CAP_S = 60.0
+#: The states a terminal passes through on its way to ACTIVE; every other state is settled.
+ON_ITS_WAY: frozenset[str] = frozenset({"REQUESTED", "QUEUED", "PROVISIONING", "LOGGING_IN"})
+_BULK_REASON_MAX = 500
+_BULK_IDS_MAX = 1000
 #: Ids are uuids on the wire and in the generated models. Callers may hand over either, because a
 #: tenant reading an id out of its own database has a string and should not have to know that.
 Id = str | UUID
@@ -138,7 +161,9 @@ def is_usable(terminal: TenantTerminal) -> bool:
 
     True only in ACTIVE. Every other state means not yet (REQUESTED, PROVISIONING, LOGGING_IN),
     not any more (DRAINING, RETIRED), not until it is resumed (DRAINED), or not at the moment
-    (OFFLINE, FAILED).
+    (OFFLINE, FAILED). QUEUED is not yet: the terminal is placed and waits for its turn to start,
+    because its cell starts terminals a few at a time. ``terminal.queue`` says its place, its
+    expected start and why it waits; :meth:`Terminals.wait_until_active` waits on it.
 
     `OFFLINE` is the state worth knowing about, because it is the one that used to be
     hidden inside ACTIVE: the terminal is fine, its *cell* is not — turned off outside MFX Hub, its
@@ -155,6 +180,56 @@ def _uuid(value: Id) -> UUID:
 
 def _op_state(operation: TerminalOperation) -> str:
     return str(getattr(operation.state, "value", operation.state))
+
+
+def _state(terminal: TenantTerminal) -> str:
+    return str(getattr(terminal.state, "value", terminal.state))
+
+
+def _now() -> dt.datetime:  # pragma: no cover - the real clock; every test pins it
+    """The wall clock an expected start is compared with. A function so a test can pin it."""
+    return dt.datetime.now(dt.UTC)
+
+
+def next_wait_s(terminal: TenantTerminal, backoff_s: float, now: dt.datetime) -> float:
+    """How long to wait before the next read of a terminal still on its way to ACTIVE.
+
+    A QUEUED terminal with an expected start is read again then, but no sooner than 2 s and no
+    later than a minute away: its cell starts terminals a few at a time, so a faster beat tells
+    nothing new. Anything else is the backoff, capped at 15 s.
+    """
+    queue = getattr(terminal, "queue", None) if _state(terminal) == "QUEUED" else None
+    expected = getattr(queue, "expected_start_at", None)
+    if isinstance(expected, dt.datetime):
+        if expected.tzinfo is None:
+            expected = expected.replace(tzinfo=dt.UTC)
+        until = (expected - now).total_seconds()
+        return min(max(until, _POLL_FROM_S), _QUEUED_CAP_S)
+    return min(backoff_s, _POLL_CAP_S)
+
+
+def bulk_ask(
+    *,
+    reason: str,
+    farm_id: Id | None,
+    broker_id: Id | None,
+    terminal_ids: Sequence[Id] | None,
+    confirm_open_positions: bool,
+) -> BulkTerminalAsk:
+    """The body of a bulk restart or retire, checked here so a bad one is ours, not a 422."""
+    if not isinstance(reason, str) or not reason.strip() or len(reason) > _BULK_REASON_MAX:
+        raise ValueError(f"reason is 1 to {_BULK_REASON_MAX} characters")
+    if farm_id is None and broker_id is None and terminal_ids is None:
+        raise ValueError("a bulk action names farm_id, broker_id or terminal_ids")
+    if terminal_ids is not None and len(terminal_ids) > _BULK_IDS_MAX:
+        raise ValueError(f"terminal_ids is at most {_BULK_IDS_MAX}")
+    return BulkTerminalAsk(
+        reason=reason,
+        farm_id=_uuid(farm_id) if farm_id is not None else UNSET,
+        broker_id=_uuid(broker_id) if broker_id is not None else UNSET,
+        terminal_ids=[_uuid(i) for i in terminal_ids] if terminal_ids is not None else UNSET,
+        confirm_open_positions=confirm_open_positions,
+    )
 
 
 class Terminals:
@@ -336,6 +411,7 @@ class Terminals:
         reason: str,
         idempotency_key: str,
         confirm_open_positions: bool = False,
+        queue: bool = True,
     ) -> OperationAccepted:
         """Restart a stuck terminal: MT5 is closed and started again on the same cell.
 
@@ -352,12 +428,20 @@ class Terminals:
         Seven rules govern it: a cooldown, a rate limit, one
         operation at a time per terminal, and the states a restart can act on. A refusal names its
         rule in ``error.code``, with ``Retry-After`` when waiting is what helps.
+
+        ``queue`` is true unless given. A valid restart refused only because the platform is busy
+        is then answered ``202`` with the operation ``QUEUED``, and it starts on its own when its
+        turn comes. ``queue=False`` keeps the refusal instead, as a 409 or 429 with
+        ``Retry-After``, for a caller that would rather decide when to try again.
         """
+        body = TerminalRestart(
+            reason=reason, queue=queue, confirm_open_positions=confirm_open_positions
+        )
         accepted = await self._client.write(
             lambda: _restart_terminal.asyncio_detailed(
                 id=_uuid(terminal_id),
                 client=self._client.generated,
-                body=TerminalRestart(reason=reason, confirm_open_positions=confirm_open_positions),
+                body=body,
                 idempotency_key=idempotency_key,
             ),
             f"POST /terminals/{terminal_id}/restart",
@@ -496,6 +580,113 @@ class Terminals:
             wait *= 2
             operation = await self.get_operation(terminal_id, operation_id)
         return operation
+
+    async def wait_until_active(
+        self, terminal_id: Id, *, timeout_s: float = 900.0
+    ) -> TenantTerminal:
+        """Read the terminal until it is no longer on its way to ACTIVE (:data:`ON_ITS_WAY`:
+        REQUESTED, QUEUED, PROVISIONING, LOGGING_IN), or until ``timeout_s`` has been waited.
+        Returns the last read either way: ACTIVE, a state it settled in instead (FAILED, for one),
+        or still on its way when the time ran out.
+
+        A QUEUED terminal is read again at its ``queue.expected_start_at`` (between 2 s and a
+        minute away), not on a fixed beat. Any other state is read again after 2 s, doubling to
+        15 s.
+        """
+        if not timeout_s >= 0:
+            raise ValueError("timeout_s is 0 or more")
+        waited = 0.0
+        backoff = _POLL_FROM_S
+        terminal = await self.get(terminal_id)
+        while _state(terminal) in ON_ITS_WAY and waited < timeout_s:
+            seconds = min(next_wait_s(terminal, backoff, _now()), timeout_s - waited)
+            await self._client.pause(seconds)
+            waited += seconds
+            backoff *= 2
+            terminal = await self.get(terminal_id)
+        return terminal
+
+    async def bulk_restart(  # noqa: PLR0913 - the route's own fields
+        self,
+        *,
+        reason: str,
+        idempotency_key: str,
+        farm_id: Id | None = None,
+        broker_id: Id | None = None,
+        terminal_ids: Sequence[Id] | None = None,
+        confirm_open_positions: bool = False,
+    ) -> BulkAction:
+        """Restart many of your terminals at once: those on ``farm_id``, at ``broker_id``, or listed
+        in ``terminal_ids`` (at most 1000), and at least one of the three.
+
+        Each is judged by the rules of a single restart. A refused one is listed in ``refused``
+        with its rule's code, and the rest are taken. Each cell carries its share at its own pace,
+        so the terminals already running on it are not slowed. Answered at once with the action and
+        its ``expected_finish_at``; its items never expire. Without ``confirm_open_positions`` a
+        terminal with positions open is refused (``positions_open``) and the rest go ahead.
+        """
+        body = bulk_ask(
+            reason=reason,
+            farm_id=farm_id,
+            broker_id=broker_id,
+            terminal_ids=terminal_ids,
+            confirm_open_positions=confirm_open_positions,
+        )
+        action = await self._client.write(
+            lambda: _bulk_restart_terminals.asyncio_detailed(
+                client=self._client.generated, body=body, idempotency_key=idempotency_key
+            ),
+            "POST /terminals:restart",
+        )
+        return action  # type: ignore[no-any-return]
+
+    async def bulk_retire(  # noqa: PLR0913 - the route's own fields
+        self,
+        *,
+        reason: str,
+        idempotency_key: str,
+        farm_id: Id | None = None,
+        broker_id: Id | None = None,
+        terminal_ids: Sequence[Id] | None = None,
+        confirm_open_positions: bool = False,
+    ) -> BulkAction:
+        """Retire many of your terminals at once, chosen and judged as :meth:`bulk_restart`."""
+        body = bulk_ask(
+            reason=reason,
+            farm_id=farm_id,
+            broker_id=broker_id,
+            terminal_ids=terminal_ids,
+            confirm_open_positions=confirm_open_positions,
+        )
+        action = await self._client.write(
+            lambda: _bulk_retire_terminals.asyncio_detailed(
+                client=self._client.generated, body=body, idempotency_key=idempotency_key
+            ),
+            "POST /terminals:retire",
+        )
+        return action  # type: ignore[no-any-return]
+
+    async def get_bulk_action(self, bulk_action_id: Id) -> BulkAction:
+        """A bulk action's progress: counts per state, what was refused, and its expected finish."""
+        action = await self._client.read(
+            lambda: _get_bulk_action.asyncio_detailed(
+                id=_uuid(bulk_action_id), client=self._client.generated
+            ),
+            f"GET /bulk-actions/{bulk_action_id}",
+        )
+        return action  # type: ignore[no-any-return]
+
+    async def cancel_bulk_action(self, bulk_action_id: Id, *, idempotency_key: str) -> BulkAction:
+        """Cancel a bulk action: its items still QUEUED settle CANCELLED, running ones finish."""
+        action = await self._client.write(
+            lambda: _cancel_bulk_action.asyncio_detailed(
+                id=_uuid(bulk_action_id),
+                client=self._client.generated,
+                idempotency_key=idempotency_key,
+            ),
+            f"POST /bulk-actions/{bulk_action_id}/cancel",
+        )
+        return action  # type: ignore[no-any-return]
 
     async def drain(
         self,

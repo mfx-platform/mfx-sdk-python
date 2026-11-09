@@ -5,7 +5,39 @@ Every release of `mfx-sdk`, newest first. The format follows
 [Semantic Versioning](https://semver.org/). Until 1.0.0, a minor version may change the public
 surface; each such change is listed under **Changed** with what to do.
 
-## Unreleased
+## 0.13.0
+
+### Added
+
+- `QUEUED`, a terminal state and an operation state: placed and waiting its turn to start,
+  because a cell starts terminals a few at a time. `terminal.queue` says its place, its
+  `expected_start_at` and why it waits (`cell_busy`, `cell_settling`, `broker_cap` and so on).
+  `TerminalStateName` takes it, so `terminals.list(state="QUEUED")` narrows to it.
+- `terminals.wait_until_active(id, timeout_s=900)`: reads the terminal until it is no longer on
+  its way to ACTIVE (REQUESTED, QUEUED, PROVISIONING, LOGGING_IN), and returns the last read. A
+  QUEUED terminal is read again at its expected start, between 2 s and a minute away; anything
+  else after 2 s, doubling to 15 s.
+- `terminals.bulk_restart(...)` and `terminals.bulk_retire(...)` (`POST /v1/terminals:restart`,
+  `POST /v1/terminals:retire`): many terminals at once, chosen by `farm_id`, `broker_id` or
+  `terminal_ids` (at most 1000). Each is judged by the rules of a single restart or retire; a
+  refused one is listed in `refused` with its rule's code and the rest are taken. The reason, the
+  filter and the id count are checked at the call. `terminals.get_bulk_action(id)` and
+  `terminals.cancel_bulk_action(id, idempotency_key=...)` read and cancel one.
+- `client.trading_accounts`: the trading accounts over every venue (`GET /v1/accounts`,
+  `GET /v1/accounts/{id}`, scope `acct:read`). `page()` and `list()` narrow by `venue`,
+  `environment` and `state` on the platform, each checked at the call; `get(id)` takes the
+  account's id or one of its terminals' ids. An MT5 account's id is its terminal's id. The sync
+  client has `get_trading_account` and `trading_accounts`. `client.accounts` is unchanged: it is
+  still the balance, positions and deals of a terminal's account.
+- The copy-trading operations (`/v1/copy/...`) are in the contract and listed in the README's
+  REST-only table; the SDK has no methods for them yet.
+
+### Changed
+
+- `terminals.restart(...)` sends `queue=True` unless told otherwise, as the contract now defaults
+  it. A valid restart refused only because the platform is busy is answered 202 with the operation
+  `QUEUED`, and it starts on its own. To keep the old answer, a 409 or 429 with `Retry-After`,
+  pass `queue=False`.
 
 ## 0.12.1
 

@@ -77,11 +77,11 @@ def sync_detailed(
     confirmation setting is on (it is off unless an operator turns it on), a tenant rate (429
     `tenant_rate`), tenant concurrency (429 `concurrency`), a farm blast radius (429 `farm_capacity`),
     and the general budget. A refusal names its rule in `error.code` and carries `Retry-After` when
-    waiting helps. With `queue: true` the four busy refusals (cooldown, tenant rate, concurrency, farm
-    capacity) are held instead: 202 with `state: QUEUED` and where it waits, started by the platform
-    when it can, and settled EXPIRED if it has not started by `queue.expires_at`. A terminal has at most
-    one waiting operation: the same kind again returns it with `duplicate: true`; a stronger kind
-    replaces it (it settles SUPERSEDED); a weaker one is 409 `superseded_by_waiting` with
+    waiting helps. Unless `queue: false` is sent, the four busy refusals (cooldown, tenant rate,
+    concurrency, farm capacity) are held instead: 202 with `state: QUEUED` and where it waits, started
+    by the platform when it can, and settled EXPIRED if it has not started by `queue.expires_at`. A
+    terminal has at most one waiting operation: the same kind again returns it with `duplicate: true`; a
+    stronger kind replaces it (it settles SUPERSEDED); a weaker one is 409 `superseded_by_waiting` with
     `details.operation_id`. The same Idempotency-Key returns the original operation; a different body
     under it is 409.
 
@@ -128,11 +128,11 @@ def sync(
     confirmation setting is on (it is off unless an operator turns it on), a tenant rate (429
     `tenant_rate`), tenant concurrency (429 `concurrency`), a farm blast radius (429 `farm_capacity`),
     and the general budget. A refusal names its rule in `error.code` and carries `Retry-After` when
-    waiting helps. With `queue: true` the four busy refusals (cooldown, tenant rate, concurrency, farm
-    capacity) are held instead: 202 with `state: QUEUED` and where it waits, started by the platform
-    when it can, and settled EXPIRED if it has not started by `queue.expires_at`. A terminal has at most
-    one waiting operation: the same kind again returns it with `duplicate: true`; a stronger kind
-    replaces it (it settles SUPERSEDED); a weaker one is 409 `superseded_by_waiting` with
+    waiting helps. Unless `queue: false` is sent, the four busy refusals (cooldown, tenant rate,
+    concurrency, farm capacity) are held instead: 202 with `state: QUEUED` and where it waits, started
+    by the platform when it can, and settled EXPIRED if it has not started by `queue.expires_at`. A
+    terminal has at most one waiting operation: the same kind again returns it with `duplicate: true`; a
+    stronger kind replaces it (it settles SUPERSEDED); a weaker one is 409 `superseded_by_waiting` with
     `details.operation_id`. The same Idempotency-Key returns the original operation; a different body
     under it is 409.
 
@@ -174,11 +174,11 @@ async def asyncio_detailed(
     confirmation setting is on (it is off unless an operator turns it on), a tenant rate (429
     `tenant_rate`), tenant concurrency (429 `concurrency`), a farm blast radius (429 `farm_capacity`),
     and the general budget. A refusal names its rule in `error.code` and carries `Retry-After` when
-    waiting helps. With `queue: true` the four busy refusals (cooldown, tenant rate, concurrency, farm
-    capacity) are held instead: 202 with `state: QUEUED` and where it waits, started by the platform
-    when it can, and settled EXPIRED if it has not started by `queue.expires_at`. A terminal has at most
-    one waiting operation: the same kind again returns it with `duplicate: true`; a stronger kind
-    replaces it (it settles SUPERSEDED); a weaker one is 409 `superseded_by_waiting` with
+    waiting helps. Unless `queue: false` is sent, the four busy refusals (cooldown, tenant rate,
+    concurrency, farm capacity) are held instead: 202 with `state: QUEUED` and where it waits, started
+    by the platform when it can, and settled EXPIRED if it has not started by `queue.expires_at`. A
+    terminal has at most one waiting operation: the same kind again returns it with `duplicate: true`; a
+    stronger kind replaces it (it settles SUPERSEDED); a weaker one is 409 `superseded_by_waiting` with
     `details.operation_id`. The same Idempotency-Key returns the original operation; a different body
     under it is 409.
 
@@ -223,11 +223,11 @@ async def asyncio(
     confirmation setting is on (it is off unless an operator turns it on), a tenant rate (429
     `tenant_rate`), tenant concurrency (429 `concurrency`), a farm blast radius (429 `farm_capacity`),
     and the general budget. A refusal names its rule in `error.code` and carries `Retry-After` when
-    waiting helps. With `queue: true` the four busy refusals (cooldown, tenant rate, concurrency, farm
-    capacity) are held instead: 202 with `state: QUEUED` and where it waits, started by the platform
-    when it can, and settled EXPIRED if it has not started by `queue.expires_at`. A terminal has at most
-    one waiting operation: the same kind again returns it with `duplicate: true`; a stronger kind
-    replaces it (it settles SUPERSEDED); a weaker one is 409 `superseded_by_waiting` with
+    waiting helps. Unless `queue: false` is sent, the four busy refusals (cooldown, tenant rate,
+    concurrency, farm capacity) are held instead: 202 with `state: QUEUED` and where it waits, started
+    by the platform when it can, and settled EXPIRED if it has not started by `queue.expires_at`. A
+    terminal has at most one waiting operation: the same kind again returns it with `duplicate: true`; a
+    stronger kind replaces it (it settles SUPERSEDED); a weaker one is 409 `superseded_by_waiting` with
     `details.operation_id`. The same Idempotency-Key returns the original operation; a different body
     under it is 409.
 

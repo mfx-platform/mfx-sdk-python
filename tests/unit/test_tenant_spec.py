@@ -182,6 +182,82 @@ def test_nothing_is_reported_when_every_schema_has_its_model(tmp_path: Path) -> 
     assert dropped_schemas(spec, _generated(tmp_path, "tenant_terminal", "spread")) == []
 
 
+def test_a_named_scalar_the_generator_inlines_is_not_reported(tmp_path: Path) -> None:
+    """Given `CopyDecimal`, a pattern string, and a number alias / When the output is
+    checked / Then neither is named: the generator inlines a scalar at each `$ref` and writes no
+    module for it by design, which is not a dropped schema."""
+    spec = {
+        "components": {
+            "schemas": {
+                "CopyDecimal": {"type": "string", "pattern": r"^-?\d+(\.\d+)?$"},
+                "Ratio": {"type": "number"},
+            }
+        }
+    }
+
+    assert dropped_schemas(spec, _generated(tmp_path)) == []
+
+
+def test_a_named_enum_or_object_without_its_model_is_still_reported(tmp_path: Path) -> None:
+    """The negative control for the scalar skip: a string `enum` gets its own module, and so does an
+    object, so a missing one of either is still a dropped schema."""
+    spec = {
+        "components": {
+            "schemas": {
+                "TerminalStateName": {"type": "string", "enum": ["ACTIVE", "QUEUED"]},
+                "CopyExternalOpen": {"type": "object"},
+            }
+        }
+    }
+
+    assert dropped_schemas(spec, _generated(tmp_path)) == ["CopyExternalOpen", "TerminalStateName"]
+
+
+def test_a_bare_union_of_refs_the_generator_inlines_is_not_reported(tmp_path: Path) -> None:
+    """Given `CopyExternalSignal`, a `oneOf` of two `$ref`s and a description / When the output is
+    checked / Then it is not named: the generator writes a `Union` of the two members' models at
+    each use and no module for the union itself, which is not a dropped schema."""
+    spec = {
+        "components": {
+            "schemas": {
+                "CopyExternalSignal": {
+                    "description": "An open or a close",
+                    "oneOf": [
+                        {"$ref": "#/components/schemas/CopyExternalOpen"},
+                        {"$ref": "#/components/schemas/CopyExternalClose"},
+                    ],
+                },
+                "CopyExternalOpen": {"type": "object"},
+                "CopyExternalClose": {"type": "object"},
+            }
+        }
+    }
+
+    generated = _generated(tmp_path, "copy_external_open", "copy_external_close")
+    assert dropped_schemas(spec, generated) == []
+
+
+@pytest.mark.parametrize(
+    "schema",
+    [
+        {"oneOf": [{"$ref": "#/components/schemas/A"}], "properties": {"x": {}}},
+        {"oneOf": [{"type": "object"}]},
+        {"oneOf": []},
+        {"allOf": [{"$ref": "#/components/schemas/A"}]},
+        {"oneOf": [{"$ref": "#/a"}], "anyOf": [{"$ref": "#/b"}]},
+        "not a mapping",
+    ],
+    ids=["beside-properties", "inline-member", "empty", "allOf", "both-unions", "not-a-mapping"],
+)
+def test_a_union_that_is_more_than_refs_is_still_reported(tmp_path: Path, schema: Any) -> None:
+    """The negative control for the union skip: a union beside properties, of an inline member, or
+    empty, an `allOf`, and both unions at once all get (or should get) a module of their own, so a
+    missing one is still a dropped schema."""
+    spec = {"components": {"schemas": {"Shape": schema}}}
+
+    assert dropped_schemas(spec, _generated(tmp_path)) == ["Shape"]
+
+
 def test_a_generator_that_wrote_nothing_at_all_is_reported(tmp_path: Path) -> None:
     """No models directory is not "nothing was declared" — it is the worst case, and every schema is
     missing."""

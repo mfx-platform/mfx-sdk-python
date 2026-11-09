@@ -102,6 +102,19 @@ def sync_detailed(
     read through one of your own terminals on the server; at most 1000 bars per call, the newest of the
     window
 
+     Where the bars come from is in `source`: `store` (the platform's candle store, which keeps
+    closed bars of the series you read and costs your terminals nothing), `terminal` (read
+    through one of your own ACTIVE terminals on the server), or `store+terminal` (closed bars
+    from the store, the rest from a terminal).
+
+    **Reads that reach a terminal are limited per terminal per minute.** Each such read makes
+    MetaTrader on your terminal load that history, and a terminal flooded with deep reads stops
+    serving its prices and orders. Past the limit the answer is 429 `terminal_reads_limit` with
+    `Retry-After` (the seconds to the next minute); `details.limit` says the limit. Reads the
+    store answers are never counted. To stay well under it: keep closed bars once you have them
+    (they never change), follow new bars on the candles channel (`md.candle_closed`) instead of
+    polling, and read only the range you are missing.
+
     Args:
         broker (str):
         server_id (Union[Unset, str]):
@@ -151,6 +164,19 @@ def sync(
     read through one of your own terminals on the server; at most 1000 bars per call, the newest of the
     window
 
+     Where the bars come from is in `source`: `store` (the platform's candle store, which keeps
+    closed bars of the series you read and costs your terminals nothing), `terminal` (read
+    through one of your own ACTIVE terminals on the server), or `store+terminal` (closed bars
+    from the store, the rest from a terminal).
+
+    **Reads that reach a terminal are limited per terminal per minute.** Each such read makes
+    MetaTrader on your terminal load that history, and a terminal flooded with deep reads stops
+    serving its prices and orders. Past the limit the answer is 429 `terminal_reads_limit` with
+    `Retry-After` (the seconds to the next minute); `details.limit` says the limit. Reads the
+    store answers are never counted. To stay well under it: keep closed bars once you have them
+    (they never change), follow new bars on the candles channel (`md.candle_closed`) instead of
+    polling, and read only the range you are missing.
+
     Args:
         broker (str):
         server_id (Union[Unset, str]):
@@ -194,6 +220,19 @@ async def asyncio_detailed(
     """Historical candles by bar time, from the platform's store when it holds the window complete, else
     read through one of your own terminals on the server; at most 1000 bars per call, the newest of the
     window
+
+     Where the bars come from is in `source`: `store` (the platform's candle store, which keeps
+    closed bars of the series you read and costs your terminals nothing), `terminal` (read
+    through one of your own ACTIVE terminals on the server), or `store+terminal` (closed bars
+    from the store, the rest from a terminal).
+
+    **Reads that reach a terminal are limited per terminal per minute.** Each such read makes
+    MetaTrader on your terminal load that history, and a terminal flooded with deep reads stops
+    serving its prices and orders. Past the limit the answer is 429 `terminal_reads_limit` with
+    `Retry-After` (the seconds to the next minute); `details.limit` says the limit. Reads the
+    store answers are never counted. To stay well under it: keep closed bars once you have them
+    (they never change), follow new bars on the candles channel (`md.candle_closed`) instead of
+    polling, and read only the range you are missing.
 
     Args:
         broker (str):
@@ -241,6 +280,19 @@ async def asyncio(
     """Historical candles by bar time, from the platform's store when it holds the window complete, else
     read through one of your own terminals on the server; at most 1000 bars per call, the newest of the
     window
+
+     Where the bars come from is in `source`: `store` (the platform's candle store, which keeps
+    closed bars of the series you read and costs your terminals nothing), `terminal` (read
+    through one of your own ACTIVE terminals on the server), or `store+terminal` (closed bars
+    from the store, the rest from a terminal).
+
+    **Reads that reach a terminal are limited per terminal per minute.** Each such read makes
+    MetaTrader on your terminal load that history, and a terminal flooded with deep reads stops
+    serving its prices and orders. Past the limit the answer is 429 `terminal_reads_limit` with
+    `Retry-After` (the seconds to the next minute); `details.limit` says the limit. Reads the
+    store answers are never counted. To stay well under it: keep closed bars once you have them
+    (they never change), follow new bars on the candles channel (`md.candle_closed`) instead of
+    polling, and read only the range you are missing.
 
     Args:
         broker (str):

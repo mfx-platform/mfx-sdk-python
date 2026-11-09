@@ -33,7 +33,8 @@ class TerminalOperationChanged:
             schema_version (str): The payload's version; 1
             operation_id (UUID):
             terminal_id (UUID):
-            kind (TerminalOperationChangedKind):
+            kind (TerminalOperationChangedKind): swap (orchestrator): the terminal moved to its farm's newer image or
+                MetaTrader build, a stop and a cold start on its own cell, at the lowest priority of its cell's line
             state (TerminalOperationChangedState): As `TerminalOperation.state`
             step (str): As `TerminalOperation.step`: the last step the cell reached, or on FAILED and NOT_STARTED what
                 failed or refused; empty when none
