@@ -22,7 +22,7 @@ from decimal import Decimal, InvalidOperation
 from enum import StrEnum
 from typing import Any, Final, Self
 
-__all__ = ["CommandState", "ExecutionResult", "Reason", "Tickets"]
+__all__ = ["CommandState", "ExecutionResult", "Reason", "Tickets", "VenueDeal"]
 
 
 class Reason(StrEnum):
@@ -52,6 +52,12 @@ class Reason(StrEnum):
     #: by the platform before it ran. Nothing reached the broker, so it is **retryable** once the
     #: window ends - :attr:`ExecutionResult.retry_at` says when, where the platform said.
     MAINTENANCE = "maintenance"
+    #: The venue did not answer, or its connection to the account is down: nothing was placed,
+    #: and the platform marks it **retryable**.
+    VENUE_UNAVAILABLE = "venue_unavailable"
+    #: The account's venue has no equivalent for what was asked (on cTrader: a stop-limit whose
+    #: limit is on the better side of its stop, or a trailing stop). Not retryable as it stands.
+    NOT_ON_THIS_VENUE = "not_on_this_venue"
 
     #: Concluded by the SDK, never sent by the platform: the request never got an answer.
     TRANSPORT_ERROR = "transport_error"
@@ -99,6 +105,41 @@ class Tickets:
             deal=_int(raw.get("deal")),
             position=_int(raw.get("position")),
         )
+
+
+@dataclass(frozen=True, slots=True)
+class VenueDeal:
+    """One deal a command made, as the venue reported it (cTrader): two for an emulated close-by,
+    one for an order filled at once. ``volume_units`` is in units of the instrument, not lots."""
+
+    deal: int
+    order: int | None
+    position: int | None
+    volume_units: Decimal | None
+    price: Decimal | None
+
+    @classmethod
+    def from_dict(cls, raw: Any) -> VenueDeal | None:
+        """Read one deal; anything without a deal number reads as none."""
+        if not isinstance(raw, dict) or _int(raw.get("deal")) is None:
+            return None
+        return cls(
+            deal=_int(raw.get("deal")) or 0,
+            order=_int(raw.get("order")),
+            position=_int(raw.get("position")),
+            volume_units=_decimal(raw.get("volume_units")),
+            price=_decimal(raw.get("price")),
+        )
+
+
+def _deals(raw: Any) -> tuple[VenueDeal, ...]:
+    if not isinstance(raw, list):
+        return ()
+    return tuple(d for d in (VenueDeal.from_dict(x) for x in raw) if d is not None)
+
+
+def _str(value: Any) -> str | None:
+    return value if isinstance(value, str) and value else None
 
 
 def _int(value: Any) -> int | None:
@@ -171,6 +212,22 @@ class ExecutionResult:
     detail: str | None = None
     #: When sending it again can work: the maintenance window's end, for a ``maintenance`` refusal.
     retry_at: dt.datetime | None = None
+    #: The venue that answered (``mt5`` or ``ctrader``); None until there is a result.
+    venue: str | None = None
+    #: The venue's own code for a refusal, verbatim, beside ``reason`` (cTrader: such as
+    #: ``NOT_ENOUGH_MONEY``). None on MT5, whose code is ``mt5_retcode``.
+    venue_code: str | None = None
+    #: Every deal the command made, in order (cTrader). Empty on MT5, where ``tickets.deal`` is
+    #: the one deal of the fill.
+    deals: tuple[VenueDeal, ...] = ()
+    #: The volume filled in units of the instrument, the sum of ``deals``; ``exec_volume`` stays
+    #: in lots. None on MT5 and when nothing filled.
+    volume_units: Decimal | None = None
+    #: A close-by the venue has no equivalent for, done as two closes (cTrader).
+    close_by_emulated: bool = False
+    #: A market order filled but its stop loss or take profit could not be set: the position is
+    #: open **without them**.
+    protection_not_set: bool = False
 
     @classmethod
     def from_command(cls, body: Any, *, idempotency_key: str, client_rtt_ms: float) -> Self:
@@ -210,6 +267,12 @@ class ExecutionResult:
             agent_latency_ms=_int(result.get("agent_latency_ms")),
             attempts=_int(result.get("attempts")) or 0,
             rerouted_from=result.get("rerouted_from"),
+            venue=_str(result.get("venue")),
+            venue_code=_str(result.get("venue_code")),
+            deals=_deals(result.get("deals")),
+            volume_units=_decimal(result.get("volume_units")),
+            close_by_emulated=result.get("close_by_emulated") is True,
+            protection_not_set=result.get("protection_not_set") is True,
         )
 
     @classmethod

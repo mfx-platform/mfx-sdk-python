@@ -5,6 +5,28 @@ Every release of `mfx-sdk`, newest first. The format follows
 [Semantic Versioning](https://semver.org/). Until 1.0.0, a minor version may change the public
 surface; each such change is listed under **Changed** with what to do.
 
+## 0.14.0
+
+### Added
+
+- Trade a trading account on any venue: `client.trading_accounts.place_order`, `cancel_order`,
+  `modify_order`, `modify_position`, `close_position`, `close_position_by`,
+  `close_position_partial`, `set_trailing_stop` and `clear_trailing_stop` take the account's id
+  and send to `/v1/accounts/{id}/...` (scope `exec:write`). Same bodies and rules as
+  `client.execution`: a required `idempotency_key`, a result returned and never raised, nothing
+  retried. Read the outcome with `client.execution.wait_for`.
+- Read a trading account on any venue: `funds`, `positions`, `pending_orders`,
+  `deals(from_=..., to=..., position=...)` and `symbols` (scope `acct:read`). `symbols` gives a
+  cTrader account's volume rules in lots and its leverage.
+- Connect cTrader accounts: `start_ctrader_grant(environment=..., scope=..., return_url=...)`
+  answers the consent link to send the trader to; `ctrader_grant(id)` lists the accounts they
+  shared; `connect_ctrader_accounts(id, [...])` makes the chosen ones trading accounts of yours;
+  `revoke_ctrader_grant(id)` moves them to `REAUTH_NEEDED`.
+- `ExecutionResult` reads what a venue adds: `venue`, `venue_code` (the venue's own refusal code
+  beside `reason`), `deals` (each `VenueDeal` with `volume_units` and `price`), `volume_units`,
+  `close_by_emulated` and `protection_not_set`.
+- `Reason.VENUE_UNAVAILABLE` (retryable) and `Reason.NOT_ON_THIS_VENUE`.
+
 ## 0.13.0
 
 ### Added

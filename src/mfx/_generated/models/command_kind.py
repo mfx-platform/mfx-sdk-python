@@ -9,6 +9,7 @@ class CommandKind(str, Enum):
     POSITION_CLOSE_BY = "position_close_by"
     POSITION_CLOSE_PARTIAL = "position_close_partial"
     POSITION_MODIFY = "position_modify"
+    RISK_SYNC = "risk_sync"
     TRAILING_STOP_CLEAR = "trailing_stop_clear"
     TRAILING_STOP_SET = "trailing_stop_set"
 

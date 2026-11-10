@@ -34,7 +34,8 @@ class Command:
     Attributes:
         command_id (UUID):
         terminal_id (UUID):
-        kind (CommandKind):
+        kind (CommandKind): What the command does. `risk_sync` is the platform's own: it hands the cell the version of
+            the risk policy in force on the account. A tenant never sends one and may see one by its id
         state (CommandState): Final states are SUCCEEDED, FAILED, EXPIRED and REJECTED. UNKNOWN is visible and NOT
             final: the order may have reached the broker and its outcome could not be read (a timeout after send, a lost
             connection). The platform asks the terminal that ran it to read its deal and order history again, every minute,
@@ -53,8 +54,8 @@ class Command:
             refuses an envelope past it, and a command still on the platform is swept EXPIRED. It is the command's deadline
             to reach the broker, not a pending order's own `expires_at`. Set from the moment the command is accepted, by
             kind: 10 s for every execution kind (order_place, order_cancel, order_modify, position_modify, position_close,
-            position_close_partial, position_close_by, trailing_stop_set, trailing_stop_clear); an order_place may ask for 1
-            s to 60 s instead with `expires_in_ms`
+            position_close_partial, position_close_by, trailing_stop_set, trailing_stop_clear), 30 s for risk_sync; an
+            order_place may ask for 1 s to 60 s instead with `expires_in_ms`
         resolve_by (Union[None, Unset, datetime.datetime]): While the command is UNKNOWN: until when the platform asks
             the terminal that ran it to read the outcome again. After it, an operator resolves it with the tenant. Null in
             every other state

@@ -57,7 +57,7 @@ from mfx.live_account import AccountView, LiveAccount
 from mfx.logging import MfxLogger, configure_logging, get_logger
 from mfx.md import Book, SubscriptionDegraded, SubscriptionRecovered, book_of, subscription_event
 from mfx.pages import Page
-from mfx.results import CommandState, ExecutionResult, Reason, Tickets
+from mfx.results import CommandState, ExecutionResult, Reason, Tickets, VenueDeal
 from mfx.secrets import Secret
 from mfx.signing import SigningKey
 from mfx.streaming import (
@@ -129,6 +129,7 @@ __all__ = [
     "UnsupportedBrokerError",
     "UpstreamError",
     "ValidationError",
+    "VenueDeal",
     "WebhookSignatureError",
     "__version__",
     "configure_logging",

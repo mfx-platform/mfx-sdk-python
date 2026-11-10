@@ -70,7 +70,12 @@ def sync_detailed(
     completed, at once when the broker refuses it. A FAILED terminal is tried again after
     `terminals.login_cooloff_minutes` (30), at most `terminals.login_cycles_per_day` (3) times a day,
     never after a refusal; retire the FAILED terminals you no longer need. MFX retires none of yours by
-    itself. One already DRAINING or RETIRED is answered as it is.
+    itself. One already DRAINING or RETIRED is answered as it is. A cell stops terminals a few at a
+    time, so that the ones still running on it are not slowed: when its cell has no slot for the stop
+    now, the answer is the terminal as it is (ACTIVE, OFFLINE, PARKED, PROVISIONING or LOGGING_IN), its
+    retire waits in the cell's line with no deadline, and it moves to DRAINING at its turn by itself.
+    The same request again answers the same retire. A cell that cannot be heard does not hold a stop:
+    its terminals drain at once.
 
     Args:
         id (UUID):
@@ -112,7 +117,12 @@ def sync(
     completed, at once when the broker refuses it. A FAILED terminal is tried again after
     `terminals.login_cooloff_minutes` (30), at most `terminals.login_cycles_per_day` (3) times a day,
     never after a refusal; retire the FAILED terminals you no longer need. MFX retires none of yours by
-    itself. One already DRAINING or RETIRED is answered as it is.
+    itself. One already DRAINING or RETIRED is answered as it is. A cell stops terminals a few at a
+    time, so that the ones still running on it are not slowed: when its cell has no slot for the stop
+    now, the answer is the terminal as it is (ACTIVE, OFFLINE, PARKED, PROVISIONING or LOGGING_IN), its
+    retire waits in the cell's line with no deadline, and it moves to DRAINING at its turn by itself.
+    The same request again answers the same retire. A cell that cannot be heard does not hold a stop:
+    its terminals drain at once.
 
     Args:
         id (UUID):
@@ -149,7 +159,12 @@ async def asyncio_detailed(
     completed, at once when the broker refuses it. A FAILED terminal is tried again after
     `terminals.login_cooloff_minutes` (30), at most `terminals.login_cycles_per_day` (3) times a day,
     never after a refusal; retire the FAILED terminals you no longer need. MFX retires none of yours by
-    itself. One already DRAINING or RETIRED is answered as it is.
+    itself. One already DRAINING or RETIRED is answered as it is. A cell stops terminals a few at a
+    time, so that the ones still running on it are not slowed: when its cell has no slot for the stop
+    now, the answer is the terminal as it is (ACTIVE, OFFLINE, PARKED, PROVISIONING or LOGGING_IN), its
+    retire waits in the cell's line with no deadline, and it moves to DRAINING at its turn by itself.
+    The same request again answers the same retire. A cell that cannot be heard does not hold a stop:
+    its terminals drain at once.
 
     Args:
         id (UUID):
@@ -189,7 +204,12 @@ async def asyncio(
     completed, at once when the broker refuses it. A FAILED terminal is tried again after
     `terminals.login_cooloff_minutes` (30), at most `terminals.login_cycles_per_day` (3) times a day,
     never after a refusal; retire the FAILED terminals you no longer need. MFX retires none of yours by
-    itself. One already DRAINING or RETIRED is answered as it is.
+    itself. One already DRAINING or RETIRED is answered as it is. A cell stops terminals a few at a
+    time, so that the ones still running on it are not slowed: when its cell has no slot for the stop
+    now, the answer is the terminal as it is (ACTIVE, OFFLINE, PARKED, PROVISIONING or LOGGING_IN), its
+    retire waits in the cell's line with no deadline, and it moves to DRAINING at its turn by itself.
+    The same request again answers the same retire. A cell that cannot be heard does not hold a stop:
+    its terminals drain at once.
 
     Args:
         id (UUID):

@@ -21,10 +21,37 @@ Three rules show up in every signature:
 
 from __future__ import annotations
 
-from dataclasses import replace
+from dataclasses import dataclass, replace
 from decimal import Decimal, InvalidOperation
 from typing import TYPE_CHECKING, Any, Literal
 
+from mfx._generated.api.accounts import (
+    cancel_trading_account_order as _acct_cancel_order,
+)
+from mfx._generated.api.accounts import (
+    clear_trading_account_trailing_stop as _acct_clear_trailing_stop,
+)
+from mfx._generated.api.accounts import (
+    close_trading_account_position as _acct_close_position,
+)
+from mfx._generated.api.accounts import (
+    close_trading_account_position_by as _acct_close_position_by,
+)
+from mfx._generated.api.accounts import (
+    close_trading_account_position_partial as _acct_close_position_partial,
+)
+from mfx._generated.api.accounts import (
+    modify_trading_account_order as _acct_modify_order,
+)
+from mfx._generated.api.accounts import (
+    modify_trading_account_position as _acct_modify_position,
+)
+from mfx._generated.api.accounts import (
+    place_trading_account_order as _acct_place_order,
+)
+from mfx._generated.api.accounts import (
+    set_trading_account_trailing_stop as _acct_set_trailing_stop,
+)
 from mfx._generated.api.execution import (
     cancel_order as _cancel_order,
 )
@@ -136,11 +163,61 @@ _POLL_FROM_S = 0.2
 _POLL_CAP_S = 2.0
 
 
+@dataclass(frozen=True, slots=True)
+class _Routes:
+    """Which generated call each command takes, and the path's first word for the `what` text.
+
+    The terminal routes and the account routes take the same bodies under the same rules; only
+    the resource differs. One table each keeps one implementation of every command.
+    """
+
+    noun: str
+    place: Any
+    cancel: Any
+    modify_order: Any
+    modify_position: Any
+    close: Any
+    close_by: Any
+    close_partial: Any
+    set_trailing: Any
+    clear_trailing: Any
+
+
+_TERMINAL_ROUTES = _Routes(
+    noun="terminals",
+    place=_place_order,
+    cancel=_cancel_order,
+    modify_order=_modify_order,
+    modify_position=_modify_position,
+    close=_close_position,
+    close_by=_close_position_by,
+    close_partial=_close_position_partial,
+    set_trailing=_set_trailing_stop,
+    clear_trailing=_clear_trailing_stop,
+)
+
+#: A trading account's routes, ``/accounts/{id}/...``: the account's lead runner takes the
+#: command, on any venue.
+_ACCOUNT_ROUTES = _Routes(
+    noun="accounts",
+    place=_acct_place_order,
+    cancel=_acct_cancel_order,
+    modify_order=_acct_modify_order,
+    modify_position=_acct_modify_position,
+    close=_acct_close_position,
+    close_by=_acct_close_position_by,
+    close_partial=_acct_close_position_partial,
+    set_trailing=_acct_set_trailing_stop,
+    clear_trailing=_acct_clear_trailing_stop,
+)
+
+
 class Execution:
     """Order entry for one tenant. Every method returns a result; none raises."""
 
-    def __init__(self, client: MfxClient) -> None:
+    def __init__(self, client: MfxClient, *, routes: _Routes = _TERMINAL_ROUTES) -> None:
         self._client = client
+        self._routes = routes
 
     async def place_order(
         self,
@@ -193,14 +270,14 @@ class Execution:
             comment=comment if comment is not None else UNSET,
         )
         return await self._command(
-            lambda: _place_order.asyncio_detailed(
+            lambda: self._routes.place.asyncio_detailed(
                 id=_uuid(terminal_id),
                 client=self._client.generated,
                 body=body,
                 idempotency_key=idempotency_key,
             ),
             idempotency_key,
-            f"POST /terminals/{terminal_id}/orders",
+            f"POST /{self._routes.noun}/{terminal_id}/orders",
         )
 
     async def cancel_order(
@@ -208,14 +285,14 @@ class Execution:
     ) -> ExecutionResult:
         """Cancel a pending order. First class, not a modify with a special case."""
         return await self._command(
-            lambda: _cancel_order.asyncio_detailed(
+            lambda: self._routes.cancel.asyncio_detailed(
                 id=_uuid(terminal_id),
                 ticket=ticket,
                 client=self._client.generated,
                 idempotency_key=idempotency_key,
             ),
             idempotency_key,
-            f"POST /terminals/{terminal_id}/orders/{ticket}/cancel",
+            f"POST /{self._routes.noun}/{terminal_id}/orders/{ticket}/cancel",
         )
 
     async def modify_position(
@@ -235,7 +312,7 @@ class Execution:
             tp=_decimal("tp", tp) if tp is not None else UNSET,
         )
         return await self._command(
-            lambda: _modify_position.asyncio_detailed(
+            lambda: self._routes.modify_position.asyncio_detailed(
                 id=_uuid(terminal_id),
                 ticket=ticket,
                 client=self._client.generated,
@@ -243,7 +320,7 @@ class Execution:
                 idempotency_key=idempotency_key,
             ),
             idempotency_key,
-            f"POST /terminals/{terminal_id}/positions/{ticket}/modify",
+            f"POST /{self._routes.noun}/{terminal_id}/positions/{ticket}/modify",
         )
 
     async def modify_order(
@@ -293,7 +370,7 @@ class Execution:
             expires_at=UNSET if isinstance(expires_at, _Keep) else expires_at,
         )
         return await self._command(
-            lambda: _modify_order.asyncio_detailed(
+            lambda: self._routes.modify_order.asyncio_detailed(
                 id=_uuid(terminal_id),
                 ticket=ticket,
                 client=self._client.generated,
@@ -301,7 +378,7 @@ class Execution:
                 idempotency_key=idempotency_key,
             ),
             idempotency_key,
-            f"POST /terminals/{terminal_id}/orders/{ticket}/modify",
+            f"POST /{self._routes.noun}/{terminal_id}/orders/{ticket}/modify",
         )
 
     async def close_position(
@@ -321,7 +398,7 @@ class Execution:
             deviation_points=deviation_points if deviation_points is not None else UNSET
         )
         return await self._command(
-            lambda: _close_position.asyncio_detailed(
+            lambda: self._routes.close.asyncio_detailed(
                 id=_uuid(terminal_id),
                 ticket=ticket,
                 client=self._client.generated,
@@ -329,7 +406,7 @@ class Execution:
                 idempotency_key=idempotency_key,
             ),
             idempotency_key,
-            f"POST /terminals/{terminal_id}/positions/{ticket}/close",
+            f"POST /{self._routes.noun}/{terminal_id}/positions/{ticket}/close",
         )
 
     async def close_position_by(
@@ -353,7 +430,7 @@ class Execution:
         """
         body = PositionCloseBy(by_ticket=by_ticket)
         return await self._command(
-            lambda: _close_position_by.asyncio_detailed(
+            lambda: self._routes.close_by.asyncio_detailed(
                 id=_uuid(terminal_id),
                 ticket=ticket,
                 client=self._client.generated,
@@ -361,7 +438,7 @@ class Execution:
                 idempotency_key=idempotency_key,
             ),
             idempotency_key,
-            f"POST /terminals/{terminal_id}/positions/{ticket}/close-by",
+            f"POST /{self._routes.noun}/{terminal_id}/positions/{ticket}/close-by",
         )
 
     async def close_position_partial(
@@ -382,7 +459,7 @@ class Execution:
             deviation_points=deviation_points if deviation_points is not None else UNSET,
         )
         return await self._command(
-            lambda: _close_position_partial.asyncio_detailed(
+            lambda: self._routes.close_partial.asyncio_detailed(
                 id=_uuid(terminal_id),
                 ticket=ticket,
                 client=self._client.generated,
@@ -390,7 +467,7 @@ class Execution:
                 idempotency_key=idempotency_key,
             ),
             idempotency_key,
-            f"POST /terminals/{terminal_id}/positions/{ticket}/close-partial",
+            f"POST /{self._routes.noun}/{terminal_id}/positions/{ticket}/close-partial",
         )
 
     async def set_trailing_stop(
@@ -413,7 +490,7 @@ class Execution:
         """
         body = TrailingStopSet(distance=_decimal("distance", distance))
         return await self._command(
-            lambda: _set_trailing_stop.asyncio_detailed(
+            lambda: self._routes.set_trailing.asyncio_detailed(
                 id=_uuid(terminal_id),
                 ticket=ticket,
                 client=self._client.generated,
@@ -421,7 +498,7 @@ class Execution:
                 idempotency_key=idempotency_key,
             ),
             idempotency_key,
-            f"PUT /terminals/{terminal_id}/positions/{ticket}/trailing-stop",
+            f"PUT /{self._routes.noun}/{terminal_id}/positions/{ticket}/trailing-stop",
         )
 
     async def clear_trailing_stop(
@@ -429,14 +506,14 @@ class Execution:
     ) -> ExecutionResult:
         """Remove the position's trailing stop. The stop loss stays where the trail left it."""
         return await self._command(
-            lambda: _clear_trailing_stop.asyncio_detailed(
+            lambda: self._routes.clear_trailing.asyncio_detailed(
                 id=_uuid(terminal_id),
                 ticket=ticket,
                 client=self._client.generated,
                 idempotency_key=idempotency_key,
             ),
             idempotency_key,
-            f"DELETE /terminals/{terminal_id}/positions/{ticket}/trailing-stop",
+            f"DELETE /{self._routes.noun}/{terminal_id}/positions/{ticket}/trailing-stop",
         )
 
     async def get_command(self, command_id: Id, *, idempotency_key: str = "") -> ExecutionResult:

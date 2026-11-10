@@ -69,11 +69,12 @@ class TenantTerminal:
         state (TenantTerminalState): As `Terminal.state`. OFFLINE: its cell cannot run it (`offline_reason` says why);
             it comes back by itself, or is moved after 15 minutes. DRAINED: you drained it; stopped and not billed, keeping
             its id, account and settings until you resume or retire it. PARKED: your account is suspended and its grace
-            period ended; the terminal is stopped and keeps its settings, its place and its login. It returns to LOGGING_IN
-            by itself when your account is reinstated, or goes to DRAINING when it is retired. QUEUED: placed on a cell and
-            waiting for its turn to start. A cell starts terminals a few at a time so that the ones already running are not
-            slowed; `queue` says your place, when it is expected to start and why it waits. It is not trading yet; it starts
-            by itself.
+            period ended; the terminal is stopped and keeps its settings, its place and its login. Its cell stops terminals
+            a few at a time, so one may stay as it was for a while after the grace ends. It returns to LOGGING_IN by itself
+            when your account is reinstated, or goes to DRAINING when it is retired. QUEUED: placed on a cell and waiting
+            for its turn to start. A cell starts terminals a few at a time so that the ones already running are not slowed;
+            `queue` says your place, when it is expected to start and why it waits. It is not trading yet; it starts by
+            itself.
         instruments (list[str]):
         created_at (datetime.datetime):
         same_login_terminals (Union[None, Unset, int]): How many of YOUR live terminals use this terminal's broker

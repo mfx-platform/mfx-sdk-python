@@ -1,6 +1,8 @@
 """Contains all the data models used in inputs/outputs"""
 
 from .account import Account
+from .account_connected import AccountConnected
+from .account_connected_venue import AccountConnectedVenue
 from .account_marks_message import AccountMarksMessage
 from .account_profile_changed import AccountProfileChanged
 from .account_profile_changed_account_type import AccountProfileChangedAccountType
@@ -10,6 +12,9 @@ from .account_profile_changed_trade_allowed import AccountProfileChangedTradeAll
 from .account_profile_type_0 import AccountProfileType0
 from .account_profile_type_0_account_type import AccountProfileType0AccountType
 from .account_profile_type_0_margin_mode import AccountProfileType0MarginMode
+from .account_reauth_needed import AccountReauthNeeded
+from .account_reauth_needed_reason import AccountReauthNeededReason
+from .account_reauth_needed_venue import AccountReauthNeededVenue
 from .account_snapshot_message import AccountSnapshotMessage
 from .account_snapshot_type_0 import AccountSnapshotType0
 from .age import Age
@@ -32,6 +37,8 @@ from .command_kind import CommandKind
 from .command_outcome import CommandOutcome
 from .command_resolved import CommandResolved
 from .command_result import CommandResult
+from .command_result_deals_type_0_item import CommandResultDealsType0Item
+from .command_result_venue import CommandResultVenue
 from .command_state import CommandState
 from .command_tickets import CommandTickets
 from .command_unknown import CommandUnknown
@@ -124,6 +131,16 @@ from .credential_accepted_cred_type import CredentialAcceptedCredType
 from .credential_accepted_takes_effect import CredentialAcceptedTakesEffect
 from .credential_submission import CredentialSubmission
 from .credential_submission_cred_type import CredentialSubmissionCredType
+from .ctrader_accounts_choice import CtraderAccountsChoice
+from .ctrader_grant import CtraderGrant
+from .ctrader_grant_account import CtraderGrantAccount
+from .ctrader_grant_create import CtraderGrantCreate
+from .ctrader_grant_create_environment import CtraderGrantCreateEnvironment
+from .ctrader_grant_create_scope import CtraderGrantCreateScope
+from .ctrader_grant_environment import CtraderGrantEnvironment
+from .ctrader_grant_scope import CtraderGrantScope
+from .ctrader_grant_started import CtraderGrantStarted
+from .ctrader_grant_state import CtraderGrantState
 from .deal import Deal
 from .deal_close_reason_type_1 import DealCloseReasonType1
 from .deal_close_reason_type_2_type_1 import DealCloseReasonType2Type1
@@ -651,6 +668,7 @@ from .trading_account_environment_type_2_type_1 import (
 from .trading_account_environment_type_3_type_1 import (
     TradingAccountEnvironmentType3Type1,
 )
+from .trading_account_list import TradingAccountList
 from .trading_account_page import TradingAccountPage
 from .trading_account_runners_item import TradingAccountRunnersItem
 from .trading_account_runners_item_role_type_1 import TradingAccountRunnersItemRoleType1
@@ -662,6 +680,8 @@ from .trading_account_runners_item_role_type_3_type_1 import (
 )
 from .trading_account_state import TradingAccountState
 from .trading_account_venue import TradingAccountVenue
+from .trading_symbol import TradingSymbol
+from .trading_symbol_list import TradingSymbolList
 from .trailing_stop import TrailingStop
 from .trailing_stop_set import TrailingStopSet
 from .trailing_stop_state import TrailingStopState
@@ -719,6 +739,8 @@ from .webhook_test_accepted import WebhookTestAccepted
 
 __all__ = (
     "Account",
+    "AccountConnected",
+    "AccountConnectedVenue",
     "AccountMarksMessage",
     "AccountProfileChanged",
     "AccountProfileChangedAccountType",
@@ -728,6 +750,9 @@ __all__ = (
     "AccountProfileType0",
     "AccountProfileType0AccountType",
     "AccountProfileType0MarginMode",
+    "AccountReauthNeeded",
+    "AccountReauthNeededReason",
+    "AccountReauthNeededVenue",
     "AccountSnapshotMessage",
     "AccountSnapshotType0",
     "Age",
@@ -750,6 +775,8 @@ __all__ = (
     "CommandOutcome",
     "CommandResolved",
     "CommandResult",
+    "CommandResultDealsType0Item",
+    "CommandResultVenue",
     "CommandState",
     "CommandTickets",
     "CommandUnknown",
@@ -840,6 +867,16 @@ __all__ = (
     "CredentialAcceptedTakesEffect",
     "CredentialSubmission",
     "CredentialSubmissionCredType",
+    "CtraderAccountsChoice",
+    "CtraderGrant",
+    "CtraderGrantAccount",
+    "CtraderGrantCreate",
+    "CtraderGrantCreateEnvironment",
+    "CtraderGrantCreateScope",
+    "CtraderGrantEnvironment",
+    "CtraderGrantScope",
+    "CtraderGrantStarted",
+    "CtraderGrantState",
     "Deal",
     "DealCloseReasonType1",
     "DealCloseReasonType2Type1",
@@ -1279,6 +1316,7 @@ __all__ = (
     "TradingAccountEnvironmentType1",
     "TradingAccountEnvironmentType2Type1",
     "TradingAccountEnvironmentType3Type1",
+    "TradingAccountList",
     "TradingAccountPage",
     "TradingAccountRunnersItem",
     "TradingAccountRunnersItemRoleType1",
@@ -1286,6 +1324,8 @@ __all__ = (
     "TradingAccountRunnersItemRoleType3Type1",
     "TradingAccountState",
     "TradingAccountVenue",
+    "TradingSymbol",
+    "TradingSymbolList",
     "TrailingStop",
     "TrailingStopSet",
     "TrailingStopState",

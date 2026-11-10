@@ -15,9 +15,11 @@ from uuid import UUID
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
+from ..models.command_result_venue import CommandResultVenue
 from ..types import UNSET, Unset
 
 if TYPE_CHECKING:
+    from ..models.command_result_deals_type_0_item import CommandResultDealsType0Item
     from ..models.command_tickets import CommandTickets
 
 
@@ -62,6 +64,21 @@ class CommandResult:
             comment (Union[None, Unset, str]): The comment the command sent to the broker: the one asked for on OrderPlace,
                 PositionClose or PositionClosePartial, empty for an order placed without one. Null when the command carried none
                 (a close without a comment, on which the closing deal takes the position's own). Always served
+            venue (Union[Unset, CommandResultVenue]): The venue that answered: the runner's. A result from an MT5 cell is
+                mt5
+            venue_code (Union[None, Unset, str]): The venue's own code for a refusal, verbatim, beside the classified
+                `reason` (cTrader: its error code, such as NOT_ENOUGH_MONEY). Null on MT5, whose code is `mt5_retcode`, and when
+                the venue gave none
+            deals (Union[None, Unset, list['CommandResultDealsType0Item']]): Every deal the command made, in the order they
+                were made: two for an emulated close-by (`close_by_emulated`), one for an order filled at once. Null on MT5,
+                where `tickets.deal` is the one deal of the fill
+            volume_units (Union[None, Unset, str]): Decimal as a string: the volume the command filled, in units of the
+                instrument (the sum of `deals`). `exec_volume` stays in lots. Null on MT5 and when nothing filled
+            close_by_emulated (Union[Unset, bool]): True for a close-by the venue has no equivalent for, done as two closes
+                (cTrader); false otherwise
+            protection_not_set (Union[Unset, bool]): True when a market order filled but its stop loss or take profit could
+                not be set on the new position (cTrader sets them after the fill): the position is open without them. False
+                otherwise
     """
 
     ok: bool
@@ -81,9 +98,18 @@ class CommandResult:
     idempotency_key: Union[Unset, str] = UNSET
     magic: Union[None, Unset, int] = UNSET
     comment: Union[None, Unset, str] = UNSET
+    venue: Union[Unset, CommandResultVenue] = UNSET
+    venue_code: Union[None, Unset, str] = UNSET
+    deals: Union[None, Unset, list["CommandResultDealsType0Item"]] = UNSET
+    volume_units: Union[None, Unset, str] = UNSET
+    close_by_emulated: Union[Unset, bool] = UNSET
+    protection_not_set: Union[Unset, bool] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
+        from ..models.command_result_deals_type_0_item import (
+            CommandResultDealsType0Item,
+        )
         from ..models.command_tickets import CommandTickets
 
         ok = self.ok
@@ -167,6 +193,38 @@ class CommandResult:
         else:
             comment = self.comment
 
+        venue: Union[Unset, str] = UNSET
+        if not isinstance(self.venue, Unset):
+            venue = self.venue.value
+
+        venue_code: Union[None, Unset, str]
+        if isinstance(self.venue_code, Unset):
+            venue_code = UNSET
+        else:
+            venue_code = self.venue_code
+
+        deals: Union[None, Unset, list[dict[str, Any]]]
+        if isinstance(self.deals, Unset):
+            deals = UNSET
+        elif isinstance(self.deals, list):
+            deals = []
+            for deals_type_0_item_data in self.deals:
+                deals_type_0_item = deals_type_0_item_data.to_dict()
+                deals.append(deals_type_0_item)
+
+        else:
+            deals = self.deals
+
+        volume_units: Union[None, Unset, str]
+        if isinstance(self.volume_units, Unset):
+            volume_units = UNSET
+        else:
+            volume_units = self.volume_units
+
+        close_by_emulated = self.close_by_emulated
+
+        protection_not_set = self.protection_not_set
+
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
@@ -202,11 +260,26 @@ class CommandResult:
             field_dict["magic"] = magic
         if comment is not UNSET:
             field_dict["comment"] = comment
+        if venue is not UNSET:
+            field_dict["venue"] = venue
+        if venue_code is not UNSET:
+            field_dict["venue_code"] = venue_code
+        if deals is not UNSET:
+            field_dict["deals"] = deals
+        if volume_units is not UNSET:
+            field_dict["volume_units"] = volume_units
+        if close_by_emulated is not UNSET:
+            field_dict["close_by_emulated"] = close_by_emulated
+        if protection_not_set is not UNSET:
+            field_dict["protection_not_set"] = protection_not_set
 
         return field_dict
 
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
+        from ..models.command_result_deals_type_0_item import (
+            CommandResultDealsType0Item,
+        )
         from ..models.command_tickets import CommandTickets
 
         d = dict(src_dict)
@@ -334,6 +407,59 @@ class CommandResult:
 
         comment = _parse_comment(d.pop("comment", UNSET))
 
+        _venue = d.pop("venue", UNSET)
+        venue: Union[Unset, CommandResultVenue]
+        if isinstance(_venue, Unset):
+            venue = UNSET
+        else:
+            venue = CommandResultVenue(_venue)
+
+        def _parse_venue_code(data: object) -> Union[None, Unset, str]:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(Union[None, Unset, str], data)
+
+        venue_code = _parse_venue_code(d.pop("venue_code", UNSET))
+
+        def _parse_deals(data: object) -> Union[None, Unset, list["CommandResultDealsType0Item"]]:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, list):
+                    raise TypeError()
+                deals_type_0 = []
+                _deals_type_0 = data
+                for deals_type_0_item_data in _deals_type_0:
+                    deals_type_0_item = CommandResultDealsType0Item.from_dict(
+                        deals_type_0_item_data
+                    )
+
+                    deals_type_0.append(deals_type_0_item)
+
+                return deals_type_0
+            except:  # noqa: E722
+                pass
+            return cast(Union[None, Unset, list["CommandResultDealsType0Item"]], data)
+
+        deals = _parse_deals(d.pop("deals", UNSET))
+
+        def _parse_volume_units(data: object) -> Union[None, Unset, str]:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(Union[None, Unset, str], data)
+
+        volume_units = _parse_volume_units(d.pop("volume_units", UNSET))
+
+        close_by_emulated = d.pop("close_by_emulated", UNSET)
+
+        protection_not_set = d.pop("protection_not_set", UNSET)
+
         command_result = cls(
             ok=ok,
             reason=reason,
@@ -352,6 +478,12 @@ class CommandResult:
             idempotency_key=idempotency_key,
             magic=magic,
             comment=comment,
+            venue=venue,
+            venue_code=venue_code,
+            deals=deals,
+            volume_units=volume_units,
+            close_by_emulated=close_by_emulated,
+            protection_not_set=protection_not_set,
         )
 
         command_result.additional_properties = d
