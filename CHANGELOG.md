@@ -5,6 +5,19 @@ Every release of `mfx-sdk`, newest first. The format follows
 [Semantic Versioning](https://semver.org/). Until 1.0.0, a minor version may change the public
 surface; each such change is listed under **Changed** with what to do.
 
+## 0.15.0
+
+### Added
+
+- Market data by a cTrader account: `client.md.subscribe_account(account_id, symbol, idempotency_key=...)`
+  streams one symbol's spots on `md:{account_id}:{symbol}` (scope `md:write`; `pending` until the
+  first spot), `account_subscriptions(account_id, cursor=..., limit=...)` and
+  `all_account_subscriptions(account_id)` list them (`md:read`), and
+  `account_candles(account_id, symbol, timeframe, from_=..., to=..., limit=...)` reads Spotware's
+  bars through the account, at most 1,000 a call. An account's subscription is stopped with the
+  existing `unsubscribe`. An MT5 account is a `StateError` with `details["reason"] ==
+  "not_on_this_venue"`; use `subscribe` and `candles` for it.
+
 ## 0.14.0
 
 ### Added

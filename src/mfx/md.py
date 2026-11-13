@@ -29,10 +29,16 @@ from typing import TYPE_CHECKING, Any, Final
 from uuid import UUID
 
 from mfx._generated.api.md import (
+    create_account_subscription as _create_account_subscription,
+)
+from mfx._generated.api.md import (
     create_subscription as _create_subscription,
 )
 from mfx._generated.api.md import (
     delete_subscription as _delete_subscription,
+)
+from mfx._generated.api.md import (
+    get_account_candles as _get_account_candles,
 )
 from mfx._generated.api.md import (
     get_candles as _get_candles,
@@ -41,8 +47,14 @@ from mfx._generated.api.md import (
     get_ticks as _get_ticks,
 )
 from mfx._generated.api.md import (
+    list_account_subscriptions as _list_account_subscriptions,
+)
+from mfx._generated.api.md import (
     list_subscriptions as _list_subscriptions,
 )
+from mfx._generated.models.account_md_subscription import AccountMdSubscription
+from mfx._generated.models.account_md_subscription_create import AccountMdSubscriptionCreate
+from mfx._generated.models.get_account_candles_tf import GetAccountCandlesTf
 from mfx._generated.models.get_candles_tf import GetCandlesTf
 from mfx._generated.models.md_subscription import MdSubscription
 from mfx._generated.models.md_subscription_create import MdSubscriptionCreate
@@ -316,6 +328,61 @@ class MarketData:
                 return
             cursor = page.next_cursor
 
+    async def subscribe_account(
+        self, account_id: Id, symbol: str, *, idempotency_key: str
+    ) -> AccountMdSubscription:
+        """Ask for a symbol's spots on one of the tenant's cTrader accounts.
+
+        The cTrader counterpart of :meth:`subscribe`, keyed on the account instead of a server.
+        ``symbol`` is the account's own name for it, as ``trading_accounts.symbols`` lists it. The
+        spots stream on ``md:{account_id}:{symbol}`` as ``md.tick``. The subscription is a
+        resource, not a command: it exists at once and is ``pending`` until the first spot arrives.
+
+        One per account and symbol: asking again answers the live one, and asking after a stop
+        reopens it. Stop it with :meth:`unsubscribe`. An MT5 account is a
+        :class:`~mfx.errors.StateError` (``details["reason"] == "not_on_this_venue"``): it streams
+        its server, so use :meth:`subscribe`. Another tenant's account, or none, is a
+        :class:`~mfx.errors.NotFoundError`.
+        """
+        subscription = await self._client.write(
+            lambda: _create_account_subscription.asyncio_detailed(
+                id=_uuid(account_id),
+                client=self._client.generated,
+                body=AccountMdSubscriptionCreate(symbol=symbol),
+                idempotency_key=idempotency_key,
+            ),
+            f"POST /accounts/{account_id}/md/subscriptions",
+        )
+        return subscription  # type: ignore[no-any-return]
+
+    async def account_subscriptions(
+        self, account_id: Id, *, cursor: str | None = None, limit: int | None = None
+    ) -> Page[AccountMdSubscription]:
+        """One page of an account's market-data subscriptions, newest first."""
+        parsed = await self._client.read(
+            lambda: _list_account_subscriptions.asyncio_detailed(
+                id=_uuid(account_id),
+                client=self._client.generated,
+                cursor=cursor if cursor is not None else UNSET,
+                limit=limit if limit is not None else UNSET,
+            ),
+            f"GET /accounts/{account_id}/md/subscriptions",
+        )
+        return page_of(parsed)
+
+    async def all_account_subscriptions(
+        self, account_id: Id
+    ) -> AsyncIterator[AccountMdSubscription]:
+        """Every subscription of an account, following the cursor."""
+        cursor: str | None = None
+        while True:
+            page = await self.account_subscriptions(account_id, cursor=cursor)
+            for subscription in page.items:
+                yield subscription
+            if not page.next_cursor:
+                return
+            cursor = page.next_cursor
+
     async def unsubscribe(self, subscription_id: Id, *, idempotency_key: str) -> None:
         """Stop streaming this symbol. The channel stops; nothing else is affected."""
         await self._client.write(
@@ -366,6 +433,47 @@ class MarketData:
                 server_id=str(server_id) if server_id is not None else UNSET,
             ),
             "GET /md/candles",
+        )
+        return parsed  # type: ignore[no-any-return]
+
+    async def account_candles(
+        self,
+        account_id: Id,
+        symbol: str,
+        timeframe: str,
+        *,
+        from_: dt.datetime,
+        to: dt.datetime,
+        limit: int | None = None,
+    ) -> CandleList:
+        """A cTrader account's bars for a window, oldest first: at most 1,000 a call.
+
+        The cTrader counterpart of :meth:`candles`, keyed on the account instead of a broker and
+        server. The bars are Spotware's trendbars for the account's own symbol name, in UTC, ``v``
+        the bar's tick volume. When the window holds more than ``limit`` bars the answer is the
+        **newest** of them; the bar still forming is included when the window reaches now. Nothing
+        is stored: the account's runner reads them, and each read counts against the same
+        per-terminal limit a minute as :meth:`candles` (a 429 is retried with the platform's
+        ``Retry-After``, and raised as :class:`~mfx.errors.RateLimitError` once it runs out).
+
+        ``timeframe`` is one of M1, M5, M15, M30, H1, H4, D1, W1, MN1; any other is a
+        ``ValueError`` here, before the wire. An MT5 account is a :class:`~mfx.errors.StateError`
+        (``details["reason"] == "not_on_this_venue"``): its candles are its server's, so use
+        :meth:`candles`. An account whose runner is not connected is an
+        :class:`~mfx.errors.UpstreamError` (503). No bar in the window is an empty answer.
+        """
+        tf = GetAccountCandlesTf(timeframe)
+        parsed = await self._client.read(
+            lambda: _get_account_candles.asyncio_detailed(
+                id=_uuid(account_id),
+                client=self._client.generated,
+                symbol=symbol,
+                tf=tf,
+                from_=from_,
+                to=to,
+                limit=limit if limit is not None else UNSET,
+            ),
+            f"GET /accounts/{account_id}/md/candles",
         )
         return parsed  # type: ignore[no-any-return]
 

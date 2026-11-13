@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import asyncio
 import base64
+import datetime as dt
 import json
 import os
 import subprocess
@@ -116,6 +117,35 @@ async def _call(client: mfx.MfxClient, op: str, args: dict[str, Any]) -> dict[st
         return await asyncio.wait_for(_read_stream(client, a["channels"], a["count"]), timeout=15)
     if op == "stream.close_waiting":
         return await asyncio.wait_for(_close_waiting(client, a["channels"]), timeout=15)
+    if op == "md.subscribe_account":
+        subscription = await client.md.subscribe_account(
+            a["account_id"], a["symbol"], idempotency_key=a["idempotency_key"]
+        )
+        return {
+            "id": str(subscription.id),
+            "account_id": str(subscription.account_id),
+            "symbol": subscription.symbol,
+            "state": str(subscription.state),
+        }
+    if op == "md.account_subscriptions":
+        return {
+            "symbols": [
+                s.symbol async for s in client.md.all_account_subscriptions(a["account_id"])
+            ]
+        }
+    if op == "md.account_candles":
+        bars = await client.md.account_candles(
+            a["account_id"],
+            a["symbol"],
+            a["timeframe"],
+            from_=dt.datetime.fromisoformat(a["from"]),
+            to=dt.datetime.fromisoformat(a["to"]),
+        )
+        return {
+            "count": len(bars.items),
+            "first_open": bars.items[0].o if bars.items else None,
+            "last_close": bars.items[-1].c if bars.items else None,
+        }
     raise AssertionError(f"this runner does not know the operation {op!r}")
 
 

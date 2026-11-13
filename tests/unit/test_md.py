@@ -8,10 +8,11 @@ import httpx
 import pytest
 
 from mfx.client import MfxClient
+from mfx.errors import NotFoundError, RateLimitError, StateError, UpstreamError
 from mfx.md import SubscriptionDegraded, SubscriptionRecovered, subscription_event
 from mfx.streaming import Channel, StreamMessage
 
-from .conftest import BROKER_ID, SERVER_ID, FakeMfx, body_of, page
+from .conftest import BROKER_ID, SERVER_ID, FakeMfx, body_of, error, page
 
 #: The Story these cases are Tested By: generated core + ergonomic layer + conformance suite.
 
@@ -349,3 +350,178 @@ async def test_a_subscription_says_on_itself_why_it_is_degraded_and_since_when(
         None,
         None,
     )
+
+
+ACCOUNT_ID = "4c2d3e4f-5a6b-7c8d-9e0f-102030405060"
+
+
+def account_subscription(
+    symbol: str = SYMBOL, sub_id: str = "06abfa00-0000-7000-8000-0000000000a1"
+) -> dict:
+    """One cTrader account subscription as the platform answers it."""
+    return {
+        "id": sub_id,
+        "account_id": ACCOUNT_ID,
+        "symbol": symbol,
+        "state": "pending",
+        "created_at": "2026-11-12T09:00:00Z",
+    }
+
+
+def _state_error() -> httpx.Response:
+    return httpx.Response(
+        409,
+        json={
+            "error": {
+                "code": "state_error",
+                "message": "an MT5 account",
+                "details": {"reason": "not_on_this_venue"},
+            }
+        },
+    )
+
+
+async def test_a_ctrader_accounts_spots_are_subscribed_by_account_and_an_mt5_account_is_refused(
+    client: MfxClient, mfx: FakeMfx
+) -> None:
+    """Given a tenant that wants a symbol's spots on one of its cTrader accounts
+    When it subscribes through the SDK, and again for an MT5 account and for an account not its own
+    Then the call is one POST /accounts/{id}/md/subscriptions carrying only the account's own symbol
+    name and the idempotency key; the answer is the pending subscription with its account and a
+    parsed state; an MT5 account is a StateError whose details name `not_on_this_venue`; another
+    tenant's account is a NotFoundError; and none of the writes is retried."""
+    mfx.responses.extend(
+        [
+            httpx.Response(201, json=account_subscription()),
+            _state_error(),
+            error(404, "not_found", "no such account"),
+        ]
+    )
+
+    created = await client.md.subscribe_account(ACCOUNT_ID, SYMBOL, idempotency_key="k1")
+
+    sent = mfx.requests[-1]
+    assert (sent.method, sent.url.path) == ("POST", f"/v1/accounts/{ACCOUNT_ID}/md/subscriptions")
+    assert sent.headers["Idempotency-Key"] == "k1"
+    assert body_of(sent) == {"symbol": SYMBOL}
+    assert (str(created.account_id), created.symbol, created.state.value) == (
+        ACCOUNT_ID,
+        SYMBOL,
+        "pending",
+    )
+
+    with pytest.raises(StateError) as refused:
+        await client.md.subscribe_account(ACCOUNT_ID, SYMBOL, idempotency_key="k2")
+    assert refused.value.details["reason"] == "not_on_this_venue"
+    with pytest.raises(NotFoundError):
+        await client.md.subscribe_account(ACCOUNT_ID, SYMBOL, idempotency_key="k3")
+    assert len(mfx.requests) == 3, "a write is never retried"
+
+
+async def test_an_accounts_subscriptions_are_listed_across_pages_and_stopped_by_the_existing_call(
+    client: MfxClient, mfx: FakeMfx
+) -> None:
+    """Given a cTrader account with more subscriptions than one page holds
+    When the tenant reads a page and then every page, and stops one
+    Then each read is a GET /accounts/{id}/md/subscriptions with `cursor` and `limit` only when
+    given; every page is followed to the end; and the stop is the same DELETE /md/subscriptions/{id}
+    as for a server subscription, so there is no second stop call to learn."""
+    sub_2 = "06abfa00-0000-7000-8000-0000000000a2"
+    sub_3 = "06abfa00-0000-7000-8000-0000000000a3"
+    mfx.responses.extend(
+        [
+            page([account_subscription("EURUSD")], "cur-2"),
+            page([account_subscription("EURUSD"), account_subscription("XAUUSD", sub_2)], "cur-2"),
+            page([account_subscription("GBPUSD", sub_3)], None),
+            httpx.Response(204),
+        ]
+    )
+
+    first = await client.md.account_subscriptions(ACCOUNT_ID, cursor="c0", limit=1)
+    sent = mfx.last.url
+    assert sent.path == f"/v1/accounts/{ACCOUNT_ID}/md/subscriptions"
+    assert (sent.params["cursor"], sent.params["limit"]) == ("c0", "1")
+    assert first.next_cursor == "cur-2"
+    assert len(first.items) == 1
+
+    symbols = [s.symbol async for s in client.md.all_account_subscriptions(ACCOUNT_ID)]
+    assert symbols == ["EURUSD", "XAUUSD", "GBPUSD"]
+    assert "cursor" not in mfx.requests[1].url.params
+    assert mfx.requests[-1].url.params["cursor"] == "cur-2", "the second page followed the cursor"
+
+    await client.md.unsubscribe(sub_2, idempotency_key="k4")
+    assert (mfx.requests[-1].method, mfx.requests[-1].url.path) == (
+        "DELETE",
+        f"/v1/md/subscriptions/{sub_2}",
+    )
+
+
+async def test_a_ctrader_accounts_bars_are_read_by_account_and_each_documented_refusal_is_typed(
+    client: MfxClient, mfx: FakeMfx, sleeps: list[float]
+) -> None:
+    """Given a tenant that wants bars of one of its cTrader accounts
+    When it reads a window, with and without a limit, and with a timeframe the contract lacks
+    Then each read is one GET /accounts/{id}/md/candles with the account's symbol name, `tf`, `from`
+    and `to`, and `limit` only when given; the bars come back oldest first as decimal strings; an
+    unknown timeframe is a ValueError before the wire; an MT5 account is a StateError
+    (`not_on_this_venue`); a 503 is an UpstreamError; and a 429 is retried after its Retry-After
+    and raised as a RateLimitError once the retries run out."""
+    start = dt.datetime(2026, 11, 12, 9, 0, tzinfo=dt.UTC)
+    end = start + dt.timedelta(hours=2)
+    bar = {
+        "ts": "2026-11-12T09:00:00Z",
+        "o": "1.158",
+        "h": "1.1592",
+        "l": "1.1575",
+        "c": "1.159",
+        "v": 812,
+    }
+    mfx.responses.extend(
+        [
+            httpx.Response(200, json={"items": [bar]}),
+            httpx.Response(200, json={"items": []}),
+            _state_error(),
+            error(503, "upstream_error", "terminal_unavailable"),
+        ]
+    )
+
+    bars = await client.md.account_candles(ACCOUNT_ID, SYMBOL, "H1", from_=start, to=end)
+    sent = mfx.last.url
+    assert sent.path == f"/v1/accounts/{ACCOUNT_ID}/md/candles"
+    assert (sent.params["symbol"], sent.params["tf"]) == (SYMBOL, "H1")
+    assert sent.params["from"].startswith("2026-11-12T09:00:00")
+    assert sent.params["to"].startswith("2026-11-12T11:00:00")
+    assert "limit" not in sent.params
+    first = bars.items[0]
+    assert (first.o, first.h, first.l, first.c, first.v, first.ts) == (
+        "1.158",
+        "1.1592",
+        "1.1575",
+        "1.159",
+        812,
+        start,
+    )
+
+    empty = await client.md.account_candles(
+        ACCOUNT_ID, SYMBOL, "M5", from_=start, to=end, limit=300
+    )
+    assert mfx.last.url.params["limit"] == "300"
+    assert empty.items == []
+
+    with pytest.raises(ValueError, match="M2"):
+        await client.md.account_candles(ACCOUNT_ID, SYMBOL, "M2", from_=start, to=end)
+    assert len(mfx.requests) == 2, "the unknown timeframe never reached MFX"
+
+    with pytest.raises(StateError) as refused:
+        await client.md.account_candles(ACCOUNT_ID, SYMBOL, "H1", from_=start, to=end)
+    assert refused.value.details["reason"] == "not_on_this_venue"
+    with pytest.raises(UpstreamError):
+        await client.md.account_candles(ACCOUNT_ID, SYMBOL, "H1", from_=start, to=end)
+
+    mfx.responses.extend(
+        [error(429, "terminal_reads_limit", "reads this minute", **{"Retry-After": "7"})] * 4
+    )
+    with pytest.raises(RateLimitError) as limited:
+        await client.md.account_candles(ACCOUNT_ID, SYMBOL, "H1", from_=start, to=end)
+    assert limited.value.retry_after_s == 7.0
+    assert sleeps == [7.0, 7.0, 7.0], "retried after the platform's own Retry-After"

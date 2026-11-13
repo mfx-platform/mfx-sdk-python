@@ -58,7 +58,7 @@ def sync_detailed(
     client: Union[AuthenticatedClient, Client],
     idempotency_key: str,
 ) -> Response[Union[Any, Error]]:
-    """Stop a subscription
+    """Stop a subscription, by server or by a cTrader account
 
     Args:
         id (UUID):
@@ -90,7 +90,7 @@ def sync(
     client: Union[AuthenticatedClient, Client],
     idempotency_key: str,
 ) -> Optional[Union[Any, Error]]:
-    """Stop a subscription
+    """Stop a subscription, by server or by a cTrader account
 
     Args:
         id (UUID):
@@ -117,7 +117,7 @@ async def asyncio_detailed(
     client: Union[AuthenticatedClient, Client],
     idempotency_key: str,
 ) -> Response[Union[Any, Error]]:
-    """Stop a subscription
+    """Stop a subscription, by server or by a cTrader account
 
     Args:
         id (UUID):
@@ -147,7 +147,7 @@ async def asyncio(
     client: Union[AuthenticatedClient, Client],
     idempotency_key: str,
 ) -> Optional[Union[Any, Error]]:
-    """Stop a subscription
+    """Stop a subscription, by server or by a cTrader account
 
     Args:
         id (UUID):
