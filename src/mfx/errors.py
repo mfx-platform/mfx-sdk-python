@@ -18,6 +18,7 @@ from __future__ import annotations
 import datetime as dt
 import json
 from collections.abc import Mapping
+from dataclasses import dataclass
 from http import HTTPStatus
 from typing import Any, Final
 
@@ -33,6 +34,9 @@ __all__ = [
     "NotFoundError",
     "PlacementError",
     "RateLimitError",
+    "RiskOverrideRequiredError",
+    "RiskRefusal",
+    "RiskRefusedError",
     "StateError",
     "TenantDisabledError",
     "TenantSuspendedError",
@@ -196,6 +200,66 @@ class MaintenanceError(ForbiddenError):
         return [s for s in value if isinstance(s, str)] if isinstance(value, list) else []
 
 
+@dataclass(frozen=True, slots=True)
+class RiskRefusal:
+    """What a Risk Management refusal names (the contract's ``RiskRefusalDetails``). Figures stay
+    text, as the platform wrote them; ``policy_id`` and ``version`` are None when a challenge's
+    rule refused, and ``challenge_id`` and ``challenge_version`` are None when a policy's did."""
+
+    reason: str
+    rule: str | None
+    policy_id: str | None
+    version: int | None
+    challenge_id: str | None
+    challenge_version: int | None
+    used: str | None
+    limit: str | None
+    would_be: str | None
+
+
+def _text_or_none(details: Mapping[str, Any], name: str) -> str | None:
+    value = details.get(name)
+    return None if value is None or value == "" else str(value)
+
+
+def _int_or_none(details: Mapping[str, Any], name: str) -> int | None:
+    value = details.get(name)
+    if isinstance(value, bool) or value is None or value == "":
+        return None
+    try:
+        return int(str(value))
+    except ValueError:
+        return None
+
+
+class RiskRefusedError(ValidationError):
+    """422 ``risk_refused``: a new entry broke a Risk Management rule in force on the account and
+    nothing was sent to the broker. ``refusal`` says which rule, the figure it used, its limit
+    and what the entry would have made it. Send a smaller entry, add a stop, or wait for the
+    inputs to be fresh (``reason`` ``risk_inputs_stale``) or for the window to open."""
+
+    @property
+    def refusal(self) -> RiskRefusal:
+        """What refused the entry, read from ``details``."""
+        d = self.details
+        return RiskRefusal(
+            reason=str(d.get("reason") or "risk_refused"),
+            rule=_text_or_none(d, "rule"),
+            policy_id=_text_or_none(d, "policy_id"),
+            version=_int_or_none(d, "version"),
+            challenge_id=_text_or_none(d, "challenge_id"),
+            challenge_version=_int_or_none(d, "challenge_version"),
+            used=_text_or_none(d, "used"),
+            limit=_text_or_none(d, "limit"),
+            would_be=_text_or_none(d, "would_be"),
+        )
+
+
+class RiskOverrideRequiredError(ForbiddenError):
+    """403 ``risk_override_required``: the change relaxes protection, and needs a key with
+    ``risk:override`` and a ``reason``. Nothing was changed."""
+
+
 class NotFoundError(MfxApiError):
     """No such object *for this tenant*. Another tenant's id is a 404 here, never a 403."""
 
@@ -320,6 +384,10 @@ _BY_CODE: Final[dict[str, type[MfxApiError]]] = {
     "conflict": ConflictError,
     "state_error": StateError,
     "placement_error": PlacementError,
+    # Risk Management: a refused entry carries its rule and figures in details, and a
+    # relaxing change made without risk:override is the key's to fix, not the request's.
+    "risk_refused": RiskRefusedError,
+    "risk_override_required": RiskOverrideRequiredError,
     # Mapped by code, which is the only way to get this right. The two refusals
     # on POST /terminals are no longer the same thing said twice, as they read when this mapping was
     # written: a 422 `validation_error` means the request names no broker or server MFX lists at all

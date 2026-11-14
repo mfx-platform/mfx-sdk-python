@@ -1,7 +1,7 @@
 from enum import Enum
 
 
-class ListRiskPlansState(str, Enum):
+class ListRiskPlansStateItem(str, Enum):
     ARMED = "armed"
     COMPLETED = "completed"
     DRAFT = "draft"

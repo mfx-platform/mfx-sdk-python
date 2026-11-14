@@ -1,7 +1,7 @@
 from enum import Enum
 
 
-class ListRiskChallengeAccountsRule(str, Enum):
+class ListRiskChallengeAccountsRuleItem(str, Enum):
     DAILY_LOSS = "daily_loss"
     MAX_DRAWDOWN = "max_drawdown"
 

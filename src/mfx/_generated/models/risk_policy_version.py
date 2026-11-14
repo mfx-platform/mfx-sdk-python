@@ -40,6 +40,8 @@ class RiskPolicyVersion:
         changes (list['RiskPolicyVersionChangesItem']):
         created_at (datetime.datetime):
         reason (Union[None, str]):
+        created_by (Union[Unset, str]): Who made the version: key:<key id> for an API key, or the person or system that
+            did
     """
 
     policy_id: UUID
@@ -50,6 +52,7 @@ class RiskPolicyVersion:
     changes: list["RiskPolicyVersionChangesItem"]
     created_at: datetime.datetime
     reason: Union[None, str]
+    created_by: Union[Unset, str] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -79,6 +82,8 @@ class RiskPolicyVersion:
         reason: Union[None, str]
         reason = self.reason
 
+        created_by = self.created_by
+
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
@@ -93,6 +98,8 @@ class RiskPolicyVersion:
                 "reason": reason,
             }
         )
+        if created_by is not UNSET:
+            field_dict["created_by"] = created_by
 
         return field_dict
 
@@ -131,6 +138,8 @@ class RiskPolicyVersion:
 
         reason = _parse_reason(d.pop("reason"))
 
+        created_by = d.pop("created_by", UNSET)
+
         risk_policy_version = cls(
             policy_id=policy_id,
             version=version,
@@ -140,6 +149,7 @@ class RiskPolicyVersion:
             changes=changes,
             created_at=created_at,
             reason=reason,
+            created_by=created_by,
         )
 
         risk_policy_version.additional_properties = d

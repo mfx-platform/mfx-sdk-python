@@ -36,7 +36,7 @@ class RiskActivity:
     Attributes:
         id (UUID):
         at (datetime.datetime):
-        terminal_id (Union[None, UUID]): null for a row about several accounts (a daily reset)
+        account_id (Union[None, UUID]): null for a row about several accounts (a daily reset)
         kind (RiskActivityKind):
         rule (Union[None, str]):
         policy (Union['RiskActivityPolicyType0', None]):
@@ -51,7 +51,7 @@ class RiskActivity:
 
     id: UUID
     at: datetime.datetime
-    terminal_id: Union[None, UUID]
+    account_id: Union[None, UUID]
     kind: RiskActivityKind
     rule: Union[None, str]
     policy: Union["RiskActivityPolicyType0", None]
@@ -73,11 +73,11 @@ class RiskActivity:
 
         at = self.at.isoformat()
 
-        terminal_id: Union[None, str]
-        if isinstance(self.terminal_id, UUID):
-            terminal_id = str(self.terminal_id)
+        account_id: Union[None, str]
+        if isinstance(self.account_id, UUID):
+            account_id = str(self.account_id)
         else:
-            terminal_id = self.terminal_id
+            account_id = self.account_id
 
         kind = self.kind.value
 
@@ -122,7 +122,7 @@ class RiskActivity:
             {
                 "id": id,
                 "at": at,
-                "terminal_id": terminal_id,
+                "account_id": account_id,
                 "kind": kind,
                 "rule": rule,
                 "policy": policy,
@@ -149,20 +149,20 @@ class RiskActivity:
 
         at = isoparse(d.pop("at"))
 
-        def _parse_terminal_id(data: object) -> Union[None, UUID]:
+        def _parse_account_id(data: object) -> Union[None, UUID]:
             if data is None:
                 return data
             try:
                 if not isinstance(data, str):
                     raise TypeError()
-                terminal_id_type_0 = UUID(data)
+                account_id_type_0 = UUID(data)
 
-                return terminal_id_type_0
+                return account_id_type_0
             except:  # noqa: E722
                 pass
             return cast(Union[None, UUID], data)
 
-        terminal_id = _parse_terminal_id(d.pop("terminal_id"))
+        account_id = _parse_account_id(d.pop("account_id"))
 
         kind = RiskActivityKind(d.pop("kind"))
 
@@ -241,7 +241,7 @@ class RiskActivity:
         risk_activity = cls(
             id=id,
             at=at,
-            terminal_id=terminal_id,
+            account_id=account_id,
             kind=kind,
             rule=rule,
             policy=policy,

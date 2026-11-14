@@ -28,12 +28,12 @@ T = TypeVar("T", bound="RiskEquitySeries")
 class RiskEquitySeries:
     """
     Attributes:
-        terminal_id (UUID):
+        account_id (UUID):
         currency (Union[None, str]):
         points (list['RiskEquitySeriesPointsItem']):
     """
 
-    terminal_id: UUID
+    account_id: UUID
     currency: Union[None, str]
     points: list["RiskEquitySeriesPointsItem"]
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
@@ -41,7 +41,7 @@ class RiskEquitySeries:
     def to_dict(self) -> dict[str, Any]:
         from ..models.risk_equity_series_points_item import RiskEquitySeriesPointsItem
 
-        terminal_id = str(self.terminal_id)
+        account_id = str(self.account_id)
 
         currency: Union[None, str]
         currency = self.currency
@@ -55,7 +55,7 @@ class RiskEquitySeries:
         field_dict.update(self.additional_properties)
         field_dict.update(
             {
-                "terminal_id": terminal_id,
+                "account_id": account_id,
                 "currency": currency,
                 "points": points,
             }
@@ -68,7 +68,7 @@ class RiskEquitySeries:
         from ..models.risk_equity_series_points_item import RiskEquitySeriesPointsItem
 
         d = dict(src_dict)
-        terminal_id = UUID(d.pop("terminal_id"))
+        account_id = UUID(d.pop("account_id"))
 
         def _parse_currency(data: object) -> Union[None, str]:
             if data is None:
@@ -85,7 +85,7 @@ class RiskEquitySeries:
             points.append(points_item)
 
         risk_equity_series = cls(
-            terminal_id=terminal_id,
+            account_id=account_id,
             currency=currency,
             points=points,
         )

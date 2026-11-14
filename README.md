@@ -126,6 +126,10 @@ package:
 - **Reads raise typed errors**, mapped from the API's `error.code`: `NotFoundError`,
   `RateLimitError` with `retry_after_s`, `UpstreamError` (with `DependencyUnavailableError` and
   `EdgeError` beneath it), `MaintenanceError` with the window's `ends_at`, and the rest.
+- **Risk Management refuses an entry with its reason.** `client.risk` holds the account rules, the
+  planner, exit plans and challenges; an order a rule refuses raises `RiskRefusedError`, whose
+  `refusal` names the rule, its limit and the figures. Closes, partial closes and cancels are
+  never refused.
 - **Credentials cannot be logged by accident.** `SigningKey` and `Secret` render as `***` in every
   repr, f-string, log line and traceback, and cannot be pickled.
 - **Lists follow the cursor.** There are no totals and no page numbers; `list()` methods iterate
@@ -145,61 +149,31 @@ platform serves each one as its part is built.
 <!-- rest-only:start -->
 | Operation | Route |
 |---|---|
-| `activateRiskPolicy` | `POST /risk/policies/{id}/activate` |
 | `addCopyGroupFollowers` | `POST /copy/groups/{id}/followers` |
-| `amendRiskPlan` | `POST /risk/plans/{id}/amend` |
 | `cancelTerminalOperation` | `DELETE /terminals/{id}/operations/{operation_id}` |
-| `checkRiskOrder` | `POST /risk/planner/check` |
-| `clearRiskBreach` | `POST /risk/accounts/{id}/clear` |
 | `createCopyFollower` | `POST /copy/followers` |
 | `createCopyGroup` | `POST /copy/groups` |
 | `createCopyLeader` | `POST /copy/leaders` |
 | `createRedisPushConnector` | `POST /connectors/redis-push` |
-| `createRiskChallenge` | `POST /risk/challenges` |
-| `createRiskChallengeVersion` | `POST /risk/challenges/{id}/versions` |
-| `createRiskPlan` | `POST /risk/plans` |
-| `createRiskPolicy` | `POST /risk/policies` |
-| `createRiskPolicyVersion` | `POST /risk/policies/{id}/versions` |
-| `deactivateRiskAccount` | `POST /risk/accounts/{id}/deactivate` |
-| `endRiskPlan` | `DELETE /risk/plans/{id}` |
-| `enrolRiskChallengeAccounts` | `POST /risk/challenges/{id}/accounts` |
 | `getCopyFollower` | `GET /copy/followers/{id}` |
 | `getCopyGroup` | `GET /copy/groups/{id}` |
 | `getCopyLeader` | `GET /copy/leaders/{id}` |
 | `getExpertAdvisorParameters` | `GET /terminals/{id}/expert-advisor/parameters` |
-| `getRiskAccount` | `GET /risk/accounts/{id}` |
-| `getRiskChallenge` | `GET /risk/challenges/{id}` |
-| `getRiskChallengeAccount` | `GET /risk/challenges/{id}/accounts/{terminal_id}` |
-| `getRiskCoverage` | `GET /risk/coverage` |
-| `getRiskEquity` | `GET /risk/accounts/{id}/equity` |
-| `getRiskPlan` | `GET /risk/plans/{id}` |
-| `getRiskPolicy` | `GET /risk/policies/{id}` |
-| `getRiskPolicyVersion` | `GET /risk/policies/{id}/versions/{version}` |
 | `listCopyFollowers` | `GET /copy/followers` |
 | `listCopyGroups` | `GET /copy/groups` |
 | `listCopyLeaders` | `GET /copy/leaders` |
 | `listCopyLog` | `GET /copy/log` |
 | `listCopyStopouts` | `GET /copy/followers/{id}/stopouts` |
-| `listRiskAccounts` | `GET /risk/accounts` |
-| `listRiskActivity` | `GET /risk/activity` |
-| `listRiskChallengeAccounts` | `GET /risk/challenges/{id}/accounts` |
-| `listRiskChallenges` | `GET /risk/challenges` |
-| `listRiskPlans` | `GET /risk/plans` |
-| `listRiskPolicies` | `GET /risk/policies` |
-| `listRiskPolicyVersions` | `GET /risk/policies/{id}/versions` |
 | `pauseCopyFollower` | `POST /copy/followers/{id}/pause` |
 | `pauseCopyGroup` | `POST /copy/groups/{id}/pause` |
 | `pauseCopyLeader` | `POST /copy/leaders/{id}/pause` |
-| `pauseRiskPlan` | `POST /risk/plans/{id}/pause` |
 | `previewCopyFollower` | `POST /copy/followers/preview` |
-| `previewRiskPlan` | `POST /risk/planner/preview` |
 | `putExpertAdvisorParameters` | `PUT /terminals/{id}/expert-advisor/parameters` |
 | `removeCopyGroupFollowers` | `POST /copy/groups/{id}/followers/remove` |
 | `resetCopyStopouts` | `POST /copy/followers/{id}/stopouts/reset` |
 | `resumeCopyFollower` | `POST /copy/followers/{id}/resume` |
 | `resumeCopyGroup` | `POST /copy/groups/{id}/resume` |
 | `resumeCopyLeader` | `POST /copy/leaders/{id}/resume` |
-| `resumeRiskPlan` | `POST /risk/plans/{id}/resume` |
 | `resyncCopyFollower` | `POST /copy/followers/{id}/resync` |
 | `retireCopyLeader` | `POST /copy/leaders/{id}/retire` |
 | `sendCopySignal` | `POST /copy/leaders/{id}/signals` |

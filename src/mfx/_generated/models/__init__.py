@@ -215,16 +215,20 @@ from .expert_advisor_upload import ExpertAdvisorUpload
 from .expert_advisor_upload_files_item import ExpertAdvisorUploadFilesItem
 from .get_account_candles_tf import GetAccountCandlesTf
 from .get_candles_tf import GetCandlesTf
+from .get_risk_account_close_scope_scope import GetRiskAccountCloseScopeScope
 from .journal_line import JournalLine
 from .list_copy_log_sort import ListCopyLogSort
 from .list_maintenance_state_item import ListMaintenanceStateItem
-from .list_risk_accounts_coverage import ListRiskAccountsCoverage
-from .list_risk_accounts_restriction import ListRiskAccountsRestriction
+from .list_risk_accounts_coverage_item import ListRiskAccountsCoverageItem
+from .list_risk_accounts_restriction_item import ListRiskAccountsRestrictionItem
 from .list_risk_accounts_sort import ListRiskAccountsSort
-from .list_risk_challenge_accounts_rule import ListRiskChallengeAccountsRule
+from .list_risk_activity_sort import ListRiskActivitySort
+from .list_risk_challenge_accounts_rule_item import ListRiskChallengeAccountsRuleItem
 from .list_risk_challenge_accounts_sort import ListRiskChallengeAccountsSort
-from .list_risk_challenge_accounts_state import ListRiskChallengeAccountsState
-from .list_risk_plans_state import ListRiskPlansState
+from .list_risk_challenge_accounts_state_item import ListRiskChallengeAccountsStateItem
+from .list_risk_plans_sort import ListRiskPlansSort
+from .list_risk_plans_state_item import ListRiskPlansStateItem
+from .list_risk_policies_sort import ListRiskPoliciesSort
 from .list_risk_policies_state import ListRiskPoliciesState
 from .list_terminals_state_item import ListTerminalsStateItem
 from .list_trading_accounts_environment import ListTradingAccountsEnvironment
@@ -346,6 +350,8 @@ from .risk_activity_items_item import RiskActivityItemsItem
 from .risk_activity_items_item_outcome import RiskActivityItemsItemOutcome
 from .risk_activity_kind import RiskActivityKind
 from .risk_activity_page import RiskActivityPage
+from .risk_activity_page_stats import RiskActivityPageStats
+from .risk_activity_page_stats_kinds import RiskActivityPageStatsKinds
 from .risk_activity_policy_type_0 import RiskActivityPolicyType0
 from .risk_amount import RiskAmount
 from .risk_budget import RiskBudget
@@ -358,6 +364,7 @@ from .risk_challenge_account_detail_result_type_0 import (
 )
 from .risk_challenge_account_detail_state import RiskChallengeAccountDetailState
 from .risk_challenge_account_page import RiskChallengeAccountPage
+from .risk_challenge_account_page_stats import RiskChallengeAccountPageStats
 from .risk_challenge_account_result_type_0 import RiskChallengeAccountResultType0
 from .risk_challenge_account_state import RiskChallengeAccountState
 from .risk_challenge_counts import RiskChallengeCounts
@@ -374,6 +381,10 @@ from .risk_check_result import RiskCheckResult
 from .risk_check_result_verdict import RiskCheckResultVerdict
 from .risk_clear import RiskClear
 from .risk_clear_rule import RiskClearRule
+from .risk_close_scope import RiskCloseScope
+from .risk_close_scope_positions_item import RiskCloseScopePositionsItem
+from .risk_close_scope_positions_item_side import RiskCloseScopePositionsItemSide
+from .risk_close_scope_scope import RiskCloseScopeScope
 from .risk_coverage import RiskCoverage
 from .risk_coverage_changed import RiskCoverageChanged
 from .risk_coverage_changed_from import RiskCoverageChangedFrom
@@ -416,6 +427,7 @@ from .risk_plan import RiskPlan
 from .risk_plan_amend import RiskPlanAmend
 from .risk_plan_create import RiskPlanCreate
 from .risk_plan_page import RiskPlanPage
+from .risk_plan_page_stats import RiskPlanPageStats
 from .risk_plan_state import RiskPlanState
 from .risk_plan_step import RiskPlanStep
 from .risk_plan_step_action import RiskPlanStepAction
@@ -685,6 +697,7 @@ from .trading_account_runners_item_role_type_3_type_1 import (
 )
 from .trading_account_state import TradingAccountState
 from .trading_account_venue import TradingAccountVenue
+from .trading_account_venue_state import TradingAccountVenueState
 from .trading_symbol import TradingSymbol
 from .trading_symbol_list import TradingSymbolList
 from .trailing_stop import TrailingStop
@@ -940,16 +953,20 @@ __all__ = (
     "ExpertAdvisorUploadFilesItem",
     "GetAccountCandlesTf",
     "GetCandlesTf",
+    "GetRiskAccountCloseScopeScope",
     "JournalLine",
     "ListCopyLogSort",
     "ListMaintenanceStateItem",
-    "ListRiskAccountsCoverage",
-    "ListRiskAccountsRestriction",
+    "ListRiskAccountsCoverageItem",
+    "ListRiskAccountsRestrictionItem",
     "ListRiskAccountsSort",
-    "ListRiskChallengeAccountsRule",
+    "ListRiskActivitySort",
+    "ListRiskChallengeAccountsRuleItem",
     "ListRiskChallengeAccountsSort",
-    "ListRiskChallengeAccountsState",
-    "ListRiskPlansState",
+    "ListRiskChallengeAccountsStateItem",
+    "ListRiskPlansSort",
+    "ListRiskPlansStateItem",
+    "ListRiskPoliciesSort",
     "ListRiskPoliciesState",
     "ListTerminalsStateItem",
     "ListTradingAccountsEnvironment",
@@ -1061,6 +1078,8 @@ __all__ = (
     "RiskActivityItemsItemOutcome",
     "RiskActivityKind",
     "RiskActivityPage",
+    "RiskActivityPageStats",
+    "RiskActivityPageStatsKinds",
     "RiskActivityPolicyType0",
     "RiskAmount",
     "RiskBudget",
@@ -1071,6 +1090,7 @@ __all__ = (
     "RiskChallengeAccountDetailResultType0",
     "RiskChallengeAccountDetailState",
     "RiskChallengeAccountPage",
+    "RiskChallengeAccountPageStats",
     "RiskChallengeAccountResultType0",
     "RiskChallengeAccountState",
     "RiskChallengeCounts",
@@ -1087,6 +1107,10 @@ __all__ = (
     "RiskCheckResultVerdict",
     "RiskClear",
     "RiskClearRule",
+    "RiskCloseScope",
+    "RiskCloseScopePositionsItem",
+    "RiskCloseScopePositionsItemSide",
+    "RiskCloseScopeScope",
     "RiskCoverage",
     "RiskCoverageChanged",
     "RiskCoverageChangedFrom",
@@ -1127,6 +1151,7 @@ __all__ = (
     "RiskPlanAmend",
     "RiskPlanCreate",
     "RiskPlanPage",
+    "RiskPlanPageStats",
     "RiskPlanState",
     "RiskPlanStep",
     "RiskPlanStepAction",
@@ -1334,6 +1359,7 @@ __all__ = (
     "TradingAccountRunnersItemRoleType3Type1",
     "TradingAccountState",
     "TradingAccountVenue",
+    "TradingAccountVenueState",
     "TradingSymbol",
     "TradingSymbolList",
     "TrailingStop",

@@ -24,20 +24,20 @@ T = TypeVar("T", bound="RiskCoverageSummaryNotHealthyItem")
 class RiskCoverageSummaryNotHealthyItem:
     """
     Attributes:
-        terminal_id (UUID):
+        account_id (UUID):
         kind (str):
         state (str):
         reason (Union[None, str]):
     """
 
-    terminal_id: UUID
+    account_id: UUID
     kind: str
     state: str
     reason: Union[None, str]
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        terminal_id = str(self.terminal_id)
+        account_id = str(self.account_id)
 
         kind = self.kind
 
@@ -50,7 +50,7 @@ class RiskCoverageSummaryNotHealthyItem:
         field_dict.update(self.additional_properties)
         field_dict.update(
             {
-                "terminal_id": terminal_id,
+                "account_id": account_id,
                 "kind": kind,
                 "state": state,
                 "reason": reason,
@@ -62,7 +62,7 @@ class RiskCoverageSummaryNotHealthyItem:
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         d = dict(src_dict)
-        terminal_id = UUID(d.pop("terminal_id"))
+        account_id = UUID(d.pop("account_id"))
 
         kind = d.pop("kind")
 
@@ -76,7 +76,7 @@ class RiskCoverageSummaryNotHealthyItem:
         reason = _parse_reason(d.pop("reason"))
 
         risk_coverage_summary_not_healthy_item = cls(
-            terminal_id=terminal_id,
+            account_id=account_id,
             kind=kind,
             state=state,
             reason=reason,

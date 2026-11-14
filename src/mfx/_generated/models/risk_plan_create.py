@@ -29,17 +29,20 @@ T = TypeVar("T", bound="RiskPlanCreate")
 class RiskPlanCreate:
     """
     Attributes:
-        terminal_id (UUID):
+        account_id (UUID):
         steps (list['RiskPlanStepSpec']):
         ticket (Union[None, Unset, str]): An open position; or give order
         order (Union[Unset, RiskProposedOrder]):
+        preview_id (Union[None, UUID, Unset]): With order: the preview it was sized from. The order is placed only
+            within risk.preview_max_move_points of the preview's price and before its expires_at
         replace (Union[Unset, bool]): Take over a position another manager holds Default: False.
     """
 
-    terminal_id: UUID
+    account_id: UUID
     steps: list["RiskPlanStepSpec"]
     ticket: Union[None, Unset, str] = UNSET
     order: Union[Unset, "RiskProposedOrder"] = UNSET
+    preview_id: Union[None, UUID, Unset] = UNSET
     replace: Union[Unset, bool] = False
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
@@ -47,7 +50,7 @@ class RiskPlanCreate:
         from ..models.risk_plan_step_spec import RiskPlanStepSpec
         from ..models.risk_proposed_order import RiskProposedOrder
 
-        terminal_id = str(self.terminal_id)
+        account_id = str(self.account_id)
 
         steps = []
         for steps_item_data in self.steps:
@@ -64,13 +67,21 @@ class RiskPlanCreate:
         if not isinstance(self.order, Unset):
             order = self.order.to_dict()
 
+        preview_id: Union[None, Unset, str]
+        if isinstance(self.preview_id, Unset):
+            preview_id = UNSET
+        elif isinstance(self.preview_id, UUID):
+            preview_id = str(self.preview_id)
+        else:
+            preview_id = self.preview_id
+
         replace = self.replace
 
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
             {
-                "terminal_id": terminal_id,
+                "account_id": account_id,
                 "steps": steps,
             }
         )
@@ -78,6 +89,8 @@ class RiskPlanCreate:
             field_dict["ticket"] = ticket
         if order is not UNSET:
             field_dict["order"] = order
+        if preview_id is not UNSET:
+            field_dict["preview_id"] = preview_id
         if replace is not UNSET:
             field_dict["replace"] = replace
 
@@ -89,7 +102,7 @@ class RiskPlanCreate:
         from ..models.risk_proposed_order import RiskProposedOrder
 
         d = dict(src_dict)
-        terminal_id = UUID(d.pop("terminal_id"))
+        account_id = UUID(d.pop("account_id"))
 
         steps = []
         _steps = d.pop("steps")
@@ -114,13 +127,31 @@ class RiskPlanCreate:
         else:
             order = RiskProposedOrder.from_dict(_order)
 
+        def _parse_preview_id(data: object) -> Union[None, UUID, Unset]:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                preview_id_type_0 = UUID(data)
+
+                return preview_id_type_0
+            except:  # noqa: E722
+                pass
+            return cast(Union[None, UUID, Unset], data)
+
+        preview_id = _parse_preview_id(d.pop("preview_id", UNSET))
+
         replace = d.pop("replace", UNSET)
 
         risk_plan_create = cls(
-            terminal_id=terminal_id,
+            account_id=account_id,
             steps=steps,
             ticket=ticket,
             order=order,
+            preview_id=preview_id,
             replace=replace,
         )
 

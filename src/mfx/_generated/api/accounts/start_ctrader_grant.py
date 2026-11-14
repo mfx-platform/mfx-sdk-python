@@ -73,7 +73,8 @@ def sync_detailed(
     MFX Hub never sees their password. After consent the trader is sent to `return_url` with `grant_id`,
     `result` and your `tenant_state`; then read the grant for the accounts it lists and choose which to
     connect. The consent link lives 15 minutes. A tenant whose plan does not include cTrader is 403
-    `feature_not_entitled`.
+    `feature_not_entitled`. A tenant whose cTrader MFX Hub has suspended or disabled is 403
+    `venue_suspended`.
 
     Args:
         idempotency_key (str):
@@ -113,7 +114,8 @@ def sync(
     MFX Hub never sees their password. After consent the trader is sent to `return_url` with `grant_id`,
     `result` and your `tenant_state`; then read the grant for the accounts it lists and choose which to
     connect. The consent link lives 15 minutes. A tenant whose plan does not include cTrader is 403
-    `feature_not_entitled`.
+    `feature_not_entitled`. A tenant whose cTrader MFX Hub has suspended or disabled is 403
+    `venue_suspended`.
 
     Args:
         idempotency_key (str):
@@ -148,7 +150,8 @@ async def asyncio_detailed(
     MFX Hub never sees their password. After consent the trader is sent to `return_url` with `grant_id`,
     `result` and your `tenant_state`; then read the grant for the accounts it lists and choose which to
     connect. The consent link lives 15 minutes. A tenant whose plan does not include cTrader is 403
-    `feature_not_entitled`.
+    `feature_not_entitled`. A tenant whose cTrader MFX Hub has suspended or disabled is 403
+    `venue_suspended`.
 
     Args:
         idempotency_key (str):
@@ -186,7 +189,8 @@ async def asyncio(
     MFX Hub never sees their password. After consent the trader is sent to `return_url` with `grant_id`,
     `result` and your `tenant_state`; then read the grant for the accounts it lists and choose which to
     connect. The consent link lives 15 minutes. A tenant whose plan does not include cTrader is 403
-    `feature_not_entitled`.
+    `feature_not_entitled`. A tenant whose cTrader MFX Hub has suspended or disabled is 403
+    `venue_suspended`.
 
     Args:
         idempotency_key (str):

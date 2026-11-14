@@ -14,16 +14,16 @@ T = TypeVar("T", bound="RiskActionCompletedAccountsItem")
 class RiskActionCompletedAccountsItem:
     """
     Attributes:
-        terminal_id (UUID):
+        account_id (UUID):
         outcome (str):
     """
 
-    terminal_id: UUID
+    account_id: UUID
     outcome: str
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        terminal_id = str(self.terminal_id)
+        account_id = str(self.account_id)
 
         outcome = self.outcome
 
@@ -31,7 +31,7 @@ class RiskActionCompletedAccountsItem:
         field_dict.update(self.additional_properties)
         field_dict.update(
             {
-                "terminal_id": terminal_id,
+                "account_id": account_id,
                 "outcome": outcome,
             }
         )
@@ -41,12 +41,12 @@ class RiskActionCompletedAccountsItem:
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         d = dict(src_dict)
-        terminal_id = UUID(d.pop("terminal_id"))
+        account_id = UUID(d.pop("account_id"))
 
         outcome = d.pop("outcome")
 
         risk_action_completed_accounts_item = cls(
-            terminal_id=terminal_id,
+            account_id=account_id,
             outcome=outcome,
         )
 

@@ -27,18 +27,18 @@ T = TypeVar("T", bound="RiskCheckRequest")
 class RiskCheckRequest:
     """
     Attributes:
-        terminal_id (UUID):
+        account_id (UUID):
         order (RiskProposedOrder):
     """
 
-    terminal_id: UUID
+    account_id: UUID
     order: "RiskProposedOrder"
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         from ..models.risk_proposed_order import RiskProposedOrder
 
-        terminal_id = str(self.terminal_id)
+        account_id = str(self.account_id)
 
         order = self.order.to_dict()
 
@@ -46,7 +46,7 @@ class RiskCheckRequest:
         field_dict.update(self.additional_properties)
         field_dict.update(
             {
-                "terminal_id": terminal_id,
+                "account_id": account_id,
                 "order": order,
             }
         )
@@ -58,12 +58,12 @@ class RiskCheckRequest:
         from ..models.risk_proposed_order import RiskProposedOrder
 
         d = dict(src_dict)
-        terminal_id = UUID(d.pop("terminal_id"))
+        account_id = UUID(d.pop("account_id"))
 
         order = RiskProposedOrder.from_dict(d.pop("order"))
 
         risk_check_request = cls(
-            terminal_id=terminal_id,
+            account_id=account_id,
             order=order,
         )
 

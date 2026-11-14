@@ -1,7 +1,7 @@
 from enum import Enum
 
 
-class ListRiskAccountsRestriction(str, Enum):
+class ListRiskAccountsRestrictionItem(str, Enum):
     ENTRIES_BLOCKED = "entries_blocked"
     NONE = "none"
 

@@ -9,6 +9,7 @@ from dateutil.parser import isoparse
 from ... import errors
 from ...client import AuthenticatedClient, Client
 from ...models.error import Error
+from ...models.list_risk_activity_sort import ListRiskActivitySort
 from ...models.risk_activity_kind import RiskActivityKind
 from ...models.risk_activity_page import RiskActivityPage
 from ...models.risk_outcome import RiskOutcome
@@ -20,10 +21,11 @@ def _get_kwargs(
     cursor: Union[Unset, str] = UNSET,
     limit: Union[Unset, int] = 50,
     kind: Union[Unset, list[RiskActivityKind]] = UNSET,
-    terminal_id: Union[Unset, UUID] = UNSET,
-    outcome: Union[Unset, RiskOutcome] = UNSET,
+    account_id: Union[Unset, list[UUID]] = UNSET,
+    outcome: Union[Unset, list[RiskOutcome]] = UNSET,
     from_: Union[Unset, datetime.datetime] = UNSET,
     to: Union[Unset, datetime.datetime] = UNSET,
+    sort: Union[Unset, ListRiskActivitySort] = ListRiskActivitySort.UNRESOLVED_FIRST,
 ) -> dict[str, Any]:
     params: dict[str, Any] = {}
 
@@ -40,14 +42,21 @@ def _get_kwargs(
 
     params["kind"] = json_kind
 
-    json_terminal_id: Union[Unset, str] = UNSET
-    if not isinstance(terminal_id, Unset):
-        json_terminal_id = str(terminal_id)
-    params["terminal_id"] = json_terminal_id
+    json_account_id: Union[Unset, list[str]] = UNSET
+    if not isinstance(account_id, Unset):
+        json_account_id = []
+        for account_id_item_data in account_id:
+            account_id_item = str(account_id_item_data)
+            json_account_id.append(account_id_item)
 
-    json_outcome: Union[Unset, str] = UNSET
+    params["account_id"] = json_account_id
+
+    json_outcome: Union[Unset, list[str]] = UNSET
     if not isinstance(outcome, Unset):
-        json_outcome = outcome.value
+        json_outcome = []
+        for outcome_item_data in outcome:
+            outcome_item = outcome_item_data.value
+            json_outcome.append(outcome_item)
 
     params["outcome"] = json_outcome
 
@@ -60,6 +69,12 @@ def _get_kwargs(
     if not isinstance(to, Unset):
         json_to = to.isoformat()
     params["to"] = json_to
+
+    json_sort: Union[Unset, str] = UNSET
+    if not isinstance(sort, Unset):
+        json_sort = sort.value
+
+    params["sort"] = json_sort
 
     params = {k: v for k, v in params.items() if v is not UNSET and v is not None}
 
@@ -102,10 +117,11 @@ def sync_detailed(
     cursor: Union[Unset, str] = UNSET,
     limit: Union[Unset, int] = 50,
     kind: Union[Unset, list[RiskActivityKind]] = UNSET,
-    terminal_id: Union[Unset, UUID] = UNSET,
-    outcome: Union[Unset, RiskOutcome] = UNSET,
+    account_id: Union[Unset, list[UUID]] = UNSET,
+    outcome: Union[Unset, list[RiskOutcome]] = UNSET,
     from_: Union[Unset, datetime.datetime] = UNSET,
     to: Union[Unset, datetime.datetime] = UNSET,
+    sort: Union[Unset, ListRiskActivitySort] = ListRiskActivitySort.UNRESOLVED_FIRST,
 ) -> Response[Union[Error, RiskActivityPage]]:
     """Every warning, breach, action and its outcome, policy and plan change, unresolved first, with
     evidence
@@ -114,10 +130,12 @@ def sync_detailed(
         cursor (Union[Unset, str]):
         limit (Union[Unset, int]):  Default: 50.
         kind (Union[Unset, list[RiskActivityKind]]):
-        terminal_id (Union[Unset, UUID]):
-        outcome (Union[Unset, RiskOutcome]):
+        account_id (Union[Unset, list[UUID]]):
+        outcome (Union[Unset, list[RiskOutcome]]):
         from_ (Union[Unset, datetime.datetime]):
         to (Union[Unset, datetime.datetime]):
+        sort (Union[Unset, ListRiskActivitySort]):  Default:
+            ListRiskActivitySort.UNRESOLVED_FIRST.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -131,10 +149,11 @@ def sync_detailed(
         cursor=cursor,
         limit=limit,
         kind=kind,
-        terminal_id=terminal_id,
+        account_id=account_id,
         outcome=outcome,
         from_=from_,
         to=to,
+        sort=sort,
     )
 
     response = client.get_httpx_client().request(
@@ -150,10 +169,11 @@ def sync(
     cursor: Union[Unset, str] = UNSET,
     limit: Union[Unset, int] = 50,
     kind: Union[Unset, list[RiskActivityKind]] = UNSET,
-    terminal_id: Union[Unset, UUID] = UNSET,
-    outcome: Union[Unset, RiskOutcome] = UNSET,
+    account_id: Union[Unset, list[UUID]] = UNSET,
+    outcome: Union[Unset, list[RiskOutcome]] = UNSET,
     from_: Union[Unset, datetime.datetime] = UNSET,
     to: Union[Unset, datetime.datetime] = UNSET,
+    sort: Union[Unset, ListRiskActivitySort] = ListRiskActivitySort.UNRESOLVED_FIRST,
 ) -> Optional[Union[Error, RiskActivityPage]]:
     """Every warning, breach, action and its outcome, policy and plan change, unresolved first, with
     evidence
@@ -162,10 +182,12 @@ def sync(
         cursor (Union[Unset, str]):
         limit (Union[Unset, int]):  Default: 50.
         kind (Union[Unset, list[RiskActivityKind]]):
-        terminal_id (Union[Unset, UUID]):
-        outcome (Union[Unset, RiskOutcome]):
+        account_id (Union[Unset, list[UUID]]):
+        outcome (Union[Unset, list[RiskOutcome]]):
         from_ (Union[Unset, datetime.datetime]):
         to (Union[Unset, datetime.datetime]):
+        sort (Union[Unset, ListRiskActivitySort]):  Default:
+            ListRiskActivitySort.UNRESOLVED_FIRST.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -180,10 +202,11 @@ def sync(
         cursor=cursor,
         limit=limit,
         kind=kind,
-        terminal_id=terminal_id,
+        account_id=account_id,
         outcome=outcome,
         from_=from_,
         to=to,
+        sort=sort,
     ).parsed
 
 
@@ -193,10 +216,11 @@ async def asyncio_detailed(
     cursor: Union[Unset, str] = UNSET,
     limit: Union[Unset, int] = 50,
     kind: Union[Unset, list[RiskActivityKind]] = UNSET,
-    terminal_id: Union[Unset, UUID] = UNSET,
-    outcome: Union[Unset, RiskOutcome] = UNSET,
+    account_id: Union[Unset, list[UUID]] = UNSET,
+    outcome: Union[Unset, list[RiskOutcome]] = UNSET,
     from_: Union[Unset, datetime.datetime] = UNSET,
     to: Union[Unset, datetime.datetime] = UNSET,
+    sort: Union[Unset, ListRiskActivitySort] = ListRiskActivitySort.UNRESOLVED_FIRST,
 ) -> Response[Union[Error, RiskActivityPage]]:
     """Every warning, breach, action and its outcome, policy and plan change, unresolved first, with
     evidence
@@ -205,10 +229,12 @@ async def asyncio_detailed(
         cursor (Union[Unset, str]):
         limit (Union[Unset, int]):  Default: 50.
         kind (Union[Unset, list[RiskActivityKind]]):
-        terminal_id (Union[Unset, UUID]):
-        outcome (Union[Unset, RiskOutcome]):
+        account_id (Union[Unset, list[UUID]]):
+        outcome (Union[Unset, list[RiskOutcome]]):
         from_ (Union[Unset, datetime.datetime]):
         to (Union[Unset, datetime.datetime]):
+        sort (Union[Unset, ListRiskActivitySort]):  Default:
+            ListRiskActivitySort.UNRESOLVED_FIRST.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -222,10 +248,11 @@ async def asyncio_detailed(
         cursor=cursor,
         limit=limit,
         kind=kind,
-        terminal_id=terminal_id,
+        account_id=account_id,
         outcome=outcome,
         from_=from_,
         to=to,
+        sort=sort,
     )
 
     response = await client.get_async_httpx_client().request(**kwargs)
@@ -239,10 +266,11 @@ async def asyncio(
     cursor: Union[Unset, str] = UNSET,
     limit: Union[Unset, int] = 50,
     kind: Union[Unset, list[RiskActivityKind]] = UNSET,
-    terminal_id: Union[Unset, UUID] = UNSET,
-    outcome: Union[Unset, RiskOutcome] = UNSET,
+    account_id: Union[Unset, list[UUID]] = UNSET,
+    outcome: Union[Unset, list[RiskOutcome]] = UNSET,
     from_: Union[Unset, datetime.datetime] = UNSET,
     to: Union[Unset, datetime.datetime] = UNSET,
+    sort: Union[Unset, ListRiskActivitySort] = ListRiskActivitySort.UNRESOLVED_FIRST,
 ) -> Optional[Union[Error, RiskActivityPage]]:
     """Every warning, breach, action and its outcome, policy and plan change, unresolved first, with
     evidence
@@ -251,10 +279,12 @@ async def asyncio(
         cursor (Union[Unset, str]):
         limit (Union[Unset, int]):  Default: 50.
         kind (Union[Unset, list[RiskActivityKind]]):
-        terminal_id (Union[Unset, UUID]):
-        outcome (Union[Unset, RiskOutcome]):
+        account_id (Union[Unset, list[UUID]]):
+        outcome (Union[Unset, list[RiskOutcome]]):
         from_ (Union[Unset, datetime.datetime]):
         to (Union[Unset, datetime.datetime]):
+        sort (Union[Unset, ListRiskActivitySort]):  Default:
+            ListRiskActivitySort.UNRESOLVED_FIRST.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -270,9 +300,10 @@ async def asyncio(
             cursor=cursor,
             limit=limit,
             kind=kind,
-            terminal_id=terminal_id,
+            account_id=account_id,
             outcome=outcome,
             from_=from_,
             to=to,
+            sort=sort,
         )
     ).parsed

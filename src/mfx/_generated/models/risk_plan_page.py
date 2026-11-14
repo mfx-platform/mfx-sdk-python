@@ -18,6 +18,7 @@ from ..types import UNSET, Unset
 
 if TYPE_CHECKING:
     from ..models.risk_plan import RiskPlan
+    from ..models.risk_plan_page_stats import RiskPlanPageStats
 
 
 T = TypeVar("T", bound="RiskPlanPage")
@@ -29,16 +30,19 @@ class RiskPlanPage:
     Attributes:
         items (list['RiskPlan']):
         next_cursor (Union[None, str]):
+        stats (Union[Unset, RiskPlanPageStats]): The filtered set
         returned (Union[Unset, int]):
     """
 
     items: list["RiskPlan"]
     next_cursor: Union[None, str]
+    stats: Union[Unset, "RiskPlanPageStats"] = UNSET
     returned: Union[Unset, int] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         from ..models.risk_plan import RiskPlan
+        from ..models.risk_plan_page_stats import RiskPlanPageStats
 
         items = []
         for items_item_data in self.items:
@@ -47,6 +51,10 @@ class RiskPlanPage:
 
         next_cursor: Union[None, str]
         next_cursor = self.next_cursor
+
+        stats: Union[Unset, dict[str, Any]] = UNSET
+        if not isinstance(self.stats, Unset):
+            stats = self.stats.to_dict()
 
         returned = self.returned
 
@@ -58,6 +66,8 @@ class RiskPlanPage:
                 "next_cursor": next_cursor,
             }
         )
+        if stats is not UNSET:
+            field_dict["stats"] = stats
         if returned is not UNSET:
             field_dict["returned"] = returned
 
@@ -66,6 +76,7 @@ class RiskPlanPage:
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         from ..models.risk_plan import RiskPlan
+        from ..models.risk_plan_page_stats import RiskPlanPageStats
 
         d = dict(src_dict)
         items = []
@@ -82,11 +93,19 @@ class RiskPlanPage:
 
         next_cursor = _parse_next_cursor(d.pop("next_cursor"))
 
+        _stats = d.pop("stats", UNSET)
+        stats: Union[Unset, RiskPlanPageStats]
+        if isinstance(_stats, Unset):
+            stats = UNSET
+        else:
+            stats = RiskPlanPageStats.from_dict(_stats)
+
         returned = d.pop("returned", UNSET)
 
         risk_plan_page = cls(
             items=items,
             next_cursor=next_cursor,
+            stats=stats,
             returned=returned,
         )
 

@@ -146,6 +146,29 @@ async def _call(client: mfx.MfxClient, op: str, args: dict[str, Any]) -> dict[st
             "first_open": bars.items[0].o if bars.items else None,
             "last_close": bars.items[-1].c if bars.items else None,
         }
+    if op == "risk.check":
+        order = {"symbol": a["symbol"], "side": a["side"], "type": "market", "volume": a["volume"]}
+        checked = await client.risk.check(a["account_id"], order)
+        return {"verdict": str(checked.verdict)}
+    if op == "risk.create_plan":
+        order = {"symbol": a["symbol"], "side": a["side"], "type": "market", "volume": a["volume"]}
+        step = {"trigger": {"kind": "r", "value": "1"},
+                "action": {"kind": "close_part", "pct": "50"}, "held_by": "mfx"}  # fmt: skip
+        plan = await client.risk.create_plan(
+            {"account_id": a["account_id"], "order": order, "steps": [step]},
+            idempotency_key=a["idempotency_key"],
+        )
+        return {"id": str(plan.id)}
+    if op == "risk.create_policy":
+        policy = await client.risk.create_policy(
+            a["name"], a["rules"], reset=a["reset"], idempotency_key=a["idempotency_key"]
+        )
+        return {"id": str(policy.id), "version": policy.current_version.version}
+    if op == "risk.challenge_accounts":
+        accounts = client.risk.challenge_accounts(
+            a["challenge_id"], state=a.get("state"), sort=a.get("sort", "daily_loss_used")
+        )
+        return {"ids": [str(x.account_id) async for x in accounts]}
     raise AssertionError(f"this runner does not know the operation {op!r}")
 
 

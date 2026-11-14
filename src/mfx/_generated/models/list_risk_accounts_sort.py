@@ -6,6 +6,7 @@ class ListRiskAccountsSort(str, Enum):
     DRAWDOWN_USED = "drawdown_used"
     EXPOSURE = "exposure"
     INPUTS_AGE = "inputs_age"
+    PLANS = "plans"
 
     def __str__(self) -> str:
         return str(self.value)

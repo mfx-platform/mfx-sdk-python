@@ -37,7 +37,7 @@ T = TypeVar("T", bound="RiskAccount")
 class RiskAccount:
     """
     Attributes:
-        terminal_id (UUID):
+        account_id (UUID):
         policy (Union['RiskAccountPolicyType0', None]):
         activation_state (RiskAccountActivationState):
         daily_loss (Union['RiskDailyLossFigure', None]):
@@ -48,9 +48,10 @@ class RiskAccount:
         coverage (RiskCoverage): Per kind. A green terminal is not full coverage
         inputs (RiskAccountInputs):
         challenges (list['RiskAccountChallengesItem']):
+        plans (Union[Unset, int]): Its exit plans armed, managing or paused
     """
 
-    terminal_id: UUID
+    account_id: UUID
     policy: Union["RiskAccountPolicyType0", None]
     activation_state: RiskAccountActivationState
     daily_loss: Union["RiskDailyLossFigure", None]
@@ -61,6 +62,7 @@ class RiskAccount:
     coverage: "RiskCoverage"
     inputs: "RiskAccountInputs"
     challenges: list["RiskAccountChallengesItem"]
+    plans: Union[Unset, int] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -74,7 +76,7 @@ class RiskAccount:
         from ..models.risk_daily_loss_figure import RiskDailyLossFigure
         from ..models.risk_drawdown_figure import RiskDrawdownFigure
 
-        terminal_id = str(self.terminal_id)
+        account_id = str(self.account_id)
 
         policy: Union[None, dict[str, Any]]
         if isinstance(self.policy, RiskAccountPolicyType0):
@@ -114,11 +116,13 @@ class RiskAccount:
             challenges_item = challenges_item_data.to_dict()
             challenges.append(challenges_item)
 
+        plans = self.plans
+
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
             {
-                "terminal_id": terminal_id,
+                "account_id": account_id,
                 "policy": policy,
                 "activation_state": activation_state,
                 "daily_loss": daily_loss,
@@ -131,6 +135,8 @@ class RiskAccount:
                 "challenges": challenges,
             }
         )
+        if plans is not UNSET:
+            field_dict["plans"] = plans
 
         return field_dict
 
@@ -147,7 +153,7 @@ class RiskAccount:
         from ..models.risk_drawdown_figure import RiskDrawdownFigure
 
         d = dict(src_dict)
-        terminal_id = UUID(d.pop("terminal_id"))
+        account_id = UUID(d.pop("account_id"))
 
         def _parse_policy(data: object) -> Union["RiskAccountPolicyType0", None]:
             if data is None:
@@ -218,8 +224,10 @@ class RiskAccount:
 
             challenges.append(challenges_item)
 
+        plans = d.pop("plans", UNSET)
+
         risk_account = cls(
-            terminal_id=terminal_id,
+            account_id=account_id,
             policy=policy,
             activation_state=activation_state,
             daily_loss=daily_loss,
@@ -230,6 +238,7 @@ class RiskAccount:
             coverage=coverage,
             inputs=inputs,
             challenges=challenges,
+            plans=plans,
         )
 
         risk_account.additional_properties = d

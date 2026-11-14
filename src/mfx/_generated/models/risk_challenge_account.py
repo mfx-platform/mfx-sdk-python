@@ -33,21 +33,25 @@ T = TypeVar("T", bound="RiskChallengeAccount")
 class RiskChallengeAccount:
     """
     Attributes:
-        terminal_id (UUID):
+        account_id (UUID):
         version (int):
         state (RiskChallengeAccountState):
         started_at (datetime.datetime):
         period_ends_at (Union[None, datetime.datetime]):
         start_balance (str):
-        day_pnl (Union[None, str]):
-        daily_loss_used (Union[None, str]):
-        drawdown_used (Union[None, str]):
-        profit_pct (Union[None, str]):
+        day_pnl (Union[None, str]): Equity less the day's start equity on the account's last fresh read; null when
+            decided, before its first day, or with no fresh read
+        daily_loss_used (Union[None, str]): Percent of the daily loss limit used, as the challenge judges it; null when
+            decided, before its first day, or with no fresh read
+        drawdown_used (Union[None, str]): Percent of the drawdown limit used (from the peak when trailing); null when
+            decided or with no fresh read
+        profit_pct (Union[None, str]): Equity against the start balance, percent; null when decided or with no fresh
+            read
         trading_days (int):
         result (Union['RiskChallengeAccountResultType0', None]):
     """
 
-    terminal_id: UUID
+    account_id: UUID
     version: int
     state: RiskChallengeAccountState
     started_at: datetime.datetime
@@ -66,7 +70,7 @@ class RiskChallengeAccount:
             RiskChallengeAccountResultType0,
         )
 
-        terminal_id = str(self.terminal_id)
+        account_id = str(self.account_id)
 
         version = self.version
 
@@ -106,7 +110,7 @@ class RiskChallengeAccount:
         field_dict.update(self.additional_properties)
         field_dict.update(
             {
-                "terminal_id": terminal_id,
+                "account_id": account_id,
                 "version": version,
                 "state": state,
                 "started_at": started_at,
@@ -130,7 +134,7 @@ class RiskChallengeAccount:
         )
 
         d = dict(src_dict)
-        terminal_id = UUID(d.pop("terminal_id"))
+        account_id = UUID(d.pop("account_id"))
 
         version = d.pop("version")
 
@@ -201,7 +205,7 @@ class RiskChallengeAccount:
         result = _parse_result(d.pop("result"))
 
         risk_challenge_account = cls(
-            terminal_id=terminal_id,
+            account_id=account_id,
             version=version,
             state=state,
             started_at=started_at,

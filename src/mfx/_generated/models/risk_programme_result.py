@@ -31,7 +31,7 @@ class RiskProgrammeResult:
         schema_version (str):
         challenge_id (UUID):
         version (int):
-        terminal_id (UUID):
+        account_id (UUID):
         result (RiskProgrammeResultResult):
         rule (Union[None, str]):
         at (datetime.datetime):
@@ -40,7 +40,7 @@ class RiskProgrammeResult:
     schema_version: str
     challenge_id: UUID
     version: int
-    terminal_id: UUID
+    account_id: UUID
     result: RiskProgrammeResultResult
     rule: Union[None, str]
     at: datetime.datetime
@@ -53,7 +53,7 @@ class RiskProgrammeResult:
 
         version = self.version
 
-        terminal_id = str(self.terminal_id)
+        account_id = str(self.account_id)
 
         result = self.result.value
 
@@ -69,7 +69,7 @@ class RiskProgrammeResult:
                 "schema_version": schema_version,
                 "challenge_id": challenge_id,
                 "version": version,
-                "terminal_id": terminal_id,
+                "account_id": account_id,
                 "result": result,
                 "rule": rule,
                 "at": at,
@@ -87,7 +87,7 @@ class RiskProgrammeResult:
 
         version = d.pop("version")
 
-        terminal_id = UUID(d.pop("terminal_id"))
+        account_id = UUID(d.pop("account_id"))
 
         result = RiskProgrammeResultResult(d.pop("result"))
 
@@ -104,7 +104,7 @@ class RiskProgrammeResult:
             schema_version=schema_version,
             challenge_id=challenge_id,
             version=version,
-            terminal_id=terminal_id,
+            account_id=account_id,
             result=result,
             rule=rule,
             at=at,

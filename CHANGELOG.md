@@ -5,6 +5,37 @@ Every release of `mfx-sdk`, newest first. The format follows
 [Semantic Versioning](https://semver.org/). Until 1.0.0, a minor version may change the public
 surface; each such change is listed under **Changed** with what to do.
 
+## 0.16.0
+
+### Added
+
+- Risk Management: `client.risk` covers every `/v1/risk/*` route (scopes `risk:read`, `risk:write`,
+  `risk:override`).
+  - **Policies:** `create_policy`, `add_policy_version` (a relaxing version needs `risk:override`
+    and a `reason`), `activate` (one outcome per account), `policy`, `policy_version`, `policies`
+    (`sort="newest"` or `"oldest"`) and `policy_versions`.
+  - **Accounts:** `accounts_page` (one page and its `stats`) and `accounts` (every page), filtered
+    by several `coverage` and `restriction` values and sorted by a figure; `account`, `equity`,
+    `close_scope(account_id, "mfx_positions" | "all_positions")` (what a close action would close
+    now), `deactivate`, `clear` and `coverage`.
+  - **The planner:** `preview` (size a trade from a risk budget) and `check` (an order already
+    sized, as the pre-trade check would judge it).
+  - **Exit plans:** `create_plan`, `plan` (with `r_now`), `plans_page` and `plans` (several
+    accounts and states, `newest` or `oldest`), `amend_plan`, `pause_plan`, `resume_plan` and
+    `end_plan`.
+  - **Challenges:** `create_challenge`, `add_challenge_version`, `challenge`, `challenges`,
+    `enrol`, `challenge_accounts_page` and `challenge_accounts` (several states and rules, sorted
+    by a figure, with `stats`), and `challenge_account` (its periods and their statistics).
+  - **Activity:** `activity_page` and `activity` (several kinds, accounts and outcomes;
+    `unresolved_first`, `newest` or `oldest`).
+- `RiskRefusedError` (a `ValidationError`, code `risk_refused`): a new entry that breaks a rule in
+  force. Its `refusal` names the reason, the rule, the policy or the challenge with its version,
+  and the figure used, the limit and what the entry would have made it, as text.
+- `RiskOverrideRequiredError` (a `ForbiddenError`, code `risk_override_required`): a change that
+  relaxes protection without `risk:override` and a reason.
+- Typed events: `RiskRuleEvent` (`risk.rule_warning`, `risk.rule_breached`, `risk.rule_cleared`),
+  `RiskCoverageChanged`, `RiskProgrammeResult` and `RiskPeriodClosed`, from `event_of`.
+
 ## 0.15.0
 
 ### Added

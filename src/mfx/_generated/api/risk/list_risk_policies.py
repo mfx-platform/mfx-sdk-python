@@ -6,6 +6,7 @@ import httpx
 from ... import errors
 from ...client import AuthenticatedClient, Client
 from ...models.error import Error
+from ...models.list_risk_policies_sort import ListRiskPoliciesSort
 from ...models.list_risk_policies_state import ListRiskPoliciesState
 from ...models.risk_policy_page import RiskPolicyPage
 from ...types import UNSET, Response, Unset
@@ -16,6 +17,7 @@ def _get_kwargs(
     cursor: Union[Unset, str] = UNSET,
     limit: Union[Unset, int] = 50,
     state: Union[Unset, ListRiskPoliciesState] = UNSET,
+    sort: Union[Unset, ListRiskPoliciesSort] = ListRiskPoliciesSort.NEWEST,
 ) -> dict[str, Any]:
     params: dict[str, Any] = {}
 
@@ -28,6 +30,12 @@ def _get_kwargs(
         json_state = state.value
 
     params["state"] = json_state
+
+    json_sort: Union[Unset, str] = UNSET
+    if not isinstance(sort, Unset):
+        json_sort = sort.value
+
+    params["sort"] = json_sort
 
     params = {k: v for k, v in params.items() if v is not UNSET and v is not None}
 
@@ -70,6 +78,7 @@ def sync_detailed(
     cursor: Union[Unset, str] = UNSET,
     limit: Union[Unset, int] = 50,
     state: Union[Unset, ListRiskPoliciesState] = UNSET,
+    sort: Union[Unset, ListRiskPoliciesSort] = ListRiskPoliciesSort.NEWEST,
 ) -> Response[Union[Error, RiskPolicyPage]]:
     """The tenant's account policies, newest first
 
@@ -77,6 +86,7 @@ def sync_detailed(
         cursor (Union[Unset, str]):
         limit (Union[Unset, int]):  Default: 50.
         state (Union[Unset, ListRiskPoliciesState]):
+        sort (Union[Unset, ListRiskPoliciesSort]):  Default: ListRiskPoliciesSort.NEWEST.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -90,6 +100,7 @@ def sync_detailed(
         cursor=cursor,
         limit=limit,
         state=state,
+        sort=sort,
     )
 
     response = client.get_httpx_client().request(
@@ -105,6 +116,7 @@ def sync(
     cursor: Union[Unset, str] = UNSET,
     limit: Union[Unset, int] = 50,
     state: Union[Unset, ListRiskPoliciesState] = UNSET,
+    sort: Union[Unset, ListRiskPoliciesSort] = ListRiskPoliciesSort.NEWEST,
 ) -> Optional[Union[Error, RiskPolicyPage]]:
     """The tenant's account policies, newest first
 
@@ -112,6 +124,7 @@ def sync(
         cursor (Union[Unset, str]):
         limit (Union[Unset, int]):  Default: 50.
         state (Union[Unset, ListRiskPoliciesState]):
+        sort (Union[Unset, ListRiskPoliciesSort]):  Default: ListRiskPoliciesSort.NEWEST.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -126,6 +139,7 @@ def sync(
         cursor=cursor,
         limit=limit,
         state=state,
+        sort=sort,
     ).parsed
 
 
@@ -135,6 +149,7 @@ async def asyncio_detailed(
     cursor: Union[Unset, str] = UNSET,
     limit: Union[Unset, int] = 50,
     state: Union[Unset, ListRiskPoliciesState] = UNSET,
+    sort: Union[Unset, ListRiskPoliciesSort] = ListRiskPoliciesSort.NEWEST,
 ) -> Response[Union[Error, RiskPolicyPage]]:
     """The tenant's account policies, newest first
 
@@ -142,6 +157,7 @@ async def asyncio_detailed(
         cursor (Union[Unset, str]):
         limit (Union[Unset, int]):  Default: 50.
         state (Union[Unset, ListRiskPoliciesState]):
+        sort (Union[Unset, ListRiskPoliciesSort]):  Default: ListRiskPoliciesSort.NEWEST.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -155,6 +171,7 @@ async def asyncio_detailed(
         cursor=cursor,
         limit=limit,
         state=state,
+        sort=sort,
     )
 
     response = await client.get_async_httpx_client().request(**kwargs)
@@ -168,6 +185,7 @@ async def asyncio(
     cursor: Union[Unset, str] = UNSET,
     limit: Union[Unset, int] = 50,
     state: Union[Unset, ListRiskPoliciesState] = UNSET,
+    sort: Union[Unset, ListRiskPoliciesSort] = ListRiskPoliciesSort.NEWEST,
 ) -> Optional[Union[Error, RiskPolicyPage]]:
     """The tenant's account policies, newest first
 
@@ -175,6 +193,7 @@ async def asyncio(
         cursor (Union[Unset, str]):
         limit (Union[Unset, int]):  Default: 50.
         state (Union[Unset, ListRiskPoliciesState]):
+        sort (Union[Unset, ListRiskPoliciesSort]):  Default: ListRiskPoliciesSort.NEWEST.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -190,5 +209,6 @@ async def asyncio(
             cursor=cursor,
             limit=limit,
             state=state,
+            sort=sort,
         )
     ).parsed

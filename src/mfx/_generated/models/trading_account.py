@@ -26,6 +26,7 @@ from ..models.trading_account_environment_type_3_type_1 import (
 )
 from ..models.trading_account_state import TradingAccountState
 from ..models.trading_account_venue import TradingAccountVenue
+from ..models.trading_account_venue_state import TradingAccountVenueState
 from ..types import UNSET, Unset
 
 if TYPE_CHECKING:
@@ -58,6 +59,9 @@ class TradingAccount:
             runners (list['TradingAccountRunnersItem']): MT5: the terminals that run the account, yours to read at
                 /terminals/{id}; empty for a venue MFX runs without a terminal of yours
             created_at (datetime.datetime):
+            venue_state (Union[Unset, TradingAccountVenueState]): Whether MFX Hub has braked this venue for you. SUSPENDED:
+                new orders and anything adding risk are refused 403 venue_suspended; closing, cancelling and tightening
+                protection still work. DISABLED: every trading call is refused; reads work
     """
 
     id: UUID
@@ -74,6 +78,7 @@ class TradingAccount:
     login_masked: Union[None, str]
     runners: list["TradingAccountRunnersItem"]
     created_at: datetime.datetime
+    venue_state: Union[Unset, TradingAccountVenueState] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -111,6 +116,10 @@ class TradingAccount:
 
         created_at = self.created_at.isoformat()
 
+        venue_state: Union[Unset, str] = UNSET
+        if not isinstance(self.venue_state, Unset):
+            venue_state = self.venue_state.value
+
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
@@ -126,6 +135,8 @@ class TradingAccount:
                 "created_at": created_at,
             }
         )
+        if venue_state is not UNSET:
+            field_dict["venue_state"] = venue_state
 
         return field_dict
 
@@ -212,6 +223,13 @@ class TradingAccount:
 
         created_at = isoparse(d.pop("created_at"))
 
+        _venue_state = d.pop("venue_state", UNSET)
+        venue_state: Union[Unset, TradingAccountVenueState]
+        if isinstance(_venue_state, Unset):
+            venue_state = UNSET
+        else:
+            venue_state = TradingAccountVenueState(_venue_state)
+
         trading_account = cls(
             id=id,
             venue=venue,
@@ -222,6 +240,7 @@ class TradingAccount:
             login_masked=login_masked,
             runners=runners,
             created_at=created_at,
+            venue_state=venue_state,
         )
 
         trading_account.additional_properties = d

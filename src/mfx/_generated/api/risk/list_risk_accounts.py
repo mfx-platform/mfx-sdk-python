@@ -6,8 +6,10 @@ import httpx
 from ... import errors
 from ...client import AuthenticatedClient, Client
 from ...models.error import Error
-from ...models.list_risk_accounts_coverage import ListRiskAccountsCoverage
-from ...models.list_risk_accounts_restriction import ListRiskAccountsRestriction
+from ...models.list_risk_accounts_coverage_item import ListRiskAccountsCoverageItem
+from ...models.list_risk_accounts_restriction_item import (
+    ListRiskAccountsRestrictionItem,
+)
 from ...models.list_risk_accounts_sort import ListRiskAccountsSort
 from ...models.risk_account_page import RiskAccountPage
 from ...types import UNSET, Response, Unset
@@ -17,8 +19,8 @@ def _get_kwargs(
     *,
     cursor: Union[Unset, str] = UNSET,
     limit: Union[Unset, int] = 50,
-    coverage: Union[Unset, ListRiskAccountsCoverage] = UNSET,
-    restriction: Union[Unset, ListRiskAccountsRestriction] = UNSET,
+    coverage: Union[Unset, list[ListRiskAccountsCoverageItem]] = UNSET,
+    restriction: Union[Unset, list[ListRiskAccountsRestrictionItem]] = UNSET,
     sort: Union[Unset, ListRiskAccountsSort] = ListRiskAccountsSort.DAILY_LOSS_USED,
 ) -> dict[str, Any]:
     params: dict[str, Any] = {}
@@ -27,15 +29,21 @@ def _get_kwargs(
 
     params["limit"] = limit
 
-    json_coverage: Union[Unset, str] = UNSET
+    json_coverage: Union[Unset, list[str]] = UNSET
     if not isinstance(coverage, Unset):
-        json_coverage = coverage.value
+        json_coverage = []
+        for coverage_item_data in coverage:
+            coverage_item = coverage_item_data.value
+            json_coverage.append(coverage_item)
 
     params["coverage"] = json_coverage
 
-    json_restriction: Union[Unset, str] = UNSET
+    json_restriction: Union[Unset, list[str]] = UNSET
     if not isinstance(restriction, Unset):
-        json_restriction = restriction.value
+        json_restriction = []
+        for restriction_item_data in restriction:
+            restriction_item = restriction_item_data.value
+            json_restriction.append(restriction_item)
 
     params["restriction"] = json_restriction
 
@@ -85,8 +93,8 @@ def sync_detailed(
     client: Union[AuthenticatedClient, Client],
     cursor: Union[Unset, str] = UNSET,
     limit: Union[Unset, int] = 50,
-    coverage: Union[Unset, ListRiskAccountsCoverage] = UNSET,
-    restriction: Union[Unset, ListRiskAccountsRestriction] = UNSET,
+    coverage: Union[Unset, list[ListRiskAccountsCoverageItem]] = UNSET,
+    restriction: Union[Unset, list[ListRiskAccountsRestrictionItem]] = UNSET,
     sort: Union[Unset, ListRiskAccountsSort] = ListRiskAccountsSort.DAILY_LOSS_USED,
 ) -> Response[Union[Error, RiskAccountPage]]:
     """Every account of the tenant with its allowance, drawdown, exposure, restriction and coverage
@@ -94,8 +102,8 @@ def sync_detailed(
     Args:
         cursor (Union[Unset, str]):
         limit (Union[Unset, int]):  Default: 50.
-        coverage (Union[Unset, ListRiskAccountsCoverage]):
-        restriction (Union[Unset, ListRiskAccountsRestriction]):
+        coverage (Union[Unset, list[ListRiskAccountsCoverageItem]]):
+        restriction (Union[Unset, list[ListRiskAccountsRestrictionItem]]):
         sort (Union[Unset, ListRiskAccountsSort]):  Default: ListRiskAccountsSort.DAILY_LOSS_USED.
 
     Raises:
@@ -126,8 +134,8 @@ def sync(
     client: Union[AuthenticatedClient, Client],
     cursor: Union[Unset, str] = UNSET,
     limit: Union[Unset, int] = 50,
-    coverage: Union[Unset, ListRiskAccountsCoverage] = UNSET,
-    restriction: Union[Unset, ListRiskAccountsRestriction] = UNSET,
+    coverage: Union[Unset, list[ListRiskAccountsCoverageItem]] = UNSET,
+    restriction: Union[Unset, list[ListRiskAccountsRestrictionItem]] = UNSET,
     sort: Union[Unset, ListRiskAccountsSort] = ListRiskAccountsSort.DAILY_LOSS_USED,
 ) -> Optional[Union[Error, RiskAccountPage]]:
     """Every account of the tenant with its allowance, drawdown, exposure, restriction and coverage
@@ -135,8 +143,8 @@ def sync(
     Args:
         cursor (Union[Unset, str]):
         limit (Union[Unset, int]):  Default: 50.
-        coverage (Union[Unset, ListRiskAccountsCoverage]):
-        restriction (Union[Unset, ListRiskAccountsRestriction]):
+        coverage (Union[Unset, list[ListRiskAccountsCoverageItem]]):
+        restriction (Union[Unset, list[ListRiskAccountsRestrictionItem]]):
         sort (Union[Unset, ListRiskAccountsSort]):  Default: ListRiskAccountsSort.DAILY_LOSS_USED.
 
     Raises:
@@ -162,8 +170,8 @@ async def asyncio_detailed(
     client: Union[AuthenticatedClient, Client],
     cursor: Union[Unset, str] = UNSET,
     limit: Union[Unset, int] = 50,
-    coverage: Union[Unset, ListRiskAccountsCoverage] = UNSET,
-    restriction: Union[Unset, ListRiskAccountsRestriction] = UNSET,
+    coverage: Union[Unset, list[ListRiskAccountsCoverageItem]] = UNSET,
+    restriction: Union[Unset, list[ListRiskAccountsRestrictionItem]] = UNSET,
     sort: Union[Unset, ListRiskAccountsSort] = ListRiskAccountsSort.DAILY_LOSS_USED,
 ) -> Response[Union[Error, RiskAccountPage]]:
     """Every account of the tenant with its allowance, drawdown, exposure, restriction and coverage
@@ -171,8 +179,8 @@ async def asyncio_detailed(
     Args:
         cursor (Union[Unset, str]):
         limit (Union[Unset, int]):  Default: 50.
-        coverage (Union[Unset, ListRiskAccountsCoverage]):
-        restriction (Union[Unset, ListRiskAccountsRestriction]):
+        coverage (Union[Unset, list[ListRiskAccountsCoverageItem]]):
+        restriction (Union[Unset, list[ListRiskAccountsRestrictionItem]]):
         sort (Union[Unset, ListRiskAccountsSort]):  Default: ListRiskAccountsSort.DAILY_LOSS_USED.
 
     Raises:
@@ -201,8 +209,8 @@ async def asyncio(
     client: Union[AuthenticatedClient, Client],
     cursor: Union[Unset, str] = UNSET,
     limit: Union[Unset, int] = 50,
-    coverage: Union[Unset, ListRiskAccountsCoverage] = UNSET,
-    restriction: Union[Unset, ListRiskAccountsRestriction] = UNSET,
+    coverage: Union[Unset, list[ListRiskAccountsCoverageItem]] = UNSET,
+    restriction: Union[Unset, list[ListRiskAccountsRestrictionItem]] = UNSET,
     sort: Union[Unset, ListRiskAccountsSort] = ListRiskAccountsSort.DAILY_LOSS_USED,
 ) -> Optional[Union[Error, RiskAccountPage]]:
     """Every account of the tenant with its allowance, drawdown, exposure, restriction and coverage
@@ -210,8 +218,8 @@ async def asyncio(
     Args:
         cursor (Union[Unset, str]):
         limit (Union[Unset, int]):  Default: 50.
-        coverage (Union[Unset, ListRiskAccountsCoverage]):
-        restriction (Union[Unset, ListRiskAccountsRestriction]):
+        coverage (Union[Unset, list[ListRiskAccountsCoverageItem]]):
+        restriction (Union[Unset, list[ListRiskAccountsRestrictionItem]]):
         sort (Union[Unset, ListRiskAccountsSort]):  Default: ListRiskAccountsSort.DAILY_LOSS_USED.
 
     Raises:

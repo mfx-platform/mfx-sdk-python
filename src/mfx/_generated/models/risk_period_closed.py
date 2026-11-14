@@ -32,14 +32,14 @@ class RiskPeriodClosed:
     Attributes:
         schema_version (str):
         challenge_id (UUID):
-        terminal_id (UUID):
+        account_id (UUID):
         period (RiskPeriod):
         at (datetime.datetime):
     """
 
     schema_version: str
     challenge_id: UUID
-    terminal_id: UUID
+    account_id: UUID
     period: "RiskPeriod"
     at: datetime.datetime
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
@@ -51,7 +51,7 @@ class RiskPeriodClosed:
 
         challenge_id = str(self.challenge_id)
 
-        terminal_id = str(self.terminal_id)
+        account_id = str(self.account_id)
 
         period = self.period.to_dict()
 
@@ -63,7 +63,7 @@ class RiskPeriodClosed:
             {
                 "schema_version": schema_version,
                 "challenge_id": challenge_id,
-                "terminal_id": terminal_id,
+                "account_id": account_id,
                 "period": period,
                 "at": at,
             }
@@ -80,7 +80,7 @@ class RiskPeriodClosed:
 
         challenge_id = UUID(d.pop("challenge_id"))
 
-        terminal_id = UUID(d.pop("terminal_id"))
+        account_id = UUID(d.pop("account_id"))
 
         period = RiskPeriod.from_dict(d.pop("period"))
 
@@ -89,7 +89,7 @@ class RiskPeriodClosed:
         risk_period_closed = cls(
             schema_version=schema_version,
             challenge_id=challenge_id,
-            terminal_id=terminal_id,
+            account_id=account_id,
             period=period,
             at=at,
         )

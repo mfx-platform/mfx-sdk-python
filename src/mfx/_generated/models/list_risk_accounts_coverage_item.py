@@ -1,7 +1,7 @@
 from enum import Enum
 
 
-class ListRiskAccountsCoverage(str, Enum):
+class ListRiskAccountsCoverageItem(str, Enum):
     DEGRADED = "degraded"
     DISCONNECTED = "disconnected"
     HEALTHY = "healthy"

@@ -43,6 +43,7 @@ from mfx.expert_advisors import ExpertAdvisors, Tenant
 from mfx.farms import Farms
 from mfx.maintenance import Maintenance
 from mfx.md import MarketData
+from mfx.risk import Risk
 from mfx.signing import MfxSignature, SigningKey
 from mfx.streaming import Connector, MfxStream, websockets_connector
 from mfx.terminals import Terminals
@@ -152,6 +153,7 @@ class MfxClient:
         self.tenant = Tenant(self)
         self.maintenance = Maintenance(self)
         self.farms = Farms(self)
+        self.risk = Risk(self)
 
     @staticmethod
     async def _default_sleep(seconds: float) -> None:

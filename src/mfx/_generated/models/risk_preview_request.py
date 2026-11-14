@@ -31,7 +31,7 @@ T = TypeVar("T", bound="RiskPreviewRequest")
 class RiskPreviewRequest:
     """
     Attributes:
-        terminal_id (UUID):
+        account_id (UUID):
         symbol (str):
         side (RiskPreviewRequestSide):
         entry_type (RiskPreviewRequestEntryType):
@@ -44,7 +44,7 @@ class RiskPreviewRequest:
             caller
     """
 
-    terminal_id: UUID
+    account_id: UUID
     symbol: str
     side: RiskPreviewRequestSide
     entry_type: RiskPreviewRequestEntryType
@@ -62,7 +62,7 @@ class RiskPreviewRequest:
             RiskPreviewRequestAssumptions,
         )
 
-        terminal_id = str(self.terminal_id)
+        account_id = str(self.account_id)
 
         symbol = self.symbol
 
@@ -100,7 +100,7 @@ class RiskPreviewRequest:
         field_dict.update(self.additional_properties)
         field_dict.update(
             {
-                "terminal_id": terminal_id,
+                "account_id": account_id,
                 "symbol": symbol,
                 "side": side,
                 "entry_type": entry_type,
@@ -127,7 +127,7 @@ class RiskPreviewRequest:
         )
 
         d = dict(src_dict)
-        terminal_id = UUID(d.pop("terminal_id"))
+        account_id = UUID(d.pop("account_id"))
 
         symbol = d.pop("symbol")
 
@@ -174,7 +174,7 @@ class RiskPreviewRequest:
             assumptions = RiskPreviewRequestAssumptions.from_dict(_assumptions)
 
         risk_preview_request = cls(
-            terminal_id=terminal_id,
+            account_id=account_id,
             symbol=symbol,
             side=side,
             entry_type=entry_type,

@@ -28,7 +28,7 @@ class RiskPolicyActivated:
 
     Attributes:
         schema_version (str):
-        terminal_id (UUID):
+        account_id (UUID):
         policy_id (Union[None, UUID]):
         version (Union[None, int]):
         previous_version (Union[None, int]):
@@ -37,7 +37,7 @@ class RiskPolicyActivated:
     """
 
     schema_version: str
-    terminal_id: UUID
+    account_id: UUID
     policy_id: Union[None, UUID]
     version: Union[None, int]
     previous_version: Union[None, int]
@@ -48,7 +48,7 @@ class RiskPolicyActivated:
     def to_dict(self) -> dict[str, Any]:
         schema_version = self.schema_version
 
-        terminal_id = str(self.terminal_id)
+        account_id = str(self.account_id)
 
         policy_id: Union[None, str]
         if isinstance(self.policy_id, UUID):
@@ -71,7 +71,7 @@ class RiskPolicyActivated:
         field_dict.update(
             {
                 "schema_version": schema_version,
-                "terminal_id": terminal_id,
+                "account_id": account_id,
                 "policy_id": policy_id,
                 "version": version,
                 "previous_version": previous_version,
@@ -87,7 +87,7 @@ class RiskPolicyActivated:
         d = dict(src_dict)
         schema_version = d.pop("schema_version")
 
-        terminal_id = UUID(d.pop("terminal_id"))
+        account_id = UUID(d.pop("account_id"))
 
         def _parse_policy_id(data: object) -> Union[None, UUID]:
             if data is None:
@@ -124,7 +124,7 @@ class RiskPolicyActivated:
 
         risk_policy_activated = cls(
             schema_version=schema_version,
-            terminal_id=terminal_id,
+            account_id=account_id,
             policy_id=policy_id,
             version=version,
             previous_version=previous_version,

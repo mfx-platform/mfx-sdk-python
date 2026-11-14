@@ -11,6 +11,7 @@ from typing import (
     Union,
     cast,
 )
+from uuid import UUID
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -34,6 +35,7 @@ T = TypeVar("T", bound="RiskPreview")
 class RiskPreview:
     """
     Attributes:
+        id (UUID): Name it as preview_id to place this order with its plan (POST /risk/plans) before expires_at
         volume (Union[None, str]): Rounded down to the step; null when even the minimum is over the budget
         volume_unrounded (Union[None, str]):
         reason (Union[None, RiskPreviewReasonType1, RiskPreviewReasonType2Type1, RiskPreviewReasonType3Type1]):
@@ -52,6 +54,7 @@ class RiskPreview:
         expires_at (datetime.datetime):
     """
 
+    id: UUID
     volume: Union[None, str]
     volume_unrounded: Union[None, str]
     reason: Union[
@@ -75,6 +78,8 @@ class RiskPreview:
     def to_dict(self) -> dict[str, Any]:
         from ..models.risk_preview_inputs import RiskPreviewInputs
         from ..models.risk_rule_check import RiskRuleCheck
+
+        id = str(self.id)
 
         volume: Union[None, str]
         volume = self.volume
@@ -132,6 +137,7 @@ class RiskPreview:
         field_dict.update(self.additional_properties)
         field_dict.update(
             {
+                "id": id,
                 "volume": volume,
                 "volume_unrounded": volume_unrounded,
                 "reason": reason,
@@ -159,6 +165,7 @@ class RiskPreview:
         from ..models.risk_rule_check import RiskRuleCheck
 
         d = dict(src_dict)
+        id = UUID(d.pop("id"))
 
         def _parse_volume(data: object) -> Union[None, str]:
             if data is None:
@@ -284,6 +291,7 @@ class RiskPreview:
         expires_at = isoparse(d.pop("expires_at"))
 
         risk_preview = cls(
+            id=id,
             volume=volume,
             volume_unrounded=volume_unrounded,
             reason=reason,

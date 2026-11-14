@@ -7,9 +7,13 @@ import httpx
 from ... import errors
 from ...client import AuthenticatedClient, Client
 from ...models.error import Error
-from ...models.list_risk_challenge_accounts_rule import ListRiskChallengeAccountsRule
+from ...models.list_risk_challenge_accounts_rule_item import (
+    ListRiskChallengeAccountsRuleItem,
+)
 from ...models.list_risk_challenge_accounts_sort import ListRiskChallengeAccountsSort
-from ...models.list_risk_challenge_accounts_state import ListRiskChallengeAccountsState
+from ...models.list_risk_challenge_accounts_state_item import (
+    ListRiskChallengeAccountsStateItem,
+)
 from ...models.risk_challenge_account_page import RiskChallengeAccountPage
 from ...types import UNSET, Response, Unset
 
@@ -19,8 +23,8 @@ def _get_kwargs(
     *,
     cursor: Union[Unset, str] = UNSET,
     limit: Union[Unset, int] = 50,
-    state: Union[Unset, ListRiskChallengeAccountsState] = UNSET,
-    rule: Union[Unset, ListRiskChallengeAccountsRule] = UNSET,
+    state: Union[Unset, list[ListRiskChallengeAccountsStateItem]] = UNSET,
+    rule: Union[Unset, list[ListRiskChallengeAccountsRuleItem]] = UNSET,
     below_min_days: Union[Unset, bool] = UNSET,
     sort: Union[
         Unset, ListRiskChallengeAccountsSort
@@ -32,15 +36,21 @@ def _get_kwargs(
 
     params["limit"] = limit
 
-    json_state: Union[Unset, str] = UNSET
+    json_state: Union[Unset, list[str]] = UNSET
     if not isinstance(state, Unset):
-        json_state = state.value
+        json_state = []
+        for state_item_data in state:
+            state_item = state_item_data.value
+            json_state.append(state_item)
 
     params["state"] = json_state
 
-    json_rule: Union[Unset, str] = UNSET
+    json_rule: Union[Unset, list[str]] = UNSET
     if not isinstance(rule, Unset):
-        json_rule = rule.value
+        json_rule = []
+        for rule_item_data in rule:
+            rule_item = rule_item_data.value
+            json_rule.append(rule_item)
 
     params["rule"] = json_rule
 
@@ -95,8 +105,8 @@ def sync_detailed(
     client: Union[AuthenticatedClient, Client],
     cursor: Union[Unset, str] = UNSET,
     limit: Union[Unset, int] = 50,
-    state: Union[Unset, ListRiskChallengeAccountsState] = UNSET,
-    rule: Union[Unset, ListRiskChallengeAccountsRule] = UNSET,
+    state: Union[Unset, list[ListRiskChallengeAccountsStateItem]] = UNSET,
+    rule: Union[Unset, list[ListRiskChallengeAccountsRuleItem]] = UNSET,
     below_min_days: Union[Unset, bool] = UNSET,
     sort: Union[
         Unset, ListRiskChallengeAccountsSort
@@ -108,8 +118,8 @@ def sync_detailed(
         id (UUID):
         cursor (Union[Unset, str]):
         limit (Union[Unset, int]):  Default: 50.
-        state (Union[Unset, ListRiskChallengeAccountsState]):
-        rule (Union[Unset, ListRiskChallengeAccountsRule]):
+        state (Union[Unset, list[ListRiskChallengeAccountsStateItem]]):
+        rule (Union[Unset, list[ListRiskChallengeAccountsRuleItem]]):
         below_min_days (Union[Unset, bool]):
         sort (Union[Unset, ListRiskChallengeAccountsSort]):  Default:
             ListRiskChallengeAccountsSort.DAILY_LOSS_USED.
@@ -145,8 +155,8 @@ def sync(
     client: Union[AuthenticatedClient, Client],
     cursor: Union[Unset, str] = UNSET,
     limit: Union[Unset, int] = 50,
-    state: Union[Unset, ListRiskChallengeAccountsState] = UNSET,
-    rule: Union[Unset, ListRiskChallengeAccountsRule] = UNSET,
+    state: Union[Unset, list[ListRiskChallengeAccountsStateItem]] = UNSET,
+    rule: Union[Unset, list[ListRiskChallengeAccountsRuleItem]] = UNSET,
     below_min_days: Union[Unset, bool] = UNSET,
     sort: Union[
         Unset, ListRiskChallengeAccountsSort
@@ -158,8 +168,8 @@ def sync(
         id (UUID):
         cursor (Union[Unset, str]):
         limit (Union[Unset, int]):  Default: 50.
-        state (Union[Unset, ListRiskChallengeAccountsState]):
-        rule (Union[Unset, ListRiskChallengeAccountsRule]):
+        state (Union[Unset, list[ListRiskChallengeAccountsStateItem]]):
+        rule (Union[Unset, list[ListRiskChallengeAccountsRuleItem]]):
         below_min_days (Union[Unset, bool]):
         sort (Union[Unset, ListRiskChallengeAccountsSort]):  Default:
             ListRiskChallengeAccountsSort.DAILY_LOSS_USED.
@@ -190,8 +200,8 @@ async def asyncio_detailed(
     client: Union[AuthenticatedClient, Client],
     cursor: Union[Unset, str] = UNSET,
     limit: Union[Unset, int] = 50,
-    state: Union[Unset, ListRiskChallengeAccountsState] = UNSET,
-    rule: Union[Unset, ListRiskChallengeAccountsRule] = UNSET,
+    state: Union[Unset, list[ListRiskChallengeAccountsStateItem]] = UNSET,
+    rule: Union[Unset, list[ListRiskChallengeAccountsRuleItem]] = UNSET,
     below_min_days: Union[Unset, bool] = UNSET,
     sort: Union[
         Unset, ListRiskChallengeAccountsSort
@@ -203,8 +213,8 @@ async def asyncio_detailed(
         id (UUID):
         cursor (Union[Unset, str]):
         limit (Union[Unset, int]):  Default: 50.
-        state (Union[Unset, ListRiskChallengeAccountsState]):
-        rule (Union[Unset, ListRiskChallengeAccountsRule]):
+        state (Union[Unset, list[ListRiskChallengeAccountsStateItem]]):
+        rule (Union[Unset, list[ListRiskChallengeAccountsRuleItem]]):
         below_min_days (Union[Unset, bool]):
         sort (Union[Unset, ListRiskChallengeAccountsSort]):  Default:
             ListRiskChallengeAccountsSort.DAILY_LOSS_USED.
@@ -238,8 +248,8 @@ async def asyncio(
     client: Union[AuthenticatedClient, Client],
     cursor: Union[Unset, str] = UNSET,
     limit: Union[Unset, int] = 50,
-    state: Union[Unset, ListRiskChallengeAccountsState] = UNSET,
-    rule: Union[Unset, ListRiskChallengeAccountsRule] = UNSET,
+    state: Union[Unset, list[ListRiskChallengeAccountsStateItem]] = UNSET,
+    rule: Union[Unset, list[ListRiskChallengeAccountsRuleItem]] = UNSET,
     below_min_days: Union[Unset, bool] = UNSET,
     sort: Union[
         Unset, ListRiskChallengeAccountsSort
@@ -251,8 +261,8 @@ async def asyncio(
         id (UUID):
         cursor (Union[Unset, str]):
         limit (Union[Unset, int]):  Default: 50.
-        state (Union[Unset, ListRiskChallengeAccountsState]):
-        rule (Union[Unset, ListRiskChallengeAccountsRule]):
+        state (Union[Unset, list[ListRiskChallengeAccountsStateItem]]):
+        rule (Union[Unset, list[ListRiskChallengeAccountsRuleItem]]):
         below_min_days (Union[Unset, bool]):
         sort (Union[Unset, ListRiskChallengeAccountsSort]):  Default:
             ListRiskChallengeAccountsSort.DAILY_LOSS_USED.

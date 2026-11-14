@@ -32,7 +32,7 @@ class RiskPlan:
     """
     Attributes:
         id (UUID):
-        terminal_id (UUID):
+        account_id (UUID):
         ticket (Union[None, str]): null until the order becomes a position
         version (int):
         state (RiskPlanState):
@@ -45,10 +45,12 @@ class RiskPlan:
         created_at (datetime.datetime):
         reason (Union[None, Unset, str]): Why paused, failed or ended: stop_changed, position_closed, terminal_retired,
             by_tenant
+        r_now (Union[None, Unset, str]): How many R the position is from its entry on its last read, in its favour, as
+            the R triggers judge it; null when the plan manages no position now, has no 1R, or the position has no read
     """
 
     id: UUID
-    terminal_id: UUID
+    account_id: UUID
     ticket: Union[None, str]
     version: int
     state: RiskPlanState
@@ -60,6 +62,7 @@ class RiskPlan:
     command_id: Union[None, UUID]
     created_at: datetime.datetime
     reason: Union[None, Unset, str] = UNSET
+    r_now: Union[None, Unset, str] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -67,7 +70,7 @@ class RiskPlan:
 
         id = str(self.id)
 
-        terminal_id = str(self.terminal_id)
+        account_id = str(self.account_id)
 
         ticket: Union[None, str]
         ticket = self.ticket
@@ -107,12 +110,18 @@ class RiskPlan:
         else:
             reason = self.reason
 
+        r_now: Union[None, Unset, str]
+        if isinstance(self.r_now, Unset):
+            r_now = UNSET
+        else:
+            r_now = self.r_now
+
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
             {
                 "id": id,
-                "terminal_id": terminal_id,
+                "account_id": account_id,
                 "ticket": ticket,
                 "version": version,
                 "state": state,
@@ -127,6 +136,8 @@ class RiskPlan:
         )
         if reason is not UNSET:
             field_dict["reason"] = reason
+        if r_now is not UNSET:
+            field_dict["r_now"] = r_now
 
         return field_dict
 
@@ -137,7 +148,7 @@ class RiskPlan:
         d = dict(src_dict)
         id = UUID(d.pop("id"))
 
-        terminal_id = UUID(d.pop("terminal_id"))
+        account_id = UUID(d.pop("account_id"))
 
         def _parse_ticket(data: object) -> Union[None, str]:
             if data is None:
@@ -211,9 +222,18 @@ class RiskPlan:
 
         reason = _parse_reason(d.pop("reason", UNSET))
 
+        def _parse_r_now(data: object) -> Union[None, Unset, str]:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(Union[None, Unset, str], data)
+
+        r_now = _parse_r_now(d.pop("r_now", UNSET))
+
         risk_plan = cls(
             id=id,
-            terminal_id=terminal_id,
+            account_id=account_id,
             ticket=ticket,
             version=version,
             state=state,
@@ -225,6 +245,7 @@ class RiskPlan:
             command_id=command_id,
             created_at=created_at,
             reason=reason,
+            r_now=r_now,
         )
 
         risk_plan.additional_properties = d

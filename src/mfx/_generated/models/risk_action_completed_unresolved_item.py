@@ -24,20 +24,20 @@ T = TypeVar("T", bound="RiskActionCompletedUnresolvedItem")
 class RiskActionCompletedUnresolvedItem:
     """
     Attributes:
-        terminal_id (UUID):
+        account_id (UUID):
         ticket (str):
         command_id (UUID):
         reserved (Union[None, Unset, str]):
     """
 
-    terminal_id: UUID
+    account_id: UUID
     ticket: str
     command_id: UUID
     reserved: Union[None, Unset, str] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        terminal_id = str(self.terminal_id)
+        account_id = str(self.account_id)
 
         ticket = self.ticket
 
@@ -53,7 +53,7 @@ class RiskActionCompletedUnresolvedItem:
         field_dict.update(self.additional_properties)
         field_dict.update(
             {
-                "terminal_id": terminal_id,
+                "account_id": account_id,
                 "ticket": ticket,
                 "command_id": command_id,
             }
@@ -66,7 +66,7 @@ class RiskActionCompletedUnresolvedItem:
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         d = dict(src_dict)
-        terminal_id = UUID(d.pop("terminal_id"))
+        account_id = UUID(d.pop("account_id"))
 
         ticket = d.pop("ticket")
 
@@ -82,7 +82,7 @@ class RiskActionCompletedUnresolvedItem:
         reserved = _parse_reserved(d.pop("reserved", UNSET))
 
         risk_action_completed_unresolved_item = cls(
-            terminal_id=terminal_id,
+            account_id=account_id,
             ticket=ticket,
             command_id=command_id,
             reserved=reserved,

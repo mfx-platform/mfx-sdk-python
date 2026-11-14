@@ -37,7 +37,7 @@ class RiskPlanStepEvent:
     Attributes:
         schema_version (str):
         plan_id (UUID):
-        terminal_id (UUID):
+        account_id (UUID):
         ticket (Union[None, str]):
         version (int):
         step (Union[None, int]):
@@ -50,7 +50,7 @@ class RiskPlanStepEvent:
 
     schema_version: str
     plan_id: UUID
-    terminal_id: UUID
+    account_id: UUID
     ticket: Union[None, str]
     version: int
     step: Union[None, int]
@@ -70,7 +70,7 @@ class RiskPlanStepEvent:
 
         plan_id = str(self.plan_id)
 
-        terminal_id = str(self.terminal_id)
+        account_id = str(self.account_id)
 
         ticket: Union[None, str]
         ticket = self.ticket
@@ -103,7 +103,7 @@ class RiskPlanStepEvent:
             {
                 "schema_version": schema_version,
                 "plan_id": plan_id,
-                "terminal_id": terminal_id,
+                "account_id": account_id,
                 "ticket": ticket,
                 "version": version,
                 "step": step,
@@ -123,7 +123,7 @@ class RiskPlanStepEvent:
 
         plan_id = UUID(d.pop("plan_id"))
 
-        terminal_id = UUID(d.pop("terminal_id"))
+        account_id = UUID(d.pop("account_id"))
 
         def _parse_ticket(data: object) -> Union[None, str]:
             if data is None:
@@ -201,7 +201,7 @@ class RiskPlanStepEvent:
         risk_plan_step_event = cls(
             schema_version=schema_version,
             plan_id=plan_id,
-            terminal_id=terminal_id,
+            account_id=account_id,
             ticket=ticket,
             version=version,
             step=step,

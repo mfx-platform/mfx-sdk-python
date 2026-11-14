@@ -18,6 +18,7 @@ from ..types import UNSET, Unset
 
 if TYPE_CHECKING:
     from ..models.risk_challenge_account import RiskChallengeAccount
+    from ..models.risk_challenge_account_page_stats import RiskChallengeAccountPageStats
 
 
 T = TypeVar("T", bound="RiskChallengeAccountPage")
@@ -29,16 +30,22 @@ class RiskChallengeAccountPage:
     Attributes:
         items (list['RiskChallengeAccount']):
         next_cursor (Union[None, str]):
+        stats (Union[Unset, RiskChallengeAccountPageStats]): Counts over the filtered set, before paging. events_today
+            counts the challenge's Activity rows since 00:00 UTC.
         returned (Union[Unset, int]):
     """
 
     items: list["RiskChallengeAccount"]
     next_cursor: Union[None, str]
+    stats: Union[Unset, "RiskChallengeAccountPageStats"] = UNSET
     returned: Union[Unset, int] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         from ..models.risk_challenge_account import RiskChallengeAccount
+        from ..models.risk_challenge_account_page_stats import (
+            RiskChallengeAccountPageStats,
+        )
 
         items = []
         for items_item_data in self.items:
@@ -47,6 +54,10 @@ class RiskChallengeAccountPage:
 
         next_cursor: Union[None, str]
         next_cursor = self.next_cursor
+
+        stats: Union[Unset, dict[str, Any]] = UNSET
+        if not isinstance(self.stats, Unset):
+            stats = self.stats.to_dict()
 
         returned = self.returned
 
@@ -58,6 +69,8 @@ class RiskChallengeAccountPage:
                 "next_cursor": next_cursor,
             }
         )
+        if stats is not UNSET:
+            field_dict["stats"] = stats
         if returned is not UNSET:
             field_dict["returned"] = returned
 
@@ -66,6 +79,9 @@ class RiskChallengeAccountPage:
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         from ..models.risk_challenge_account import RiskChallengeAccount
+        from ..models.risk_challenge_account_page_stats import (
+            RiskChallengeAccountPageStats,
+        )
 
         d = dict(src_dict)
         items = []
@@ -82,11 +98,19 @@ class RiskChallengeAccountPage:
 
         next_cursor = _parse_next_cursor(d.pop("next_cursor"))
 
+        _stats = d.pop("stats", UNSET)
+        stats: Union[Unset, RiskChallengeAccountPageStats]
+        if isinstance(_stats, Unset):
+            stats = UNSET
+        else:
+            stats = RiskChallengeAccountPageStats.from_dict(_stats)
+
         returned = d.pop("returned", UNSET)
 
         risk_challenge_account_page = cls(
             items=items,
             next_cursor=next_cursor,
+            stats=stats,
             returned=returned,
         )
 

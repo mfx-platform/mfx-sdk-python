@@ -23,23 +23,23 @@ T = TypeVar("T", bound="RiskEnrol")
 class RiskEnrol:
     """
     Attributes:
-        terminal_ids (list[UUID]):
+        account_ids (list[UUID]):
     """
 
-    terminal_ids: list[UUID]
+    account_ids: list[UUID]
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        terminal_ids = []
-        for terminal_ids_item_data in self.terminal_ids:
-            terminal_ids_item = str(terminal_ids_item_data)
-            terminal_ids.append(terminal_ids_item)
+        account_ids = []
+        for account_ids_item_data in self.account_ids:
+            account_ids_item = str(account_ids_item_data)
+            account_ids.append(account_ids_item)
 
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
             {
-                "terminal_ids": terminal_ids,
+                "account_ids": account_ids,
             }
         )
 
@@ -48,15 +48,15 @@ class RiskEnrol:
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         d = dict(src_dict)
-        terminal_ids = []
-        _terminal_ids = d.pop("terminal_ids")
-        for terminal_ids_item_data in _terminal_ids:
-            terminal_ids_item = UUID(terminal_ids_item_data)
+        account_ids = []
+        _account_ids = d.pop("account_ids")
+        for account_ids_item_data in _account_ids:
+            account_ids_item = UUID(account_ids_item_data)
 
-            terminal_ids.append(terminal_ids_item)
+            account_ids.append(account_ids_item)
 
         risk_enrol = cls(
-            terminal_ids=terminal_ids,
+            account_ids=account_ids,
         )
 
         risk_enrol.additional_properties = d

@@ -31,7 +31,7 @@ class RiskCoverageChanged:
 
     Attributes:
         schema_version (str):
-        terminal_id (UUID):
+        account_id (UUID):
         kind (RiskCoverageChangedKind):
         from_ (RiskCoverageChangedFrom):
         to (RiskCoverageChangedTo):
@@ -40,7 +40,7 @@ class RiskCoverageChanged:
     """
 
     schema_version: str
-    terminal_id: UUID
+    account_id: UUID
     kind: RiskCoverageChangedKind
     from_: RiskCoverageChangedFrom
     to: RiskCoverageChangedTo
@@ -51,7 +51,7 @@ class RiskCoverageChanged:
     def to_dict(self) -> dict[str, Any]:
         schema_version = self.schema_version
 
-        terminal_id = str(self.terminal_id)
+        account_id = str(self.account_id)
 
         kind = self.kind.value
 
@@ -69,7 +69,7 @@ class RiskCoverageChanged:
         field_dict.update(
             {
                 "schema_version": schema_version,
-                "terminal_id": terminal_id,
+                "account_id": account_id,
                 "kind": kind,
                 "from": from_,
                 "to": to,
@@ -85,7 +85,7 @@ class RiskCoverageChanged:
         d = dict(src_dict)
         schema_version = d.pop("schema_version")
 
-        terminal_id = UUID(d.pop("terminal_id"))
+        account_id = UUID(d.pop("account_id"))
 
         kind = RiskCoverageChangedKind(d.pop("kind"))
 
@@ -104,7 +104,7 @@ class RiskCoverageChanged:
 
         risk_coverage_changed = cls(
             schema_version=schema_version,
-            terminal_id=terminal_id,
+            account_id=account_id,
             kind=kind,
             from_=from_,
             to=to,

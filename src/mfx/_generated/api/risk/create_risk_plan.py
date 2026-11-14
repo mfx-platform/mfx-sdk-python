@@ -67,8 +67,17 @@ def sync_detailed(
 
      A position has one manager. A plan on a position that already has one (a plan or a standalone
     trailing stop) needs `replace: true`, or is 409 `conflict` with `details.reason = position_managed`
-    and `details.manager`. A plan with a trailing step owns its trailing stop. With `order`, the answer
-    carries the command that places it.
+    and `details.manager`. A plan with a trailing step owns its trailing stop. With `order` (a market
+    order; another type is 400 `validation_error`, `details.reason = order_type`), the order is checked
+    as any entry is (422 `risk_refused`, and the plan is kept `failed`, each step `skipped` naming the
+    refusal) and placed; the answer carries the command that places it, and the plan is `draft` until
+    the order's result names a position, then arms on that position's entry and stop. With `preview_id`
+    as well, the order must be the one previewed (the same account, symbol, side, stop and volume, else
+    400 `validation_error`), and it is placed only while the price is within
+    `risk.preview_max_move_points` (counted in the symbol's tick size) of the preview's and the preview
+    has not expired: otherwise 409 `preview_moved` or `preview_expired`, nothing is placed, and the
+    client previews again. A preview another tenant made, or one MFX Hub no longer holds, is
+    `preview_expired`.
 
     Args:
         idempotency_key (str):
@@ -105,8 +114,17 @@ def sync(
 
      A position has one manager. A plan on a position that already has one (a plan or a standalone
     trailing stop) needs `replace: true`, or is 409 `conflict` with `details.reason = position_managed`
-    and `details.manager`. A plan with a trailing step owns its trailing stop. With `order`, the answer
-    carries the command that places it.
+    and `details.manager`. A plan with a trailing step owns its trailing stop. With `order` (a market
+    order; another type is 400 `validation_error`, `details.reason = order_type`), the order is checked
+    as any entry is (422 `risk_refused`, and the plan is kept `failed`, each step `skipped` naming the
+    refusal) and placed; the answer carries the command that places it, and the plan is `draft` until
+    the order's result names a position, then arms on that position's entry and stop. With `preview_id`
+    as well, the order must be the one previewed (the same account, symbol, side, stop and volume, else
+    400 `validation_error`), and it is placed only while the price is within
+    `risk.preview_max_move_points` (counted in the symbol's tick size) of the preview's and the preview
+    has not expired: otherwise 409 `preview_moved` or `preview_expired`, nothing is placed, and the
+    client previews again. A preview another tenant made, or one MFX Hub no longer holds, is
+    `preview_expired`.
 
     Args:
         idempotency_key (str):
@@ -138,8 +156,17 @@ async def asyncio_detailed(
 
      A position has one manager. A plan on a position that already has one (a plan or a standalone
     trailing stop) needs `replace: true`, or is 409 `conflict` with `details.reason = position_managed`
-    and `details.manager`. A plan with a trailing step owns its trailing stop. With `order`, the answer
-    carries the command that places it.
+    and `details.manager`. A plan with a trailing step owns its trailing stop. With `order` (a market
+    order; another type is 400 `validation_error`, `details.reason = order_type`), the order is checked
+    as any entry is (422 `risk_refused`, and the plan is kept `failed`, each step `skipped` naming the
+    refusal) and placed; the answer carries the command that places it, and the plan is `draft` until
+    the order's result names a position, then arms on that position's entry and stop. With `preview_id`
+    as well, the order must be the one previewed (the same account, symbol, side, stop and volume, else
+    400 `validation_error`), and it is placed only while the price is within
+    `risk.preview_max_move_points` (counted in the symbol's tick size) of the preview's and the preview
+    has not expired: otherwise 409 `preview_moved` or `preview_expired`, nothing is placed, and the
+    client previews again. A preview another tenant made, or one MFX Hub no longer holds, is
+    `preview_expired`.
 
     Args:
         idempotency_key (str):
@@ -174,8 +201,17 @@ async def asyncio(
 
      A position has one manager. A plan on a position that already has one (a plan or a standalone
     trailing stop) needs `replace: true`, or is 409 `conflict` with `details.reason = position_managed`
-    and `details.manager`. A plan with a trailing step owns its trailing stop. With `order`, the answer
-    carries the command that places it.
+    and `details.manager`. A plan with a trailing step owns its trailing stop. With `order` (a market
+    order; another type is 400 `validation_error`, `details.reason = order_type`), the order is checked
+    as any entry is (422 `risk_refused`, and the plan is kept `failed`, each step `skipped` naming the
+    refusal) and placed; the answer carries the command that places it, and the plan is `draft` until
+    the order's result names a position, then arms on that position's entry and stop. With `preview_id`
+    as well, the order must be the one previewed (the same account, symbol, side, stop and volume, else
+    400 `validation_error`), and it is placed only while the price is within
+    `risk.preview_max_move_points` (counted in the symbol's tick size) of the preview's and the preview
+    has not expired: otherwise 409 `preview_moved` or `preview_expired`, nothing is placed, and the
+    client previews again. A preview another tenant made, or one MFX Hub no longer holds, is
+    `preview_expired`.
 
     Args:
         idempotency_key (str):

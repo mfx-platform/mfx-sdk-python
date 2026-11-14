@@ -1,4 +1,4 @@
-"""The order, position, terminal and candle events, as typed values.
+"""The order, position, terminal, candle and Risk Management events, as typed values.
 
 The platform sends these on the stream with every value as text. :func:`event_of` reads one
 message as the event it is, or None for any other:
@@ -22,6 +22,7 @@ does not know.
 from __future__ import annotations
 
 import datetime as dt
+import json
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from decimal import Decimal
@@ -40,6 +41,10 @@ __all__ = [
     "PositionClosed",
     "PositionModified",
     "PositionOpened",
+    "RiskCoverageChanged",
+    "RiskPeriodClosed",
+    "RiskProgrammeResult",
+    "RiskRuleEvent",
     "TerminalStateChanged",
     "event_of",
 ]
@@ -66,6 +71,18 @@ class _Data:
     def text_or_none(self, key: str) -> str | None:
         value = self._raw(key, False)
         return None if value is None else str(value)
+
+    def blank_none(self, key: str) -> str | None:
+        """Text, where the platform sends an empty string for none (a flat event's field)."""
+        value = self._raw(key, False)
+        return None if value is None or value == "" else str(value)
+
+    def json(self, key: str) -> Any:  # noqa: ANN401 - the contract's object or list
+        """A nested part: the stream carries it as JSON text, a webhook body as JSON itself."""
+        value = self._raw(key, False)
+        if isinstance(value, str):
+            return json.loads(value) if value else None
+        return value
 
     def uuid(self, key: str) -> UUID:
         return UUID(str(self._raw(key, True)))
@@ -292,6 +309,80 @@ class CandleClosed:
     prev_ts: dt.datetime
 
 
+@dataclass(frozen=True, slots=True, kw_only=True)
+class RiskRuleEvent:
+    """``risk.rule_warning``, ``risk.rule_breached`` or ``risk.rule_cleared``: a rule of a policy
+    (``policy_id``) or of a challenge (``challenge_id``) reached its warning or action level, or
+    cleared. Figures stay as the platform wrote them, in the account's currency."""
+
+    KINDS: ClassVar[frozenset[str]] = frozenset(
+        {"risk.rule_warning", "risk.rule_breached", "risk.rule_cleared"}
+    )
+    kind: str
+    schema_version: str
+    account_id: UUID
+    rule: str
+    policy_id: UUID | None
+    challenge_id: UUID | None
+    version: int | None
+    used: Decimal | None
+    limit: Decimal | None
+    #: ``warn``, ``act`` or ``cleared``.
+    level: str
+    #: What the rule authorised: ``notify``, ``block_entries``, ``cancel_pending``,
+    #: ``close_positions``.
+    actions: tuple[str, ...]
+    #: ``reset``, ``override`` or ``below_warn`` on a clear; None otherwise.
+    cleared_by: str | None
+    at: dt.datetime
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class RiskCoverageChanged:
+    """``risk.coverage_changed``: one kind of an account's coverage changed state."""
+
+    KIND: ClassVar[str] = "risk.coverage_changed"
+    schema_version: str
+    account_id: UUID
+    #: ``monitoring``, ``pre_trade``, ``broker_held`` or ``managed_actions``.
+    coverage: str
+    #: The contract's ``from`` and ``to``: ``healthy``, ``degraded``, ``disconnected``,
+    #: ``unknown``.
+    from_state: str
+    to_state: str
+    reason: str | None
+    at: dt.datetime
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class RiskProgrammeResult:
+    """``risk.programme_result``: a challenge account passed, failed or ended. Once only."""
+
+    KIND: ClassVar[str] = "risk.programme_result"
+    schema_version: str
+    challenge_id: UUID
+    version: int
+    account_id: UUID
+    #: ``passed``, ``failed`` or ``ended``.
+    result: str
+    #: The rule it failed on; None on a pass or an end.
+    rule: str | None
+    at: dt.datetime
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class RiskPeriodClosed:
+    """``risk.period_closed``: one period of a challenge account closed, with its statistics
+    (the contract's ``RiskPeriod``, as a mapping: figures as text)."""
+
+    KIND: ClassVar[str] = "risk.period_closed"
+    schema_version: str
+    challenge_id: UUID
+    account_id: UUID
+    period: Mapping[str, Any]
+    at: dt.datetime
+
+
 Event = (
     OrderPlaced
     | OrderModified
@@ -301,6 +392,10 @@ Event = (
     | PositionClosed
     | TerminalStateChanged
     | CandleClosed
+    | RiskRuleEvent
+    | RiskCoverageChanged
+    | RiskProgrammeResult
+    | RiskPeriodClosed
 )
 
 
@@ -366,6 +461,68 @@ def _candle_closed(d: _Data) -> CandleClosed:
     )
 
 
+def _risk_uuid(d: _Data, key: str) -> UUID | None:
+    value = d.blank_none(key)
+    return None if value is None else UUID(value)
+
+
+def _risk_rule(d: _Data) -> RiskRuleEvent:
+    version, used, limit = d.blank_none("version"), d.blank_none("used"), d.blank_none("limit")
+    actions = d.json("actions") or []
+    return RiskRuleEvent(
+        kind=d._kind,  # noqa: SLF001 - the reader's own record of the type
+        schema_version=d.text("schema_version"),
+        account_id=d.uuid("account_id"),
+        rule=d.text("rule"),
+        policy_id=_risk_uuid(d, "policy_id"),
+        challenge_id=_risk_uuid(d, "challenge_id"),
+        version=None if version is None else int(version),
+        used=None if used is None else Decimal(used),
+        limit=None if limit is None else Decimal(limit),
+        level=d.text("level"),
+        actions=tuple(str(a) for a in actions),
+        cleared_by=d.blank_none("cleared_by"),
+        at=d.instant("at"),
+    )
+
+
+def _risk_coverage(d: _Data) -> RiskCoverageChanged:
+    return RiskCoverageChanged(
+        schema_version=d.text("schema_version"),
+        account_id=d.uuid("account_id"),
+        coverage=d.text("kind"),
+        from_state=d.text("from"),
+        to_state=d.text("to"),
+        reason=d.blank_none("reason"),
+        at=d.instant("at"),
+    )
+
+
+def _risk_result(d: _Data) -> RiskProgrammeResult:
+    return RiskProgrammeResult(
+        schema_version=d.text("schema_version"),
+        challenge_id=d.uuid("challenge_id"),
+        version=d.integer("version"),
+        account_id=d.uuid("account_id"),
+        result=d.text("result"),
+        rule=d.blank_none("rule"),
+        at=d.instant("at"),
+    )
+
+
+def _risk_period(d: _Data) -> RiskPeriodClosed:
+    period = d.json("period")
+    if not isinstance(period, Mapping):
+        raise ValueError("risk.period_closed carries no `period`")
+    return RiskPeriodClosed(
+        schema_version=d.text("schema_version"),
+        challenge_id=d.uuid("challenge_id"),
+        account_id=d.uuid("account_id"),
+        period=period,
+        at=d.instant("at"),
+    )
+
+
 _READERS: Final[Mapping[str, Callable[[_Data], Event]]] = {
     OrderPlaced.KIND: _order_placed,
     OrderModified.KIND: _order_modified,
@@ -375,6 +532,10 @@ _READERS: Final[Mapping[str, Callable[[_Data], Event]]] = {
     PositionClosed.KIND: _position_closed,
     TerminalStateChanged.KIND: _terminal_state_changed,
     CandleClosed.KIND: _candle_closed,
+    **dict.fromkeys(RiskRuleEvent.KINDS, _risk_rule),
+    RiskCoverageChanged.KIND: _risk_coverage,
+    RiskProgrammeResult.KIND: _risk_result,
+    RiskPeriodClosed.KIND: _risk_period,
 }
 
 #: The event types :func:`event_of` reads. Any other type is None, never an error.

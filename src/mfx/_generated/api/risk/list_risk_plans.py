@@ -7,7 +7,8 @@ import httpx
 from ... import errors
 from ...client import AuthenticatedClient, Client
 from ...models.error import Error
-from ...models.list_risk_plans_state import ListRiskPlansState
+from ...models.list_risk_plans_sort import ListRiskPlansSort
+from ...models.list_risk_plans_state_item import ListRiskPlansStateItem
 from ...models.risk_plan_page import RiskPlanPage
 from ...types import UNSET, Response, Unset
 
@@ -16,8 +17,9 @@ def _get_kwargs(
     *,
     cursor: Union[Unset, str] = UNSET,
     limit: Union[Unset, int] = 50,
-    terminal_id: Union[Unset, UUID] = UNSET,
-    state: Union[Unset, ListRiskPlansState] = UNSET,
+    account_id: Union[Unset, list[UUID]] = UNSET,
+    state: Union[Unset, list[ListRiskPlansStateItem]] = UNSET,
+    sort: Union[Unset, ListRiskPlansSort] = ListRiskPlansSort.NEWEST,
 ) -> dict[str, Any]:
     params: dict[str, Any] = {}
 
@@ -25,16 +27,29 @@ def _get_kwargs(
 
     params["limit"] = limit
 
-    json_terminal_id: Union[Unset, str] = UNSET
-    if not isinstance(terminal_id, Unset):
-        json_terminal_id = str(terminal_id)
-    params["terminal_id"] = json_terminal_id
+    json_account_id: Union[Unset, list[str]] = UNSET
+    if not isinstance(account_id, Unset):
+        json_account_id = []
+        for account_id_item_data in account_id:
+            account_id_item = str(account_id_item_data)
+            json_account_id.append(account_id_item)
 
-    json_state: Union[Unset, str] = UNSET
+    params["account_id"] = json_account_id
+
+    json_state: Union[Unset, list[str]] = UNSET
     if not isinstance(state, Unset):
-        json_state = state.value
+        json_state = []
+        for state_item_data in state:
+            state_item = state_item_data.value
+            json_state.append(state_item)
 
     params["state"] = json_state
+
+    json_sort: Union[Unset, str] = UNSET
+    if not isinstance(sort, Unset):
+        json_sort = sort.value
+
+    params["sort"] = json_sort
 
     params = {k: v for k, v in params.items() if v is not UNSET and v is not None}
 
@@ -76,16 +91,18 @@ def sync_detailed(
     client: Union[AuthenticatedClient, Client],
     cursor: Union[Unset, str] = UNSET,
     limit: Union[Unset, int] = 50,
-    terminal_id: Union[Unset, UUID] = UNSET,
-    state: Union[Unset, ListRiskPlansState] = UNSET,
+    account_id: Union[Unset, list[UUID]] = UNSET,
+    state: Union[Unset, list[ListRiskPlansStateItem]] = UNSET,
+    sort: Union[Unset, ListRiskPlansSort] = ListRiskPlansSort.NEWEST,
 ) -> Response[Union[Error, RiskPlanPage]]:
     """The tenant's exit plans, newest first
 
     Args:
         cursor (Union[Unset, str]):
         limit (Union[Unset, int]):  Default: 50.
-        terminal_id (Union[Unset, UUID]):
-        state (Union[Unset, ListRiskPlansState]):
+        account_id (Union[Unset, list[UUID]]):
+        state (Union[Unset, list[ListRiskPlansStateItem]]):
+        sort (Union[Unset, ListRiskPlansSort]):  Default: ListRiskPlansSort.NEWEST.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -98,8 +115,9 @@ def sync_detailed(
     kwargs = _get_kwargs(
         cursor=cursor,
         limit=limit,
-        terminal_id=terminal_id,
+        account_id=account_id,
         state=state,
+        sort=sort,
     )
 
     response = client.get_httpx_client().request(
@@ -114,16 +132,18 @@ def sync(
     client: Union[AuthenticatedClient, Client],
     cursor: Union[Unset, str] = UNSET,
     limit: Union[Unset, int] = 50,
-    terminal_id: Union[Unset, UUID] = UNSET,
-    state: Union[Unset, ListRiskPlansState] = UNSET,
+    account_id: Union[Unset, list[UUID]] = UNSET,
+    state: Union[Unset, list[ListRiskPlansStateItem]] = UNSET,
+    sort: Union[Unset, ListRiskPlansSort] = ListRiskPlansSort.NEWEST,
 ) -> Optional[Union[Error, RiskPlanPage]]:
     """The tenant's exit plans, newest first
 
     Args:
         cursor (Union[Unset, str]):
         limit (Union[Unset, int]):  Default: 50.
-        terminal_id (Union[Unset, UUID]):
-        state (Union[Unset, ListRiskPlansState]):
+        account_id (Union[Unset, list[UUID]]):
+        state (Union[Unset, list[ListRiskPlansStateItem]]):
+        sort (Union[Unset, ListRiskPlansSort]):  Default: ListRiskPlansSort.NEWEST.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -137,8 +157,9 @@ def sync(
         client=client,
         cursor=cursor,
         limit=limit,
-        terminal_id=terminal_id,
+        account_id=account_id,
         state=state,
+        sort=sort,
     ).parsed
 
 
@@ -147,16 +168,18 @@ async def asyncio_detailed(
     client: Union[AuthenticatedClient, Client],
     cursor: Union[Unset, str] = UNSET,
     limit: Union[Unset, int] = 50,
-    terminal_id: Union[Unset, UUID] = UNSET,
-    state: Union[Unset, ListRiskPlansState] = UNSET,
+    account_id: Union[Unset, list[UUID]] = UNSET,
+    state: Union[Unset, list[ListRiskPlansStateItem]] = UNSET,
+    sort: Union[Unset, ListRiskPlansSort] = ListRiskPlansSort.NEWEST,
 ) -> Response[Union[Error, RiskPlanPage]]:
     """The tenant's exit plans, newest first
 
     Args:
         cursor (Union[Unset, str]):
         limit (Union[Unset, int]):  Default: 50.
-        terminal_id (Union[Unset, UUID]):
-        state (Union[Unset, ListRiskPlansState]):
+        account_id (Union[Unset, list[UUID]]):
+        state (Union[Unset, list[ListRiskPlansStateItem]]):
+        sort (Union[Unset, ListRiskPlansSort]):  Default: ListRiskPlansSort.NEWEST.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -169,8 +192,9 @@ async def asyncio_detailed(
     kwargs = _get_kwargs(
         cursor=cursor,
         limit=limit,
-        terminal_id=terminal_id,
+        account_id=account_id,
         state=state,
+        sort=sort,
     )
 
     response = await client.get_async_httpx_client().request(**kwargs)
@@ -183,16 +207,18 @@ async def asyncio(
     client: Union[AuthenticatedClient, Client],
     cursor: Union[Unset, str] = UNSET,
     limit: Union[Unset, int] = 50,
-    terminal_id: Union[Unset, UUID] = UNSET,
-    state: Union[Unset, ListRiskPlansState] = UNSET,
+    account_id: Union[Unset, list[UUID]] = UNSET,
+    state: Union[Unset, list[ListRiskPlansStateItem]] = UNSET,
+    sort: Union[Unset, ListRiskPlansSort] = ListRiskPlansSort.NEWEST,
 ) -> Optional[Union[Error, RiskPlanPage]]:
     """The tenant's exit plans, newest first
 
     Args:
         cursor (Union[Unset, str]):
         limit (Union[Unset, int]):  Default: 50.
-        terminal_id (Union[Unset, UUID]):
-        state (Union[Unset, ListRiskPlansState]):
+        account_id (Union[Unset, list[UUID]]):
+        state (Union[Unset, list[ListRiskPlansStateItem]]):
+        sort (Union[Unset, ListRiskPlansSort]):  Default: ListRiskPlansSort.NEWEST.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -207,7 +233,8 @@ async def asyncio(
             client=client,
             cursor=cursor,
             limit=limit,
-            terminal_id=terminal_id,
+            account_id=account_id,
             state=state,
+            sort=sort,
         )
     ).parsed

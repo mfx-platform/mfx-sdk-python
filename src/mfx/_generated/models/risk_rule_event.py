@@ -37,7 +37,7 @@ class RiskRuleEvent:
 
     Attributes:
         schema_version (str):
-        terminal_id (UUID):
+        account_id (UUID):
         rule (str):
         policy_id (Union[None, UUID]):
         version (int):
@@ -52,7 +52,7 @@ class RiskRuleEvent:
     """
 
     schema_version: str
-    terminal_id: UUID
+    account_id: UUID
     rule: str
     policy_id: Union[None, UUID]
     version: int
@@ -74,7 +74,7 @@ class RiskRuleEvent:
     def to_dict(self) -> dict[str, Any]:
         schema_version = self.schema_version
 
-        terminal_id = str(self.terminal_id)
+        account_id = str(self.account_id)
 
         rule = self.rule
 
@@ -126,7 +126,7 @@ class RiskRuleEvent:
         field_dict.update(
             {
                 "schema_version": schema_version,
-                "terminal_id": terminal_id,
+                "account_id": account_id,
                 "rule": rule,
                 "policy_id": policy_id,
                 "version": version,
@@ -149,7 +149,7 @@ class RiskRuleEvent:
         d = dict(src_dict)
         schema_version = d.pop("schema_version")
 
-        terminal_id = UUID(d.pop("terminal_id"))
+        account_id = UUID(d.pop("account_id"))
 
         rule = d.pop("rule")
 
@@ -264,7 +264,7 @@ class RiskRuleEvent:
 
         risk_rule_event = cls(
             schema_version=schema_version,
-            terminal_id=terminal_id,
+            account_id=account_id,
             rule=rule,
             policy_id=policy_id,
             version=version,

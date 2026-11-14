@@ -66,7 +66,9 @@ def sync_detailed(
     the budget; when the symbol's minimum volume costs more than the budget no volume is offered
     (`reason: volume_min_over_budget`). A cost the specification does not give is 422 `validation_error`
     with `details.reason = assumption_required` until the caller states it. The answer expires at
-    `expires_at` or when the price moves `risk.preview_max_move_points`.
+    `expires_at` or when the price moves `risk.preview_max_move_points`. Its `id` names it when the
+    order is placed with its plan (`preview_id` on `POST /risk/plans`); MFX Hub keeps a preview until it
+    expires and no longer.
 
     Args:
         body (RiskPreviewRequest):
@@ -102,7 +104,9 @@ def sync(
     the budget; when the symbol's minimum volume costs more than the budget no volume is offered
     (`reason: volume_min_over_budget`). A cost the specification does not give is 422 `validation_error`
     with `details.reason = assumption_required` until the caller states it. The answer expires at
-    `expires_at` or when the price moves `risk.preview_max_move_points`.
+    `expires_at` or when the price moves `risk.preview_max_move_points`. Its `id` names it when the
+    order is placed with its plan (`preview_id` on `POST /risk/plans`); MFX Hub keeps a preview until it
+    expires and no longer.
 
     Args:
         body (RiskPreviewRequest):
@@ -133,7 +137,9 @@ async def asyncio_detailed(
     the budget; when the symbol's minimum volume costs more than the budget no volume is offered
     (`reason: volume_min_over_budget`). A cost the specification does not give is 422 `validation_error`
     with `details.reason = assumption_required` until the caller states it. The answer expires at
-    `expires_at` or when the price moves `risk.preview_max_move_points`.
+    `expires_at` or when the price moves `risk.preview_max_move_points`. Its `id` names it when the
+    order is placed with its plan (`preview_id` on `POST /risk/plans`); MFX Hub keeps a preview until it
+    expires and no longer.
 
     Args:
         body (RiskPreviewRequest):
@@ -167,7 +173,9 @@ async def asyncio(
     the budget; when the symbol's minimum volume costs more than the budget no volume is offered
     (`reason: volume_min_over_budget`). A cost the specification does not give is 422 `validation_error`
     with `details.reason = assumption_required` until the caller states it. The answer expires at
-    `expires_at` or when the price moves `risk.preview_max_move_points`.
+    `expires_at` or when the price moves `risk.preview_max_move_points`. Its `id` names it when the
+    order is placed with its plan (`preview_id` on `POST /risk/plans`); MFX Hub keeps a preview until it
+    expires and no longer.
 
     Args:
         body (RiskPreviewRequest):

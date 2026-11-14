@@ -34,7 +34,7 @@ T = TypeVar("T", bound="RiskChallengeAccountDetail")
 class RiskChallengeAccountDetail:
     """
     Attributes:
-        terminal_id (UUID):
+        account_id (UUID):
         version (int):
         state (RiskChallengeAccountDetailState):
         started_at (datetime.datetime):
@@ -49,7 +49,7 @@ class RiskChallengeAccountDetail:
         periods (list['RiskPeriod']):
     """
 
-    terminal_id: UUID
+    account_id: UUID
     version: int
     state: RiskChallengeAccountDetailState
     started_at: datetime.datetime
@@ -70,7 +70,7 @@ class RiskChallengeAccountDetail:
         )
         from ..models.risk_period import RiskPeriod
 
-        terminal_id = str(self.terminal_id)
+        account_id = str(self.account_id)
 
         version = self.version
 
@@ -115,7 +115,7 @@ class RiskChallengeAccountDetail:
         field_dict.update(self.additional_properties)
         field_dict.update(
             {
-                "terminal_id": terminal_id,
+                "account_id": account_id,
                 "version": version,
                 "state": state,
                 "started_at": started_at,
@@ -141,7 +141,7 @@ class RiskChallengeAccountDetail:
         from ..models.risk_period import RiskPeriod
 
         d = dict(src_dict)
-        terminal_id = UUID(d.pop("terminal_id"))
+        account_id = UUID(d.pop("account_id"))
 
         version = d.pop("version")
 
@@ -219,7 +219,7 @@ class RiskChallengeAccountDetail:
             periods.append(periods_item)
 
         risk_challenge_account_detail = cls(
-            terminal_id=terminal_id,
+            account_id=account_id,
             version=version,
             state=state,
             started_at=started_at,

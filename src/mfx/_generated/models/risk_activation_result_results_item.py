@@ -27,19 +27,19 @@ T = TypeVar("T", bound="RiskActivationResultResultsItem")
 class RiskActivationResultResultsItem:
     """
     Attributes:
-        terminal_id (UUID):
+        account_id (UUID):
         outcome (RiskActivationResultResultsItemOutcome):
         reason (Union[None, str]): Why it was refused, as an error code: risk_override_required, not_found,
             quota_exceeded
     """
 
-    terminal_id: UUID
+    account_id: UUID
     outcome: RiskActivationResultResultsItemOutcome
     reason: Union[None, str]
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        terminal_id = str(self.terminal_id)
+        account_id = str(self.account_id)
 
         outcome = self.outcome.value
 
@@ -50,7 +50,7 @@ class RiskActivationResultResultsItem:
         field_dict.update(self.additional_properties)
         field_dict.update(
             {
-                "terminal_id": terminal_id,
+                "account_id": account_id,
                 "outcome": outcome,
                 "reason": reason,
             }
@@ -61,7 +61,7 @@ class RiskActivationResultResultsItem:
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         d = dict(src_dict)
-        terminal_id = UUID(d.pop("terminal_id"))
+        account_id = UUID(d.pop("account_id"))
 
         outcome = RiskActivationResultResultsItemOutcome(d.pop("outcome"))
 
@@ -73,7 +73,7 @@ class RiskActivationResultResultsItem:
         reason = _parse_reason(d.pop("reason"))
 
         risk_activation_result_results_item = cls(
-            terminal_id=terminal_id,
+            account_id=account_id,
             outcome=outcome,
             reason=reason,
         )

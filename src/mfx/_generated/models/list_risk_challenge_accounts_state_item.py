@@ -1,7 +1,7 @@
 from enum import Enum
 
 
-class ListRiskChallengeAccountsState(str, Enum):
+class ListRiskChallengeAccountsStateItem(str, Enum):
     ENDED = "ended"
     FAILED = "failed"
     IN_PROGRESS = "in_progress"

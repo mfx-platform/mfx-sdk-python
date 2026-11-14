@@ -15,18 +15,18 @@ T = TypeVar("T", bound="RiskPolicyAccountsItem")
 class RiskPolicyAccountsItem:
     """
     Attributes:
-        terminal_id (UUID):
+        account_id (UUID):
         version (int):
         state (RiskPolicyAccountsItemState):
     """
 
-    terminal_id: UUID
+    account_id: UUID
     version: int
     state: RiskPolicyAccountsItemState
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        terminal_id = str(self.terminal_id)
+        account_id = str(self.account_id)
 
         version = self.version
 
@@ -36,7 +36,7 @@ class RiskPolicyAccountsItem:
         field_dict.update(self.additional_properties)
         field_dict.update(
             {
-                "terminal_id": terminal_id,
+                "account_id": account_id,
                 "version": version,
                 "state": state,
             }
@@ -47,14 +47,14 @@ class RiskPolicyAccountsItem:
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         d = dict(src_dict)
-        terminal_id = UUID(d.pop("terminal_id"))
+        account_id = UUID(d.pop("account_id"))
 
         version = d.pop("version")
 
         state = RiskPolicyAccountsItemState(d.pop("state"))
 
         risk_policy_accounts_item = cls(
-            terminal_id=terminal_id,
+            account_id=account_id,
             version=version,
             state=state,
         )

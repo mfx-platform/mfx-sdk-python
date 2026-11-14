@@ -72,7 +72,9 @@ def sync_detailed(
      Each chosen account becomes a trading account of yours (`venue: ctrader`), PENDING until MFX Hub has
     authorised it at cTrader, then CONNECTED with an `account.connected` event. Choosing an account
     already connected answers it unchanged. A grant that is not ACTIVE is 409 `state_error`; an id the
-    grant does not list is 422 `unprocessable`.
+    grant does not list is 422 `unprocessable`. A tenant whose cTrader is suspended or disabled is 403
+    `venue_suspended`, and live accounts past the tenant's limit are 409 `quota_exceeded` with details
+    {quota: live_accounts, limit, in_use}; nothing is connected then.
 
     Args:
         id (UUID):
@@ -112,7 +114,9 @@ def sync(
      Each chosen account becomes a trading account of yours (`venue: ctrader`), PENDING until MFX Hub has
     authorised it at cTrader, then CONNECTED with an `account.connected` event. Choosing an account
     already connected answers it unchanged. A grant that is not ACTIVE is 409 `state_error`; an id the
-    grant does not list is 422 `unprocessable`.
+    grant does not list is 422 `unprocessable`. A tenant whose cTrader is suspended or disabled is 403
+    `venue_suspended`, and live accounts past the tenant's limit are 409 `quota_exceeded` with details
+    {quota: live_accounts, limit, in_use}; nothing is connected then.
 
     Args:
         id (UUID):
@@ -147,7 +151,9 @@ async def asyncio_detailed(
      Each chosen account becomes a trading account of yours (`venue: ctrader`), PENDING until MFX Hub has
     authorised it at cTrader, then CONNECTED with an `account.connected` event. Choosing an account
     already connected answers it unchanged. A grant that is not ACTIVE is 409 `state_error`; an id the
-    grant does not list is 422 `unprocessable`.
+    grant does not list is 422 `unprocessable`. A tenant whose cTrader is suspended or disabled is 403
+    `venue_suspended`, and live accounts past the tenant's limit are 409 `quota_exceeded` with details
+    {quota: live_accounts, limit, in_use}; nothing is connected then.
 
     Args:
         id (UUID):
@@ -185,7 +191,9 @@ async def asyncio(
      Each chosen account becomes a trading account of yours (`venue: ctrader`), PENDING until MFX Hub has
     authorised it at cTrader, then CONNECTED with an `account.connected` event. Choosing an account
     already connected answers it unchanged. A grant that is not ACTIVE is 409 `state_error`; an id the
-    grant does not list is 422 `unprocessable`.
+    grant does not list is 422 `unprocessable`. A tenant whose cTrader is suspended or disabled is 403
+    `venue_suspended`, and live accounts past the tenant's limit are 409 `quota_exceeded` with details
+    {quota: live_accounts, limit, in_use}; nothing is connected then.
 
     Args:
         id (UUID):
