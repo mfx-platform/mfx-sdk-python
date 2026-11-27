@@ -24,19 +24,25 @@ T = TypeVar("T", bound="CtraderGrantCreate")
 @_attrs_define
 class CtraderGrantCreate:
     """Start connecting a trader's cTrader accounts. Send the trader to `consent_url`: they sign in at cTrader, choose the
-    accounts to share, and come back to `return_url`.
+    accounts to share, and come back to `return_url`, or to MFX Hub's own result page when you send none.
 
         Attributes:
             environment (CtraderGrantCreateEnvironment): live or demo accounts; one grant covers one of them
             scope (CtraderGrantCreateScope): accounts: read the accounts only; trading: read them and place orders on them
-            return_url (str): Where the trader is sent after consent, https only. MFX Hub adds `grant_id`, `result`
-                (`granted`, `denied` or `failed`) and your `tenant_state` as query parameters.
-            tenant_state (Union[None, Unset, str]): Your own value, returned unchanged on return_url; never read by MFX Hub
+            return_url (Union[Unset, str]): Where the trader is sent after consent, https only. MFX Hub adds `grant_id`,
+                `result` (`granted`, `denied` or `failed`) and your `tenant_state` as query parameters. Optional: without it the
+                trader ends on MFX Hub's own page, which tells them the result in plain words and sends them nowhere else.
+                Nothing then comes back to you, so follow the grant by reading it (`GET
+                /v1/accounts/ctrader/grants/{grant_id}`): `ACTIVE` with its accounts once they approve, `EXPIRED` if they refuse
+                or the link lapses. Once you have registered return origins (`PUT /v1/accounts/ctrader/return-origins`), its
+                origin must be one of them, else 400 `validation_error` with `details.reason` `return_url_unregistered`.
+            tenant_state (Union[None, Unset, str]): Your own value, returned unchanged on return_url; never read by MFX Hub,
+                and not shown on MFX Hub's own result page
     """
 
     environment: CtraderGrantCreateEnvironment
     scope: CtraderGrantCreateScope
-    return_url: str
+    return_url: Union[Unset, str] = UNSET
     tenant_state: Union[None, Unset, str] = UNSET
 
     def to_dict(self) -> dict[str, Any]:
@@ -58,9 +64,10 @@ class CtraderGrantCreate:
             {
                 "environment": environment,
                 "scope": scope,
-                "return_url": return_url,
             }
         )
+        if return_url is not UNSET:
+            field_dict["return_url"] = return_url
         if tenant_state is not UNSET:
             field_dict["tenant_state"] = tenant_state
 
@@ -69,11 +76,11 @@ class CtraderGrantCreate:
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         d = dict(src_dict)
-        environment = CtraderGrantCreateEnvironment(d.pop("environment"))
+        environment = CtraderGrantCreateEnvironment._read(d.pop("environment"))
 
-        scope = CtraderGrantCreateScope(d.pop("scope"))
+        scope = CtraderGrantCreateScope._read(d.pop("scope"))
 
-        return_url = d.pop("return_url")
+        return_url = d.pop("return_url", UNSET)
 
         def _parse_tenant_state(data: object) -> Union[None, Unset, str]:
             if data is None:

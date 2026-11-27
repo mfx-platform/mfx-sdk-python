@@ -113,9 +113,9 @@ class RiskActionCompleted:
 
         action_id = UUID(d.pop("action_id"))
 
-        kind = RiskActionCompletedKind(d.pop("kind"))
+        kind = RiskActionCompletedKind._read(d.pop("kind"))
 
-        state = RiskActionCompletedState(d.pop("state"))
+        state = RiskActionCompletedState._read(d.pop("state"))
 
         accounts = []
         _accounts = d.pop("accounts")

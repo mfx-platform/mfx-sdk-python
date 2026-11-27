@@ -98,10 +98,12 @@ async def test_a_policy_is_created_versioned_and_put_in_force_with_one_outcome_p
 ) -> None:
     """Given a tenant with risk:write
     When it creates a policy, adds a version that relaxes it with a reason, activates it on two
-    accounts, and reads the policy, one version and every policy oldest first
+    accounts, reads the policy, one version and every policy oldest first, and archives it while an
+    account still holds it and then once none does
     Then each is one request to its route with the idempotency key and the body in the contract's
     shape, decimals as text; the activation answers one outcome per account; the list follows the
-    cursor and sends its sort."""
+    cursor and sends its sort; the archive sends no body, a refused one is a StateError naming the
+    accounts that hold it, and the archived policy carries archived_at."""
     mfx.responses.append(answer("RiskPolicy", 201))
     await client.risk.create_policy(
         "Funded", RULES, reset={"zone": "broker"}, idempotency_key="p-1"
@@ -151,6 +153,30 @@ async def test_a_policy_is_created_versioned_and_put_in_force_with_one_outcome_p
     assert query(mfx.last)["cursor"] == ["c1"]
     mfx.responses.append(answer("RiskPolicyVersionPage", next_cursor=None))
     assert len([v async for v in client.risk.policy_versions(ID, limit=5)]) == 1
+
+    mfx.responses.append(
+        httpx.Response(
+            409,
+            json={
+                "error": {
+                    "code": "state_error",
+                    "message": "the policy is held by 1 account",
+                    "details": {"accounts": [ACCOUNT]},
+                }
+            },
+        )
+    )
+    sent_before = len(mfx.requests)
+    with pytest.raises(errors.StateError) as held:
+        await client.risk.archive_policy(ID, idempotency_key="ar-1")
+    assert held.value.details["accounts"] == [ACCOUNT]
+    assert len(mfx.requests) == sent_before + 1  # a refused write is sent once
+    mfx.responses.append(answer("RiskPolicy", archived_at="2026-11-16T07:00:00Z"))
+    archived = await client.risk.archive_policy(ID, idempotency_key="ar-2")
+    request = mfx.last
+    assert (request.method, request.url.path) == ("POST", f"/v1/risk/policies/{ID}/archive")
+    assert request.headers["Idempotency-Key"] == "ar-2" and request.content == b""
+    assert archived.archived_at == dt.datetime(2026, 11, 16, 7, tzinfo=dt.UTC)
 
 
 async def test_accounts_are_listed_with_several_values_per_filter_and_their_stats_and_read_one(
@@ -395,7 +421,9 @@ async def test_a_challenge_is_created_versioned_and_enrolled_and_its_accounts_so
     When the tenant creates a challenge, adds a version, enrols two accounts, lists its accounts
     in two states sorted by profit, walks every page, and reads one account's periods
     Then each is its own route; the list sends the repeated filters and the sort and keeps its
-    stats; the walk follows the cursor; the account reads its periods."""
+    stats; the walk follows the cursor; the account reads its periods; archiving sends no body,
+    is a StateError naming the accounts in progress while any is, sent once, and the archived
+    challenge carries archived_at."""
     rules = sample(SCHEMAS["RiskChallengeRules"])
     mfx.responses.append(answer("RiskChallenge", 201))
     await client.risk.create_challenge("Phase 1", rules, idempotency_key="ch-1")
@@ -412,6 +440,28 @@ async def test_a_challenge_is_created_versioned_and_enrolled_and_its_accounts_so
     mfx.responses.append(httpx.Response(200, json={"results": []}))
     await client.risk.enrol(ID, [ACCOUNT, ID], idempotency_key="en-1")
     assert body_of(mfx.last) == {"account_ids": [ACCOUNT, ID]}
+    mfx.responses.append(
+        httpx.Response(
+            409,
+            json={
+                "error": {
+                    "code": "state_error",
+                    "message": "1 account is in progress",
+                    "details": {"accounts": [ACCOUNT]},
+                }
+            },
+        )
+    )
+    sent_before = len(mfx.requests)
+    with pytest.raises(errors.StateError) as running:
+        await client.risk.archive_challenge(ID, idempotency_key="ca-1")
+    assert running.value.details["accounts"] == [ACCOUNT]
+    assert len(mfx.requests) == sent_before + 1  # a refused write is sent once
+    mfx.responses.append(answer("RiskChallenge", archived_at="2026-11-16T12:00:00Z"))
+    archived = await client.risk.archive_challenge(ID, idempotency_key="ca-2")
+    assert (mfx.last.method, mfx.last.url.path) == ("POST", f"/v1/risk/challenges/{ID}/archive")
+    assert mfx.last.headers["Idempotency-Key"] == "ca-2" and mfx.last.content == b""
+    assert archived.archived_at == dt.datetime(2026, 11, 16, 12, tzinfo=dt.UTC)
     mfx.responses.append(answer("RiskChallenge"))
     await client.risk.challenge(ID)
     mfx.responses.append(answer("RiskChallengePage", next_cursor=None))

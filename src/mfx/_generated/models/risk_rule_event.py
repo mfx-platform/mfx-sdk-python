@@ -184,12 +184,12 @@ class RiskRuleEvent:
 
         limit = _parse_limit(d.pop("limit"))
 
-        level = RiskRuleEventLevel(d.pop("level"))
+        level = RiskRuleEventLevel._read(d.pop("level"))
 
         actions = []
         _actions = d.pop("actions")
         for actions_item_data in _actions:
-            actions_item = RiskActionKind(actions_item_data)
+            actions_item = RiskActionKind._read(actions_item_data)
 
             actions.append(actions_item)
 
@@ -228,7 +228,7 @@ class RiskRuleEvent:
             try:
                 if not isinstance(data, str):
                     raise TypeError()
-                cleared_by_type_1 = RiskRuleEventClearedByType1(data)
+                cleared_by_type_1 = RiskRuleEventClearedByType1._read(data)
 
                 return cleared_by_type_1
             except:  # noqa: E722
@@ -236,7 +236,7 @@ class RiskRuleEvent:
             try:
                 if not isinstance(data, str):
                     raise TypeError()
-                cleared_by_type_2_type_1 = RiskRuleEventClearedByType2Type1(data)
+                cleared_by_type_2_type_1 = RiskRuleEventClearedByType2Type1._read(data)
 
                 return cleared_by_type_2_type_1
             except:  # noqa: E722
@@ -244,7 +244,7 @@ class RiskRuleEvent:
             try:
                 if not isinstance(data, str):
                     raise TypeError()
-                cleared_by_type_3_type_1 = RiskRuleEventClearedByType3Type1(data)
+                cleared_by_type_3_type_1 = RiskRuleEventClearedByType3Type1._read(data)
 
                 return cleared_by_type_3_type_1
             except:  # noqa: E722

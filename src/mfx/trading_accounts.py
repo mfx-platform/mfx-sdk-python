@@ -116,6 +116,9 @@ class TradingAccounts:
         """One trading account, by its own id or by one of its terminals' ids.
 
         Another tenant's, or an id that is not an account of yours, is a 404, never a 403.
+
+        Args:
+            account_id: The trading account to act on. Another tenant's id answers 404, never 403.
         """
         account = await self._client.read(
             lambda: _get_trading_account.asyncio_detailed(
@@ -139,6 +142,10 @@ class TradingAccounts:
         ``venue`` and ``state`` are one value or a sequence, each sent as one comma-separated value
         and checked here, so a misspelt one is a ``ValueError`` at the call. ``environment`` is
         ``live`` or ``demo``. Every filter narrows the list on the platform before the page is cut.
+
+        Args:
+            cursor: Where to continue from: the previous page's ``next_cursor``.
+            limit: How many to return at most, on one page.
         """
         venues = states_param(venue, ListTradingAccountsVenueItem)
         states = states_param(state, ListTradingAccountsStateItem)
@@ -166,7 +173,11 @@ class TradingAccounts:
         environment: AccountEnvironment | None = None,
         state: AccountStateName | Sequence[AccountStateName] | None = None,
     ) -> AsyncIterator[TradingAccount]:
-        """Every trading account, following the cursor, narrowed as :meth:`page` is."""
+        """Every trading account, following the cursor, narrowed as :meth:`page` is.
+
+        Args:
+            limit: How many to return at most, on one page.
+        """
         cursor: str | None = None
         while True:
             page = await self.page(
@@ -185,6 +196,9 @@ class TradingAccounts:
 
         On cTrader the equity is computed by the platform (the venue sends none) and ``stale`` says
         when it could not be computed recently. Another tenant's account is a 404.
+
+        Args:
+            account_id: The trading account to act on. Another tenant's id answers 404, never 403.
         """
         parsed = await self._client.read(
             lambda: _get_funds.asyncio_detailed(
@@ -196,7 +210,11 @@ class TradingAccounts:
 
     async def positions(self, account_id: Id) -> PositionList:
         """Every open position, as one snapshot with its ``as_of``. On cTrader ``volume`` is in lots
-        and ``ticket`` is the venue's position id."""
+        and ``ticket`` is the venue's position id.
+
+        Args:
+            account_id: The trading account to act on. Another tenant's id answers 404, never 403.
+        """
         parsed = await self._client.read(
             lambda: _list_positions.asyncio_detailed(
                 id=_uuid(account_id), client=self._client.generated
@@ -206,7 +224,11 @@ class TradingAccounts:
         return parsed  # type: ignore[no-any-return]
 
     async def pending_orders(self, account_id: Id) -> PendingOrderList:
-        """Every pending order, as one snapshot with its ``as_of``."""
+        """Every pending order, as one snapshot with its ``as_of``.
+
+        Args:
+            account_id: The trading account to act on. Another tenant's id answers 404, never 403.
+        """
         parsed = await self._client.read(
             lambda: _list_pending_orders.asyncio_detailed(
                 id=_uuid(account_id), client=self._client.generated
@@ -230,6 +252,11 @@ class TradingAccounts:
         Read from the venue when asked: a venue that does not answer in time is an
         ``UpstreamError``, and a window wider than 31 days a ``ValidationError``. On cTrader every
         time is UTC and ``magic`` is the origin marker the order was placed with.
+
+        Args:
+            account_id: The trading account to act on. Another tenant's id answers 404, never 403.
+            cursor: Where to continue from: the previous page's ``next_cursor``.
+            limit: How many to return at most, on one page.
         """
         parsed = await self._client.read(
             lambda: _list_deals.asyncio_detailed(
@@ -249,8 +276,11 @@ class TradingAccounts:
         """The symbols a cTrader account can trade, with their volume rules in lots and leverage.
 
         A volume a command sends must be a whole ``volume_step`` between ``volume_min`` and
-        ``volume_max``. An MT5 account is refused (its symbols are its broker's catalogue), and a
-        cTrader account that is not connected now is an ``UpstreamError``.
+        ``volume_max``. A MetaTrader 5 account is refused (its symbols are its broker's catalogue),
+        and a cTrader account that is not connected now is an ``UpstreamError``.
+
+        Args:
+            account_id: The trading account to act on. Another tenant's id answers 404, never 403.
         """
         parsed = await self._client.read(
             lambda: _list_symbols.asyncio_detailed(
@@ -289,6 +319,21 @@ class TradingAccounts:
         (:meth:`symbols`). On cTrader ``magic`` stays on the order as its label and comes back on
         the deals, and a market order's stop loss and take profit are set just after the fill
         (``protection_not_set`` says when that failed).
+
+        Args:
+            account_id: The trading account to act on. Another tenant's id answers 404, never 403.
+            symbol: The broker's own symbol name, exactly as the catalogue returns it. MFX Hub never
+                renames an instrument.
+            side: ``"buy"`` or ``"sell"``.
+            idempotency_key: Required on every write and never defaulted. Sending again with the
+                same key answers the original; a fresh key asks for a new action.
+            order_type: ``"market"`` (the default), ``"limit"``, ``"stop"`` or ``"stop_limit"``.
+            price: The order's price, as a ``Decimal``, a string or an int.
+            sl: Stop loss price, as a ``Decimal``, a string or an int.
+            tp: Take profit price, as a ``Decimal``, a string or an int.
+            deviation_points: The largest slippage you accept on a market order, in points.
+            expires_at: When a pending order expires. Timezone-aware.
+            comment: Up to 31 characters. Longer is refused here rather than cut by the terminal.
         """
         return await self._orders.place_order(
             account_id,
@@ -310,7 +355,14 @@ class TradingAccounts:
     async def cancel_order(
         self, account_id: Id, ticket: int, *, idempotency_key: str
     ) -> ExecutionResult:
-        """Cancel a pending order; as :meth:`mfx.execution.Execution.cancel_order`."""
+        """Cancel a pending order; as :meth:`mfx.execution.Execution.cancel_order`.
+
+        Args:
+            account_id: The trading account to act on. Another tenant's id answers 404, never 403.
+            ticket: The order's or position's ticket number on the broker.
+            idempotency_key: Required on every write and never defaulted. Sending again with the
+                same key answers the original; a fresh key asks for a new action.
+        """
         return await self._orders.cancel_order(account_id, ticket, idempotency_key=idempotency_key)
 
     async def modify_order(  # noqa: PLR0913 - every field an amend can change
@@ -325,7 +377,18 @@ class TradingAccounts:
         tp: Amount | None = None,
         expires_at: dt.datetime | None | _Keep = _KEEP,
     ) -> ExecutionResult:
-        """Amend a pending order; as :meth:`mfx.execution.Execution.modify_order`."""
+        """Amend a pending order; as :meth:`mfx.execution.Execution.modify_order`.
+
+        Args:
+            account_id: The trading account to act on. Another tenant's id answers 404, never 403.
+            ticket: The order's or position's ticket number on the broker.
+            idempotency_key: Required on every write and never defaulted. Sending again with the
+                same key answers the original; a fresh key asks for a new action.
+            price: The order's price, as a ``Decimal``, a string or an int.
+            sl: Stop loss price, as a ``Decimal``, a string or an int.
+            tp: Take profit price, as a ``Decimal``, a string or an int.
+            expires_at: When a pending order expires. Timezone-aware.
+        """
         return await self._orders.modify_order(
             account_id,
             ticket,
@@ -347,7 +410,16 @@ class TradingAccounts:
         tp: Amount | None = None,
     ) -> ExecutionResult:
         """Move a position's stop loss, take profit or both; as
-        :meth:`mfx.execution.Execution.modify_position`."""
+        :meth:`mfx.execution.Execution.modify_position`.
+
+        Args:
+            account_id: The trading account to act on. Another tenant's id answers 404, never 403.
+            ticket: The order's or position's ticket number on the broker.
+            idempotency_key: Required on every write and never defaulted. Sending again with the
+                same key answers the original; a fresh key asks for a new action.
+            sl: Stop loss price, as a ``Decimal``, a string or an int.
+            tp: Take profit price, as a ``Decimal``, a string or an int.
+        """
         return await self._orders.modify_position(
             account_id, ticket, idempotency_key=idempotency_key, sl=sl, tp=tp
         )
@@ -359,10 +431,24 @@ class TradingAccounts:
         *,
         idempotency_key: str,
         deviation_points: int | None = None,
+        comment: str | None = None,
     ) -> ExecutionResult:
-        """Close a position in full; as :meth:`mfx.execution.Execution.close_position`."""
+        """Close a position in full; as :meth:`mfx.execution.Execution.close_position`, its
+        ``comment`` written on the closing deal.
+
+        Args:
+            account_id: The trading account to act on. Another tenant's id answers 404, never 403.
+            ticket: The order's or position's ticket number on the broker.
+            idempotency_key: Required on every write and never defaulted. Sending again with the
+                same key answers the original; a fresh key asks for a new action.
+            deviation_points: The largest slippage you accept on a market order, in points.
+        """
         return await self._orders.close_position(
-            account_id, ticket, idempotency_key=idempotency_key, deviation_points=deviation_points
+            account_id,
+            ticket,
+            idempotency_key=idempotency_key,
+            deviation_points=deviation_points,
+            comment=comment,
         )
 
     async def close_position_by(
@@ -373,6 +459,12 @@ class TradingAccounts:
 
         cTrader has no close-by: it is done as two closes, the result says ``close_by_emulated``
         and ``deals`` holds both.
+
+        Args:
+            account_id: The trading account to act on. Another tenant's id answers 404, never 403.
+            ticket: The order's or position's ticket number on the broker.
+            idempotency_key: Required on every write and never defaulted. Sending again with the
+                same key answers the original; a fresh key asks for a new action.
         """
         return await self._orders.close_position_by(
             account_id, ticket, by_ticket, idempotency_key=idempotency_key
@@ -386,15 +478,27 @@ class TradingAccounts:
         volume: Amount,
         idempotency_key: str,
         deviation_points: int | None = None,
+        comment: str | None = None,
     ) -> ExecutionResult:
         """Close part of a position, in lots; as
-        :meth:`mfx.execution.Execution.close_position_partial`."""
+        :meth:`mfx.execution.Execution.close_position_partial`.
+
+        Args:
+            account_id: The trading account to act on. Another tenant's id answers 404, never 403.
+            ticket: The order's or position's ticket number on the broker.
+            volume: Lots, as a ``Decimal``, a string or an int. A float is refused.
+            idempotency_key: Required on every write and never defaulted. Sending again with the
+                same key answers the original; a fresh key asks for a new action.
+            deviation_points: The largest slippage you accept on a market order, in points.
+            comment: Up to 31 characters. Longer is refused here rather than cut by the terminal.
+        """
         return await self._orders.close_position_partial(
             account_id,
             ticket,
             volume=volume,
             idempotency_key=idempotency_key,
             deviation_points=deviation_points,
+            comment=comment,
         )
 
     async def set_trailing_stop(
@@ -403,6 +507,12 @@ class TradingAccounts:
         """Trail a position's stop loss; as :meth:`mfx.execution.Execution.set_trailing_stop`.
 
         A venue that has no trailing stop yet refuses it, and the refusal comes back as the result.
+
+        Args:
+            account_id: The trading account to act on. Another tenant's id answers 404, never 403.
+            ticket: The order's or position's ticket number on the broker.
+            idempotency_key: Required on every write and never defaulted. Sending again with the
+                same key answers the original; a fresh key asks for a new action.
         """
         return await self._orders.set_trailing_stop(
             account_id, ticket, distance=distance, idempotency_key=idempotency_key
@@ -412,7 +522,14 @@ class TradingAccounts:
         self, account_id: Id, ticket: int, *, idempotency_key: str
     ) -> ExecutionResult:
         """Remove a position's trailing stop; as
-        :meth:`mfx.execution.Execution.clear_trailing_stop`."""
+        :meth:`mfx.execution.Execution.clear_trailing_stop`.
+
+        Args:
+            account_id: The trading account to act on. Another tenant's id answers 404, never 403.
+            ticket: The order's or position's ticket number on the broker.
+            idempotency_key: Required on every write and never defaulted. Sending again with the
+                same key answers the original; a fresh key asks for a new action.
+        """
         return await self._orders.clear_trailing_stop(
             account_id, ticket, idempotency_key=idempotency_key
         )
@@ -434,6 +551,10 @@ class TradingAccounts:
         and chooses the accounts to share, then comes back to ``return_url`` (https) with
         ``grant_id``, ``result`` and your ``tenant_state``. The link lives 15 minutes. One grant
         covers ``live`` or ``demo`` accounts. A plan without cTrader is a ``ForbiddenError``.
+
+        Args:
+            idempotency_key: Required on every write and never defaulted. Sending again with the
+                same key answers the original; a fresh key asks for a new action.
         """
         body = CtraderGrantCreate(
             environment=CtraderGrantCreateEnvironment(environment),
@@ -471,6 +592,10 @@ class TradingAccounts:
 
         Each starts PENDING and is CONNECTED once authorised at cTrader (an ``account.connected``
         event says so). Choosing one already connected returns it unchanged. 1 to 50 ids.
+
+        Args:
+            idempotency_key: Required on every write and never defaulted. Sending again with the
+                same key answers the original; a fresh key asks for a new action.
         """
         ids = [str(i) for i in ctid_trader_account_ids]
         if not ids:
@@ -489,7 +614,12 @@ class TradingAccounts:
 
     async def revoke_ctrader_grant(self, grant_id: Id, *, idempotency_key: str) -> CtraderGrant:
         """Revoke a grant: its accounts move to REAUTH_NEEDED (an ``account.reauth_needed`` event
-        each) and a new grant reconnects them. Revoking a revoked grant answers it unchanged."""
+        each) and a new grant reconnects them. Revoking a revoked grant answers it unchanged.
+
+        Args:
+            idempotency_key: Required on every write and never defaulted. Sending again with the
+                same key answers the original; a fresh key asks for a new action.
+        """
         grant = await self._client.write(
             lambda: _revoke_ctrader_grant.asyncio_detailed(
                 id=_uuid(grant_id), client=self._client.generated, idempotency_key=idempotency_key

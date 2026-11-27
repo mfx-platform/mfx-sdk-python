@@ -89,7 +89,7 @@ class TradingAccountRunnersItem:
             try:
                 if not isinstance(data, str):
                     raise TypeError()
-                role_type_1 = TradingAccountRunnersItemRoleType1(data)
+                role_type_1 = TradingAccountRunnersItemRoleType1._read(data)
 
                 return role_type_1
             except:  # noqa: E722
@@ -97,7 +97,7 @@ class TradingAccountRunnersItem:
             try:
                 if not isinstance(data, str):
                     raise TypeError()
-                role_type_2_type_1 = TradingAccountRunnersItemRoleType2Type1(data)
+                role_type_2_type_1 = TradingAccountRunnersItemRoleType2Type1._read(data)
 
                 return role_type_2_type_1
             except:  # noqa: E722
@@ -105,7 +105,7 @@ class TradingAccountRunnersItem:
             try:
                 if not isinstance(data, str):
                     raise TypeError()
-                role_type_3_type_1 = TradingAccountRunnersItemRoleType3Type1(data)
+                role_type_3_type_1 = TradingAccountRunnersItemRoleType3Type1._read(data)
 
                 return role_type_3_type_1
             except:  # noqa: E722

@@ -24,12 +24,13 @@ T = TypeVar("T", bound="MdCandleClosed")
 
 @_attrs_define
 class MdCandleClosed:
-    """md.candle_closed on candles:{server_id}:{symbol}:{tf}: a closed bar, once, read by one of your own terminals. Never
-    replayed; prev_ts tells you whether you missed one
+    """md.candle_closed on candles:{server_id}:{symbol}:{tf}: a closed bar, once, read by one of your own terminals; or on
+    candles:{account_id}:{symbol}:{tf} for a cTrader account's subscription, the bar Spotware closed for that broker and
+    environment. Never replayed; prev_ts tells you whether you missed one
 
         Attributes:
             schema_version (str):  Example: 1.
-            server_id (UUID):
+            server_id (UUID): The channel's first key: the server, or the account on a cTrader account's channel
             symbol (str): The broker's own name
             timeframe (MdCandleClosedTimeframe):
             ts (datetime.datetime): Bar open time, UTC; a D1 bar opens at the broker's midnight
@@ -107,7 +108,7 @@ class MdCandleClosed:
 
         symbol = d.pop("symbol")
 
-        timeframe = MdCandleClosedTimeframe(d.pop("timeframe"))
+        timeframe = MdCandleClosedTimeframe._read(d.pop("timeframe"))
 
         ts = isoparse(d.pop("ts"))
 

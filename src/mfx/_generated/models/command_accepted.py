@@ -85,7 +85,7 @@ class CommandAccepted:
         d = dict(src_dict)
         command_id = UUID(d.pop("command_id"))
 
-        state = CommandState(d.pop("state"))
+        state = CommandState._read(d.pop("state"))
 
         duplicate = d.pop("duplicate")
 

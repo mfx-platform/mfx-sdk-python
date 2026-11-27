@@ -63,7 +63,7 @@ class RiskAccountOpenBreachesItem:
 
         at = isoparse(d.pop("at"))
 
-        clears = RiskAccountOpenBreachesItemClears(d.pop("clears"))
+        clears = RiskAccountOpenBreachesItemClears._read(d.pop("clears"))
 
         risk_account_open_breaches_item = cls(
             rule=rule,

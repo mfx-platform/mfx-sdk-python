@@ -107,7 +107,7 @@ class CandleList:
         if isinstance(_source, Unset):
             source = UNSET
         else:
-            source = CandleListSource(_source)
+            source = CandleListSource._read(_source)
 
         def _parse_complete_from(data: object) -> Union[None, Unset, datetime.datetime]:
             if data is None:

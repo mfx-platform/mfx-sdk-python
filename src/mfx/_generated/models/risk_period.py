@@ -82,7 +82,7 @@ class RiskPeriod:
         from ..models.risk_period_stats import RiskPeriodStats
 
         d = dict(src_dict)
-        kind = RiskPeriodKind(d.pop("kind"))
+        kind = RiskPeriodKind._read(d.pop("kind"))
 
         start = isoparse(d.pop("start"))
 
@@ -101,7 +101,7 @@ class RiskPeriod:
 
         end = _parse_end(d.pop("end"))
 
-        state = RiskPeriodState(d.pop("state"))
+        state = RiskPeriodState._read(d.pop("state"))
 
         stats = RiskPeriodStats.from_dict(d.pop("stats"))
 

@@ -30,7 +30,9 @@ class RiskActivationResultResultsItem:
         account_id (UUID):
         outcome (RiskActivationResultResultsItemOutcome):
         reason (Union[None, str]): Why it was refused, as an error code: risk_override_required, not_found,
-            quota_exceeded
+            quota_exceeded, drawdown_peak_held (the version's trailing drawdown measures its peak on another basis than the
+            peak this account holds), billing_payment_required (a payment is missing and this account holds no open position
+            or pending order, so the add-on is not switched on; an account with open exposure is not refused for billing)
     """
 
     account_id: UUID
@@ -63,7 +65,7 @@ class RiskActivationResultResultsItem:
         d = dict(src_dict)
         account_id = UUID(d.pop("account_id"))
 
-        outcome = RiskActivationResultResultsItemOutcome(d.pop("outcome"))
+        outcome = RiskActivationResultResultsItemOutcome._read(d.pop("outcome"))
 
         def _parse_reason(data: object) -> Union[None, str]:
             if data is None:

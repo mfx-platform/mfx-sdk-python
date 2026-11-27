@@ -6,6 +6,7 @@ import httpx
 
 from ... import errors
 from ...client import AuthenticatedClient, Client
+from ...models.billing_payment_required_error import BillingPaymentRequiredError
 from ...models.copy_follower import CopyFollower
 from ...models.error import Error
 from ...types import UNSET, Response
@@ -32,11 +33,16 @@ def _get_kwargs(
 
 def _parse_response(
     *, client: Union[AuthenticatedClient, Client], response: httpx.Response
-) -> Union[CopyFollower, Error]:
+) -> Union[BillingPaymentRequiredError, CopyFollower, Error]:
     if response.status_code == 202:
         response_202 = CopyFollower.from_dict(response.json())
 
         return response_202
+
+    if response.status_code == 402:
+        response_402 = BillingPaymentRequiredError.from_dict(response.json())
+
+        return response_402
 
     response_default = Error.from_dict(response.json())
 
@@ -45,7 +51,7 @@ def _parse_response(
 
 def _build_response(
     *, client: Union[AuthenticatedClient, Client], response: httpx.Response
-) -> Response[Union[CopyFollower, Error]]:
+) -> Response[Union[BillingPaymentRequiredError, CopyFollower, Error]]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -59,7 +65,7 @@ def sync_detailed(
     *,
     client: Union[AuthenticatedClient, Client],
     idempotency_key: str,
-) -> Response[Union[CopyFollower, Error]]:
+) -> Response[Union[BillingPaymentRequiredError, CopyFollower, Error]]:
     """Send the follower's mandate to its account's copy host again and heal its copied positions from the
     account
 
@@ -77,7 +83,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[CopyFollower, Error]]
+        Response[Union[BillingPaymentRequiredError, CopyFollower, Error]]
     """
 
     kwargs = _get_kwargs(
@@ -97,7 +103,7 @@ def sync(
     *,
     client: Union[AuthenticatedClient, Client],
     idempotency_key: str,
-) -> Optional[Union[CopyFollower, Error]]:
+) -> Optional[Union[BillingPaymentRequiredError, CopyFollower, Error]]:
     """Send the follower's mandate to its account's copy host again and heal its copied positions from the
     account
 
@@ -115,7 +121,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[CopyFollower, Error]
+        Union[BillingPaymentRequiredError, CopyFollower, Error]
     """
 
     return sync_detailed(
@@ -130,7 +136,7 @@ async def asyncio_detailed(
     *,
     client: Union[AuthenticatedClient, Client],
     idempotency_key: str,
-) -> Response[Union[CopyFollower, Error]]:
+) -> Response[Union[BillingPaymentRequiredError, CopyFollower, Error]]:
     """Send the follower's mandate to its account's copy host again and heal its copied positions from the
     account
 
@@ -148,7 +154,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[CopyFollower, Error]]
+        Response[Union[BillingPaymentRequiredError, CopyFollower, Error]]
     """
 
     kwargs = _get_kwargs(
@@ -166,7 +172,7 @@ async def asyncio(
     *,
     client: Union[AuthenticatedClient, Client],
     idempotency_key: str,
-) -> Optional[Union[CopyFollower, Error]]:
+) -> Optional[Union[BillingPaymentRequiredError, CopyFollower, Error]]:
     """Send the follower's mandate to its account's copy host again and heal its copied positions from the
     account
 
@@ -184,7 +190,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[CopyFollower, Error]
+        Union[BillingPaymentRequiredError, CopyFollower, Error]
     """
 
     return (

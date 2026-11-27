@@ -13,6 +13,7 @@ import asyncio
 import base64
 import datetime as dt
 import json
+import logging
 import os
 import subprocess
 import sys
@@ -41,6 +42,9 @@ KINDS: dict[str, type[Exception]] = {
     "TransportError": errors.MfxTransportError,
     "Timeout": errors.MfxTimeout,
     **{name: getattr(errors, name) for name in VOCABULARY["errors"] if hasattr(errors, name)},
+    # The suite's kinds end in Error; these two keep the names the SDKs share, without it.
+    "ServiceAgreementNotAcceptedError": errors.ServiceAgreementNotAccepted,
+    "TermsNotAcceptedError": errors.TermsNotAccepted,
 }
 
 
@@ -146,6 +150,20 @@ async def _call(client: mfx.MfxClient, op: str, args: dict[str, Any]) -> dict[st
             "first_open": bars.items[0].o if bars.items else None,
             "last_close": bars.items[-1].c if bars.items else None,
         }
+    if op == "tenant.service_agreement":
+        agreement = await client.tenant.service_agreement()
+        change = agreement.plan_change
+        return {
+            "due": agreement.due,
+            "held": agreement.held,
+            "plan": agreement.plan,
+            "plan_change_state": _word(change.state) if change is not None else None,
+            "plan_change_to": change.to if change is not None else None,
+            "documents": [d.document for d in agreement.documents],
+            "accept_url": agreement.accept_url,
+        }
+    if op == "agreement.due_warnings":
+        return {"warnings": await _due_warnings(client, a["terminal_id"], a["clients"], a["calls"])}
     if op == "risk.check":
         order = {"symbol": a["symbol"], "side": a["side"], "type": "market", "volume": a["volume"]}
         checked = await client.risk.check(a["account_id"], order)
@@ -169,7 +187,135 @@ async def _call(client: mfx.MfxClient, op: str, args: dict[str, Any]) -> dict[st
             a["challenge_id"], state=a.get("state"), sort=a.get("sort", "daily_loss_used")
         )
         return {"ids": [str(x.account_id) async for x in accounts]}
+    if op.startswith("copy."):
+        return await _copy(client, op, a)
     raise AssertionError(f"this runner does not know the operation {op!r}")
+
+
+def _word(value: Any) -> Any:  # noqa: ANN401 - a generated enum, a string or None
+    """A generated enum as the word the API sent; anything else as it is."""
+    return getattr(value, "value", value)
+
+
+def _instant(raw: str | None) -> dt.datetime | None:
+    return None if raw is None else dt.datetime.fromisoformat(raw)
+
+
+async def _copy(client: mfx.MfxClient, op: str, a: dict[str, Any]) -> dict[str, Any]:  # noqa: C901, PLR0911
+    """The Copy Trading operations, through ``client.copy``."""
+    copy = client.copy
+    if op == "copy.create_leader":
+        leader = await copy.create_leader(**a)
+        return {"id": str(leader.id), "source": _word(leader.source), "state": _word(leader.state)}
+    if op == "copy.leaders":
+        ids: list[str] = []
+        stats: Any = None
+        cursor: str | None = None
+        while True:
+            page = await copy.leaders(cursor=cursor, state=a.get("state"))
+            ids += [str(leader.id) for leader in page]
+            stats = stats or page.stats
+            cursor = page.next_cursor
+            if cursor is None:
+                break
+        return {"ids": ids, "stats_leaders": stats.leaders if stats else None}
+    if op == "copy.send_open_signal":
+        accepted = await copy.send_open_signal(a.pop("leader_id"), id_=a.pop("id"), **a)
+        return {"signal_id": str(accepted.signal_id), "duplicate": accepted.duplicate}
+    if op == "copy.create_follower":
+        follower = await copy.create_follower(**a)
+        return {
+            "id": str(follower.id),
+            "state": _word(follower.state),
+            "mandate_version": follower.mandate_version,
+        }
+    if op == "copy.preview_follower":
+        preview = await copy.preview_follower(**a)
+        return {
+            "refusal": None if preview.refusal is None else preview.refusal.to_dict(),
+            "follower_volumes": [row.follower_volume for row in preview.rows],
+            "reasons": [_word(row.reason) for row in preview.rows],
+        }
+    if op == "copy.unfollow":
+        follower = await copy.unfollow(a.pop("follower_id"), **a)
+        return {"state": _word(follower.state)}
+    if op == "copy.reset_stopouts":
+        follower = await copy.reset_stopouts(a.pop("follower_id"), **a)
+        return {"state": _word(follower.state)}
+    if op == "copy.log":
+        log = await copy.log(
+            outcome=a.get("outcome"),
+            reason=a.get("reason"),
+            from_=_instant(a.get("from")),
+            to=_instant(a.get("to")),
+        )
+        return {
+            "count": len(log),
+            "reasons": [_word(row.reason) for row in log],
+            "stats_refused": log.stats.refused if log.stats else None,
+        }
+    if op == "copy.add_group_followers":
+        result = await copy.add_group_followers(
+            a["group_id"], a["follower_ids"], idempotency_key=a["idempotency_key"]
+        )
+        return {
+            "outcomes": [_word(item.outcome) for item in result.results],
+            "reasons": [item.reason for item in result.results],
+        }
+    if op == "copy.close_group":
+        closed = await copy.close_group(a.pop("group_id"), **a)
+        return {
+            "batch_id": str(closed.batch_id),
+            "paused": closed.paused,
+            "closes": [str(c) for c in closed.closes],
+        }
+    if op == "copy.rollover_group":
+        rolled = await copy.rollover_group(a.pop("group_id"), **a)
+        return {
+            "outcomes": [_word(item.outcome) for item in rolled.results],
+            "reasons": [item.reason for item in rolled.results],
+            "next_after": None if rolled.next_after is None else str(rolled.next_after),
+        }
+    if op == "copy.closes":
+        rows: list[Any] = []
+        stats, cursor = None, None
+        while True:
+            page = await copy.closes(
+                cursor=cursor, batch_id=a.get("batch_id"), state=a.get("state")
+            )
+            rows += list(page)
+            stats = stats or page.stats
+            cursor = page.next_cursor
+            if cursor is None:
+                break
+        return {
+            "ids": [str(c.id) for c in rows],
+            "states": [_word(c.state) for c in rows],
+            "stats_incomplete": stats.incomplete if stats else None,
+        }
+    if op == "copy.read_events":
+        return await asyncio.wait_for(_copy_events(client, a["count"]), timeout=15)
+    raise AssertionError(f"this runner does not know the operation {op!r}")
+
+
+async def _copy_events(client: mfx.MfxClient, count: int) -> dict[str, Any]:
+    """Read ``count`` messages on the events channel as the SDK's typed copy events."""
+    events: list[Any] = []
+    async with client.stream(max_reconnects=3) as stream:
+        await stream.subscribe("events")
+        async for message in stream:
+            if isinstance(message, StreamMessage):
+                events.append(mfx.event_of(message))
+                if len(events) >= count:
+                    break
+    return {
+        "types": [event.KIND for event in events],
+        "accounts": [str(event.account_id) for event in events],
+        "venues": [event.venue for event in events],
+        "reasons": [
+            event.reason if isinstance(event, mfx.CopyRefused) else None for event in events
+        ],
+    }
 
 
 async def _close_waiting(client: mfx.MfxClient, channels: list[str]) -> dict[str, Any]:
@@ -220,6 +366,35 @@ async def _read_stream(client: mfx.MfxClient, channels: list[str], count: int) -
         "resyncs": stats.resyncs,
         "refused": stats.refused,
     }
+
+
+class _Count(logging.Handler):
+    """Counts the Service Agreement warnings the SDK logs."""
+
+    def __init__(self) -> None:
+        super().__init__(logging.WARNING)
+        self.warnings = 0
+
+    def emit(self, record: logging.LogRecord) -> None:
+        if record.getMessage() == mfx.SERVICE_AGREEMENT_WARNING:
+            self.warnings += 1
+
+
+async def _due_warnings(client: mfx.MfxClient, terminal_id: str, clients: int, calls: int) -> int:
+    """``clients`` clients, one after another, each reading the terminal ``calls`` times; the
+    warnings they logged that a Service Agreement is due."""
+    seed = base64.b64encode(bytes.fromhex(VOCABULARY["key"]["seed_hex"])).decode()
+    counted = _Count()
+    logger = logging.getLogger("mfx")
+    logger.addHandler(counted)
+    try:
+        for _ in range(clients):
+            async with mfx.MfxClient(client.base_url, client.key_id, seed, sleep=_noop) as each:
+                for _ in range(calls):
+                    await each.terminals.get(terminal_id)
+    finally:
+        logger.removeHandler(counted)
+    return counted.warnings
 
 
 def _same(got: Any, want: Any) -> bool:  # noqa: ANN401 - JSON values

@@ -97,7 +97,7 @@ class CopyPreview:
         d = dict(src_dict)
         account_id = UUID(d.pop("account_id"))
 
-        venue = Venue(d.pop("venue"))
+        venue = Venue._read(d.pop("venue"))
 
         leader_id = UUID(d.pop("leader_id"))
 

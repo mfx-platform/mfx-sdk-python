@@ -1,5 +1,14 @@
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any, BinaryIO, Generator, Optional, TextIO, TypeVar
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    BinaryIO,
+    Generator,
+    Optional,
+    TextIO,
+    TypeVar,
+    Union,
+)
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -19,6 +28,7 @@ class CopyFollowerPageStats:
         paused (int):
         stopped_out (int):
         unfollowed (int):
+        out_of_step (Union[Unset, int]): Of those, the ones out of step: not unfollowed, and their newest drift above 0
     """
 
     followers: int
@@ -26,6 +36,7 @@ class CopyFollowerPageStats:
     paused: int
     stopped_out: int
     unfollowed: int
+    out_of_step: Union[Unset, int] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -39,6 +50,8 @@ class CopyFollowerPageStats:
 
         unfollowed = self.unfollowed
 
+        out_of_step = self.out_of_step
+
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
@@ -50,6 +63,8 @@ class CopyFollowerPageStats:
                 "unfollowed": unfollowed,
             }
         )
+        if out_of_step is not UNSET:
+            field_dict["out_of_step"] = out_of_step
 
         return field_dict
 
@@ -66,12 +81,15 @@ class CopyFollowerPageStats:
 
         unfollowed = d.pop("unfollowed")
 
+        out_of_step = d.pop("out_of_step", UNSET)
+
         copy_follower_page_stats = cls(
             followers=followers,
             copying=copying,
             paused=paused,
             stopped_out=stopped_out,
             unfollowed=unfollowed,
+            out_of_step=out_of_step,
         )
 
         copy_follower_page_stats.additional_properties = d

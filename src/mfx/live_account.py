@@ -107,6 +107,11 @@ class LiveAccount:
     """
 
     def __init__(self, terminal_id: str | UUID) -> None:
+        """Follow one terminal's account.
+
+        Args:
+            terminal_id: The terminal whose account this view follows.
+        """
         self._terminal_id = str(terminal_id)
         self._view: AccountView | None = None
         self._behind = False

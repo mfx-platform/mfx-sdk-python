@@ -33,9 +33,6 @@ from mfx._generated.api.terminals import (
     bulk_restart_terminals as _bulk_restart_terminals,
 )
 from mfx._generated.api.terminals import (
-    bulk_retire_terminals as _bulk_retire_terminals,
-)
-from mfx._generated.api.terminals import (
     cancel_bulk_action as _cancel_bulk_action,
 )
 from mfx._generated.api.terminals import (
@@ -149,8 +146,8 @@ Id = str | UUID
 #: through this function means the next state the platform adds cannot quietly read as usable.
 _USABLE_STATES: frozenset[TenantTerminalState] = frozenset({TenantTerminalState.ACTIVE})
 
-#: OFFLINE needs nothing from you. The platform brings the terminal back by itself when its cell
-#: reports again, and moves it to another cell of its farm when the cell's VM is gone or the cell is
+#: OFFLINE needs nothing from you. The platform brings the terminal back by itself when its host
+#: reports again, and moves it to another host of its farm when the host's VM is gone or the host is
 #: still down after fifteen minutes. Retrying a request against an OFFLINE terminal is the right
 #: thing to do; re-creating the terminal is not.
 OFFLINE_IS_TEMPORARY = True
@@ -162,11 +159,11 @@ def is_usable(terminal: TenantTerminal) -> bool:
     True only in ACTIVE. Every other state means not yet (REQUESTED, PROVISIONING, LOGGING_IN),
     not any more (DRAINING, RETIRED), not until it is resumed (DRAINED), or not at the moment
     (OFFLINE, FAILED). QUEUED is not yet: the terminal is placed and waits for its turn to start,
-    because its cell starts terminals a few at a time. ``terminal.queue`` says its place, its
+    because its host starts terminals a few at a time. ``terminal.queue`` says its place, its
     expected start and why it waits; :meth:`Terminals.wait_until_active` waits on it.
 
     `OFFLINE` is the state worth knowing about, because it is the one that used to be
-    hidden inside ACTIVE: the terminal is fine, its *cell* is not — turned off outside MFX Hub, its
+    hidden inside ACTIVE: the terminal is fine, its *host* is not — turned off outside MFX Hub, its
     VM missing in Azure, or silent for three minutes. ``terminal.offline_reason`` says which of the
     three. It is not something to act on: see :data:`OFFLINE_IS_TEMPORARY`.
     """
@@ -253,7 +250,7 @@ class Terminals:
     ) -> TenantTerminal:
         """Ask for a terminal. Answered at once in state ``REQUESTED``.
 
-        The move to a cell is asynchronous, and the credential is submitted separately, so a
+        The move to a host is asynchronous, and the credential is submitted separately, so a
         terminal exists before its login does. ``instruments`` are the broker's own symbol names
         (``EURUSD.sd``): MFX never renames an instrument on a tenant's behalf.
 
@@ -265,6 +262,17 @@ class Terminals:
 
         Naming one is still the way to place a terminal deliberately, and it is checked rather than
         trusted: a farm that is not yours, or cannot take it, is refused.
+
+        Args:
+            broker_id: The broker's id from the catalogue.
+            server_id: The server's id from the catalogue.
+            idempotency_key: Required on every write and never defaulted. Sending again with the
+                same key answers the original; a fresh key asks for a new action.
+            streaming: Whether this terminal streams market data.
+            execution: Whether this terminal may trade.
+            labels: Your own key/value labels on the terminal, for your own filtering.
+            redundancy: ``"none"``, ``"active_passive"`` or ``"active_active"``: whether the
+                terminal keeps a warm stand-in.
         """
         body = TerminalCreate(
             farm_id=_uuid(farm_id) if farm_id is not None else UNSET,
@@ -288,6 +296,9 @@ class Terminals:
         """One terminal: its state, how long it has been in it, and its observed conditions.
 
         Another tenant's id is a 404, never a 403.
+
+        Args:
+            terminal_id: The terminal to act on. Another tenant's id answers 404, never 403.
         """
         terminal = await self._client.read(
             lambda: _get_terminal.asyncio_detailed(
@@ -312,6 +323,10 @@ class Terminals:
         case-sensitive keys and values (at most 10): a terminal is listed only when it carries
         every one. ``state`` is one terminal state or a sequence of them, sent as one
         comma-separated value; a terminal is listed when it is in any of them. Each is checked here.
+
+        Args:
+            cursor: Where to continue from: the previous page's ``next_cursor``.
+            limit: How many to return at most, on one page.
         """
         wanted = states_param(state, ListTerminalsStateItem)  # before the call: a bad one is ours
         parsed = await self._client.read(
@@ -335,8 +350,11 @@ class Terminals:
     ) -> AsyncIterator[TenantTerminal]:
         """Every terminal, following the cursor, optionally narrowed as :meth:`page` is.
 
-        There is no `total` and no page number anywhere in the API, and there never will be
-        (guardrail 7), so this follows the cursor rather than counting.
+        There is no `total` and no page number anywhere in the API, and there never will be, so
+        this follows the cursor rather than counting.
+
+        Args:
+            limit: How many to return at most, on one page.
         """
         cursor: str | None = None
         while True:
@@ -352,12 +370,15 @@ class Terminals:
 
         ``lines`` is 1 to 200 (the platform's default is 100); a value outside that is a
         ``ValueError`` here rather than a 400 from the platform. While the terminal runs the lines
-        are read from its cell now and ``from_`` is ``live``; once it has stopped, failed or been
-        retired they are the last lines its cell kept, ``last_words``, for 24 hours, and
+        are read from its host now and ``from_`` is ``live``; once it has stopped, failed or been
+        retired they are the last lines its host kept, ``last_words``, for 24 hours, and
         ``stopped`` says why. Account numbers are masked and file paths removed by the platform.
         A terminal that is not running and holds no last lines is a ``409 state_error``
-        (``details.reason`` ``not_running``); a cell that does not answer within 10 s is a
+        (``details.reason`` ``not_running``); a host that does not answer within 10 s is a
         ``503 upstream_error``. Another tenant's terminal is a 404.
+
+        Args:
+            terminal_id: The terminal to act on. Another tenant's id answers 404, never 403.
         """
         if lines is not None and not 1 <= lines <= 200:
             raise ValueError(f"lines must be 1 to 200, not {lines}")
@@ -386,6 +407,15 @@ class Terminals:
         It is wrapped, written to Key Vault and never stored, logged or echoed; the answer is a
         reference and nothing else. An ``investor`` credential turns execution off, and
         ``execution_disabled`` on the answer says so here rather than at the first refused order.
+
+        Args:
+            terminal_id: The terminal to act on. Another tenant's id answers 404, never 403.
+            login: The broker login.
+            password: The broker password, wrapped in :class:`~mfx.secrets.Secret`. It travels once
+                and is used by reference.
+            server: The broker server name as the broker publishes it.
+            idempotency_key: Required on every write and never defaulted. Sending again with the
+                same key answers the original; a fresh key asks for a new action.
         """
         body = CredentialSubmission(
             login=login,
@@ -413,7 +443,7 @@ class Terminals:
         confirm_open_positions: bool = False,
         queue: bool = True,
     ) -> OperationAccepted:
-        """Restart a stuck terminal: MT5 is closed and started again on the same cell.
+        """Restart a stuck terminal: the terminal is closed and started again on the same host.
 
         Answered ``202`` with the operation to follow; the terminal is not back until the
         operation succeeds, which takes a minute or two. ``reason`` is required and is **shown to
@@ -433,6 +463,11 @@ class Terminals:
         is then answered ``202`` with the operation ``QUEUED``, and it starts on its own when its
         turn comes. ``queue=False`` keeps the refusal instead, as a 409 or 429 with
         ``Retry-After``, for a caller that would rather decide when to try again.
+
+        Args:
+            terminal_id: The terminal to act on. Another tenant's id answers 404, never 403.
+            idempotency_key: Required on every write and never defaulted. Sending again with the
+                same key answers the original; a fresh key asks for a new action.
         """
         body = TerminalRestart(
             reason=reason, queue=queue, confirm_open_positions=confirm_open_positions
@@ -464,6 +499,11 @@ class Terminals:
         offers no depth answers 422 ``depth_not_offered``; more than the farm allows, or a symbol
         not in ``instruments``, is 422 ``unprocessable``. Many brokers publish no book for most FX
         symbols; asking costs nothing then and the channel stays quiet.
+
+        Args:
+            terminal_id: The terminal to act on. Another tenant's id answers 404, never 403.
+            idempotency_key: Required on every write and never defaulted. Sending again with the
+                same key answers the original; a fresh key asks for a new action.
         """
         body = TerminalInstruments(
             instruments=list(instruments),
@@ -495,7 +535,15 @@ class Terminals:
         """Attach an approved version to this terminal, on the symbol's chart and timeframe. A
         governed relaunch, answered 202 with the operation to follow (:meth:`wait_for_operation`).
         The expert then runs its trial with trading off; it trades only after a green trial, and on
-        a real-money account only after :meth:`confirm_expert_advisor`."""
+        a real-money account only after :meth:`confirm_expert_advisor`.
+
+        Args:
+            terminal_id: The terminal to act on. Another tenant's id answers 404, never 403.
+            expert_advisor_id: The expert advisor to act on.
+            reason: Your own words, recorded with the action.
+            idempotency_key: Required on every write and never defaulted. Sending again with the
+                same key answers the original; a fresh key asks for a new action.
+        """
         body = ExpertAdvisorAttach(
             expert_advisor_id=_uuid(expert_advisor_id),
             symbol=symbol,
@@ -524,7 +572,14 @@ class Terminals:
         queue: bool = False,
         confirm_open_positions: bool = False,
     ) -> OperationAccepted:
-        """Take the expert off this terminal: a governed relaunch that rebuilds the folder, 202."""
+        """Take the expert off this terminal: a governed relaunch that rebuilds the folder, 202.
+
+        Args:
+            terminal_id: The terminal to act on. Another tenant's id answers 404, never 403.
+            reason: Your own words, recorded with the action.
+            idempotency_key: Required on every write and never defaulted. Sending again with the
+                same key answers the original; a fresh key asks for a new action.
+        """
         accepted = await self._client.write(
             lambda: _detach_expert_advisor.asyncio_detailed(
                 id=_uuid(terminal_id),
@@ -543,7 +598,11 @@ class Terminals:
     ) -> ExpertAdvisorAttachment:
         """Turn on live trading on a real-money account after a green trial, with the one-time
         code sent to the account's representative. A wrong, used or expired code is 403
-        ``confirmation_refused`` and the answer does not say which; five in a row lock it."""
+        ``confirmation_refused`` and the answer does not say which; five in a row lock it.
+
+        Args:
+            terminal_id: The terminal to act on. Another tenant's id answers 404, never 403.
+        """
         attachment = await self._client.write(
             lambda: _confirm_expert_advisor.asyncio_detailed(
                 id=_uuid(terminal_id),
@@ -555,7 +614,12 @@ class Terminals:
         return attachment  # type: ignore[no-any-return]
 
     async def get_operation(self, terminal_id: Id, operation_id: Id) -> TerminalOperation:
-        """One operation on the terminal (restart, attach, detach): its state, step and timeline."""
+        """One operation on the terminal (restart, attach, detach): its state, step and timeline.
+
+        Args:
+            terminal_id: The terminal to act on. Another tenant's id answers 404, never 403.
+            operation_id: The operation's id, from the answer that started it.
+        """
         operation = await self._client.read(
             lambda: _get_terminal_operation.asyncio_detailed(
                 id=_uuid(terminal_id),
@@ -571,7 +635,12 @@ class Terminals:
     ) -> TerminalOperation:
         """Read the operation until it is over (:data:`OPERATION_FINAL`), or until ``timeout_s``.
         Returns the last read either way: an operation still running when the time runs out is
-        reported as it is. Serves restart, attach and detach alike."""
+        reported as it is. Serves restart, attach and detach alike.
+
+        Args:
+            terminal_id: The terminal to act on. Another tenant's id answers 404, never 403.
+            operation_id: The operation's id, from the answer that started it.
+        """
         deadline = self._client.wall() + timeout_s
         wait = _POLL_FROM_S
         operation = await self.get_operation(terminal_id, operation_id)
@@ -592,6 +661,9 @@ class Terminals:
         A QUEUED terminal is read again at its ``queue.expected_start_at`` (between 2 s and a
         minute away), not on a fixed beat. Any other state is read again after 2 s, doubling to
         15 s.
+
+        Args:
+            terminal_id: The terminal to act on. Another tenant's id answers 404, never 403.
         """
         if not timeout_s >= 0:
             raise ValueError("timeout_s is 0 or more")
@@ -620,10 +692,15 @@ class Terminals:
         in ``terminal_ids`` (at most 1000), and at least one of the three.
 
         Each is judged by the rules of a single restart. A refused one is listed in ``refused``
-        with its rule's code, and the rest are taken. Each cell carries its share at its own pace,
+        with its rule's code, and the rest are taken. Each host carries its share at its own pace,
         so the terminals already running on it are not slowed. Answered at once with the action and
         its ``expected_finish_at``; its items never expire. Without ``confirm_open_positions`` a
         terminal with positions open is refused (``positions_open``) and the rest go ahead.
+
+        Args:
+            reason: Your own words, recorded with the action.
+            idempotency_key: Required on every write and never defaulted. Sending again with the
+                same key answers the original; a fresh key asks for a new action.
         """
         body = bulk_ask(
             reason=reason,
@@ -640,34 +717,12 @@ class Terminals:
         )
         return action  # type: ignore[no-any-return]
 
-    async def bulk_retire(  # noqa: PLR0913 - the route's own fields
-        self,
-        *,
-        reason: str,
-        idempotency_key: str,
-        farm_id: Id | None = None,
-        broker_id: Id | None = None,
-        terminal_ids: Sequence[Id] | None = None,
-        confirm_open_positions: bool = False,
-    ) -> BulkAction:
-        """Retire many of your terminals at once, chosen and judged as :meth:`bulk_restart`."""
-        body = bulk_ask(
-            reason=reason,
-            farm_id=farm_id,
-            broker_id=broker_id,
-            terminal_ids=terminal_ids,
-            confirm_open_positions=confirm_open_positions,
-        )
-        action = await self._client.write(
-            lambda: _bulk_retire_terminals.asyncio_detailed(
-                client=self._client.generated, body=body, idempotency_key=idempotency_key
-            ),
-            "POST /terminals:retire",
-        )
-        return action  # type: ignore[no-any-return]
-
     async def get_bulk_action(self, bulk_action_id: Id) -> BulkAction:
-        """A bulk action's progress: counts per state, what was refused, and its expected finish."""
+        """A bulk action's progress: counts per state, what was refused, and its expected finish.
+
+        Args:
+            bulk_action_id: The bulk action's id, from the answer that started it.
+        """
         action = await self._client.read(
             lambda: _get_bulk_action.asyncio_detailed(
                 id=_uuid(bulk_action_id), client=self._client.generated
@@ -677,7 +732,13 @@ class Terminals:
         return action  # type: ignore[no-any-return]
 
     async def cancel_bulk_action(self, bulk_action_id: Id, *, idempotency_key: str) -> BulkAction:
-        """Cancel a bulk action: its items still QUEUED settle CANCELLED, running ones finish."""
+        """Cancel a bulk action: its items still QUEUED settle CANCELLED, running ones finish.
+
+        Args:
+            bulk_action_id: The bulk action's id, from the answer that started it.
+            idempotency_key: Required on every write and never defaulted. Sending again with the
+                same key answers the original; a fresh key asks for a new action.
+        """
         action = await self._client.write(
             lambda: _cancel_bulk_action.asyncio_detailed(
                 id=_uuid(bulk_action_id),
@@ -696,9 +757,9 @@ class Terminals:
         reason: str | None = None,
         confirm_open_positions: bool = False,
     ) -> TenantTerminal:
-        """Close the terminal gracefully and keep it: DRAINED holds no cell and is not billed.
+        """Close the terminal gracefully and keep it: DRAINED holds no host and is not billed.
 
-        Answered with the terminal ``DRAINING``; it is ``DRAINED`` once its cell has stopped it,
+        Answered with the terminal ``DRAINING``; it is ``DRAINED`` once its host has stopped it,
         and the operation (kind ``drain``) succeeds. A drained terminal keeps its id, account,
         credential, instruments, labels and expert-advisor record and runs nothing until
         :meth:`resume`. It still counts toward the terminal quota. Retire it with :meth:`retire`.
@@ -708,6 +769,11 @@ class Terminals:
         required true when the account has positions open (409 ``positions_open``); positions stay
         open at the broker while the terminal is drained. ``reason`` goes to the audit log and the
         terminal's history; left out, it is recorded as not given.
+
+        Args:
+            terminal_id: The terminal to act on. Another tenant's id answers 404, never 403.
+            idempotency_key: Required on every write and never defaulted. Sending again with the
+                same key answers the original; a fresh key asks for a new action.
         """
         body = TerminalDrain(
             reason=reason if reason is not None else UNSET,
@@ -732,6 +798,11 @@ class Terminals:
         as a new terminal does and is billed again from ACTIVE. A terminal already on its way back
         is answered as it is, so a resume sent twice is one resume; a DRAINING one is 409
         ``state_error`` until it is DRAINED.
+
+        Args:
+            terminal_id: The terminal to act on. Another tenant's id answers 404, never 403.
+            idempotency_key: Required on every write and never defaulted. Sending again with the
+                same key answers the original; a fresh key asks for a new action.
         """
         terminal = await self._client.write(
             lambda: _resume_terminal.asyncio_detailed(
@@ -744,7 +815,13 @@ class Terminals:
         return terminal  # type: ignore[no-any-return]
 
     async def retire(self, terminal_id: Id, *, idempotency_key: str) -> TenantTerminal:
-        """Retire a terminal: it drains, then retires. Answered with its state now (DRAINING)."""
+        """Retire a terminal: it drains, then retires. Answered with its state now (DRAINING).
+
+        Args:
+            terminal_id: The terminal to act on. Another tenant's id answers 404, never 403.
+            idempotency_key: Required on every write and never defaulted. Sending again with the
+                same key answers the original; a fresh key asks for a new action.
+        """
         terminal = await self._client.write(
             lambda: _retire_terminal.asyncio_detailed(
                 id=_uuid(terminal_id),

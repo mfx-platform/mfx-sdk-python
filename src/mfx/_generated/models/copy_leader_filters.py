@@ -81,7 +81,7 @@ class CopyLeaderFilters:
         if isinstance(_side, Unset):
             side = UNSET
         else:
-            side = CopyLeaderFiltersSide(_side)
+            side = CopyLeaderFiltersSide._read(_side)
 
         copy_leader_filters = cls(
             symbols=symbols,

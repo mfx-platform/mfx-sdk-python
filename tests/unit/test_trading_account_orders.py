@@ -9,16 +9,19 @@ from __future__ import annotations
 
 import datetime as dt
 import inspect
+from collections.abc import Iterator
 from typing import Any
 
 import httpx
 import pytest
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
 from mfx.client import MfxClient
 from mfx.results import CommandState, Reason
+from mfx.sync import SyncMfxClient
 from mfx.trading_accounts import TradingAccounts
 
-from .conftest import TERMINAL_ID, FakeMfx, body_of, error, page
+from .conftest import BASE_URL, KEY_ID, TERMINAL_ID, FakeMfx, body_of, error, page
 
 COMMAND_ID = "0191f0c2-bbbb-7ccc-8ddd-000000000001"
 GRANT_ID = "0191f0c2-cccc-7ddd-8eee-000000000003"
@@ -323,3 +326,140 @@ async def test_connecting_no_accounts_is_refused_at_the_call_and_nothing_is_sent
     with pytest.raises(ValueError, match="at least one"):
         await client.trading_accounts.connect_ctrader_accounts(GRANT_ID, [], idempotency_key="x")
     assert mfx.requests == []
+
+
+@pytest.fixture
+def sync_client(mfx: FakeMfx, private_key: Ed25519PrivateKey) -> Iterator[SyncMfxClient]:
+    client = SyncMfxClient(BASE_URL, KEY_ID, private_key, transport=mfx.transport)
+    yield client
+    client.close()
+
+
+def test_a_script_reads_an_account_by_its_id_through_the_blocking_client(
+    sync_client: SyncMfxClient, mfx: FakeMfx
+) -> None:
+    """Given a script with no event loop and a trading account / When it reads the account's funds,
+    positions, pending orders, the deals of a window and its symbols / Then each is the same GET
+    under /v1/accounts/{id} the async client sends, and the answers are typed."""
+    mfx.responses.extend(
+        [
+            httpx.Response(200, json={"terminal_id": TERMINAL_ID, "snapshot": None,
+                                      "profile": None, "stale": True}),
+            httpx.Response(200, json={"as_of": "2026-11-10T09:00:00Z", "stale": False,
+                                      "items": []}),
+            httpx.Response(200, json={"as_of": "2026-11-10T09:00:00Z", "stale": False,
+                                      "items": []}),
+            page([], None),
+            httpx.Response(200, json={"account_id": ACCOUNT_ID, "as_of": "2026-11-10T09:00:00Z",
+                                      "items": [{"name": "EURUSD", "symbol_id": 1, "digits": 5,
+                                                 "pip_position": 4, "lot_size": "100000",
+                                                 "volume_step": "0.01", "volume_min": "0.01",
+                                                 "volume_max": "100", "leverage": 500,
+                                                 "margin_rate": None, "base_asset": "EUR",
+                                                 "quote_asset": "USD", "enabled": True}]}),
+        ]
+    )  # fmt: skip
+    since = dt.datetime(2026, 11, 3, tzinfo=dt.UTC)
+    until = dt.datetime(2026, 11, 10, tzinfo=dt.UTC)
+
+    funds = sync_client.trading_account_funds(ACCOUNT_ID)
+    positions = sync_client.trading_account_positions(ACCOUNT_ID)
+    pending = sync_client.trading_account_pending_orders(ACCOUNT_ID)
+    deals = list(sync_client.trading_account_deals(ACCOUNT_ID, from_=since, to=until, position=12))
+    symbols = sync_client.trading_account_symbols(ACCOUNT_ID)
+
+    root = f"/v1/accounts/{ACCOUNT_ID}"
+    assert [r.url.path for r in mfx.requests] == [
+        f"{root}/account", f"{root}/positions", f"{root}/orders/pending",
+        f"{root}/history/deals", f"{root}/symbols",
+    ]  # fmt: skip
+    assert mfx.requests[3].url.params["position"] == "12"
+    assert funds.stale is True and positions.items == [] and pending.items == [] and deals == []
+    assert symbols.items[0].volume_min == "0.01"
+
+
+def test_a_script_trades_an_account_and_waits_for_the_result_without_an_event_loop(
+    sync_client: SyncMfxClient, mfx: FakeMfx
+) -> None:
+    """Given a script with no event loop / When it places an order on an account, waits for it and
+    runs each of the other eight account commands / Then every one goes to /v1/accounts/{id}/...
+    with the verb the async client uses, each answer is a result and none raises."""
+    mfx.responses.append(accepted())
+    mfx.responses.append(command({"ok": True}))  # the wait_for read, after the place
+    mfx.responses.extend(accepted() for _ in range(8))
+
+    placed = sync_client.place_account_order(
+        ACCOUNT_ID, symbol="EURUSD", side="buy", volume="0.10", idempotency_key="k1"
+    )
+    done = sync_client.wait_for(placed.command_id)
+    others = [
+        sync_client.cancel_account_order(ACCOUNT_ID, 11, idempotency_key="k2"),
+        sync_client.modify_account_order(ACCOUNT_ID, 11, price="1.1000", idempotency_key="k3"),
+        sync_client.modify_account_position(ACCOUNT_ID, 12, sl="1.0900", idempotency_key="k4"),
+        sync_client.close_account_position(ACCOUNT_ID, 12, idempotency_key="k5"),
+        sync_client.close_account_position_by(ACCOUNT_ID, 12, 13, idempotency_key="k6"),
+        sync_client.close_account_position_partial(
+            ACCOUNT_ID, 12, volume="0.05", idempotency_key="k7"
+        ),
+        sync_client.set_account_trailing_stop(
+            ACCOUNT_ID, 12, distance="0.0020", idempotency_key="k8"
+        ),
+        sync_client.clear_account_trailing_stop(ACCOUNT_ID, 12, idempotency_key="k9"),
+    ]
+
+    root = f"/v1/accounts/{ACCOUNT_ID}"
+    assert [(r.method, r.url.path) for r in mfx.requests] == [
+        ("POST", f"{root}/orders"),
+        ("GET", f"/v1/commands/{COMMAND_ID}"),
+        ("POST", f"{root}/orders/11/cancel"),
+        ("POST", f"{root}/orders/11/modify"),
+        ("POST", f"{root}/positions/12/modify"),
+        ("POST", f"{root}/positions/12/close"),
+        ("POST", f"{root}/positions/12/close-by"),
+        ("POST", f"{root}/positions/12/close-partial"),
+        ("PUT", f"{root}/positions/12/trailing-stop"),
+        ("DELETE", f"{root}/positions/12/trailing-stop"),
+    ]
+    assert mfx.requests[0].headers["Idempotency-Key"] == "k1"
+    assert body_of(mfx.requests[0])["volume"] == "0.10"
+    assert done.state is CommandState.SUCCEEDED
+    assert placed.command_id == COMMAND_ID and all(r.command_id == COMMAND_ID for r in others)
+
+
+def test_a_script_runs_the_ctrader_grant_flow_through_the_blocking_client(
+    sync_client: SyncMfxClient, mfx: FakeMfx
+) -> None:
+    """Given a script with no event loop / When it starts a grant, reads it, connects one account
+    and revokes the grant / Then the four requests are those the async client sends, with the keys
+    given, and a choice of no accounts is a ValueError before anything is sent."""
+    mfx.responses.extend(
+        [
+            httpx.Response(201, json={"grant_id": GRANT_ID,
+                                      "consent_url": "https://connect.example.com/c/abc",
+                                      "expires_at": "2026-11-10T09:15:00Z"}),
+            httpx.Response(200, json=grant()),
+            httpx.Response(200, json={"items": [trading_account()]}),
+            httpx.Response(200, json=grant("REVOKED")),
+        ]
+    )  # fmt: skip
+
+    started = sync_client.start_ctrader_grant(
+        environment="demo", scope="trading", return_url="https://example.com/back",
+        idempotency_key="g-1",
+    )  # fmt: skip
+    got = sync_client.ctrader_grant(started.grant_id)
+    connected = sync_client.connect_ctrader_accounts(GRANT_ID, [4321], idempotency_key="g-2")
+    revoked = sync_client.revoke_ctrader_grant(GRANT_ID, idempotency_key="g-3")
+    with pytest.raises(ValueError, match="at least one"):
+        sync_client.connect_ctrader_accounts(GRANT_ID, [], idempotency_key="g-4")
+
+    assert [(r.method, r.url.path) for r in mfx.requests] == [
+        ("POST", "/v1/accounts/ctrader/grants"),
+        ("GET", f"/v1/accounts/ctrader/grants/{GRANT_ID}"),
+        ("POST", f"/v1/accounts/ctrader/grants/{GRANT_ID}/accounts"),
+        ("DELETE", f"/v1/accounts/ctrader/grants/{GRANT_ID}"),
+    ]
+    assert body_of(mfx.requests[2]) == {"ctid_trader_account_ids": ["4321"]}
+    assert got.accounts[0].ctid_trader_account_id == "4321"
+    assert [a.venue.value for a in connected] == ["ctrader"]
+    assert revoked.state.value == "REVOKED"

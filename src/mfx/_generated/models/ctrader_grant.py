@@ -120,11 +120,11 @@ class CtraderGrant:
         d = dict(src_dict)
         id = UUID(d.pop("id"))
 
-        environment = CtraderGrantEnvironment(d.pop("environment"))
+        environment = CtraderGrantEnvironment._read(d.pop("environment"))
 
-        scope = CtraderGrantScope(d.pop("scope"))
+        scope = CtraderGrantScope._read(d.pop("scope"))
 
-        state = CtraderGrantState(d.pop("state"))
+        state = CtraderGrantState._read(d.pop("state"))
 
         def _parse_return_url(data: object) -> Union[None, str]:
             if data is None:

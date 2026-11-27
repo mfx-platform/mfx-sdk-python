@@ -167,9 +167,9 @@ class OrderPlaced:
 
         symbol = d.pop("symbol")
 
-        side = OrderPlacedSide(d.pop("side"))
+        side = OrderPlacedSide._read(d.pop("side"))
 
-        order_type = OrderPlacedOrderType(d.pop("order_type"))
+        order_type = OrderPlacedOrderType._read(d.pop("order_type"))
 
         volume = d.pop("volume")
 

@@ -127,7 +127,7 @@ class RiskChallengeRules:
         period_kinds = []
         _period_kinds = d.pop("period_kinds")
         for period_kinds_item_data in _period_kinds:
-            period_kinds_item = RiskPeriodKind(period_kinds_item_data)
+            period_kinds_item = RiskPeriodKind._read(period_kinds_item_data)
 
             period_kinds.append(period_kinds_item)
 

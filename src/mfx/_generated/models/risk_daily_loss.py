@@ -86,7 +86,7 @@ class RiskDailyLoss:
         d = dict(src_dict)
         limit = RiskAmount.from_dict(d.pop("limit"))
 
-        basis = RiskDailyLossBasis(d.pop("basis"))
+        basis = RiskDailyLossBasis._read(d.pop("basis"))
 
         warn_at = RiskAmount.from_dict(d.pop("warn_at"))
 

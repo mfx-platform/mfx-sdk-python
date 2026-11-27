@@ -159,7 +159,7 @@ class OrderPlace:
         d = dict(src_dict)
         symbol = d.pop("symbol")
 
-        side = OrderPlaceSide(d.pop("side"))
+        side = OrderPlaceSide._read(d.pop("side"))
 
         volume = d.pop("volume")
 
@@ -168,7 +168,7 @@ class OrderPlace:
         if isinstance(_order_type, Unset):
             order_type = UNSET
         else:
-            order_type = OrderPlaceOrderType(_order_type)
+            order_type = OrderPlaceOrderType._read(_order_type)
 
         price = d.pop("price", UNSET)
 

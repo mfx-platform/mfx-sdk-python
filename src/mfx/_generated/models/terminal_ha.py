@@ -86,7 +86,7 @@ class TerminalHa:
             try:
                 if not isinstance(data, str):
                     raise TypeError()
-                mode_type_1 = TerminalHaModeType1(data)
+                mode_type_1 = TerminalHaModeType1._read(data)
 
                 return mode_type_1
             except:  # noqa: E722
@@ -94,7 +94,7 @@ class TerminalHa:
             try:
                 if not isinstance(data, str):
                     raise TypeError()
-                mode_type_2_type_1 = TerminalHaModeType2Type1(data)
+                mode_type_2_type_1 = TerminalHaModeType2Type1._read(data)
 
                 return mode_type_2_type_1
             except:  # noqa: E722
@@ -102,7 +102,7 @@ class TerminalHa:
             try:
                 if not isinstance(data, str):
                     raise TypeError()
-                mode_type_3_type_1 = TerminalHaModeType3Type1(data)
+                mode_type_3_type_1 = TerminalHaModeType3Type1._read(data)
 
                 return mode_type_3_type_1
             except:  # noqa: E722

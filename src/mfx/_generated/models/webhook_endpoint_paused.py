@@ -73,7 +73,7 @@ class WebhookEndpointPaused:
 
         endpoint_id = UUID(d.pop("endpoint_id"))
 
-        by = WebhookEndpointPausedBy(d.pop("by"))
+        by = WebhookEndpointPausedBy._read(d.pop("by"))
 
         reason = d.pop("reason")
 

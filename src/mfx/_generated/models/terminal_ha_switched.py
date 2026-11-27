@@ -71,7 +71,7 @@ class TerminalHaSwitched:
 
         terminal_id = UUID(d.pop("terminal_id"))
 
-        reason = TerminalHaSwitchedReason(d.pop("reason"))
+        reason = TerminalHaSwitchedReason._read(d.pop("reason"))
 
         at = d.pop("at")
 

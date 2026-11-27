@@ -6,6 +6,7 @@ import httpx
 
 from ... import errors
 from ...client import AuthenticatedClient, Client
+from ...models.billing_payment_required_error import BillingPaymentRequiredError
 from ...models.credential_accepted import CredentialAccepted
 from ...models.credential_submission import CredentialSubmission
 from ...models.error import Error
@@ -38,11 +39,16 @@ def _get_kwargs(
 
 def _parse_response(
     *, client: Union[AuthenticatedClient, Client], response: httpx.Response
-) -> Union[Any, CredentialAccepted, Error]:
+) -> Union[Any, BillingPaymentRequiredError, CredentialAccepted, Error]:
     if response.status_code == 202:
         response_202 = CredentialAccepted.from_dict(response.json())
 
         return response_202
+
+    if response.status_code == 402:
+        response_402 = BillingPaymentRequiredError.from_dict(response.json())
+
+        return response_402
 
     if response.status_code == 404:
         response_404 = cast(Any, None)
@@ -60,7 +66,7 @@ def _parse_response(
 
 def _build_response(
     *, client: Union[AuthenticatedClient, Client], response: httpx.Response
-) -> Response[Union[Any, CredentialAccepted, Error]]:
+) -> Response[Union[Any, BillingPaymentRequiredError, CredentialAccepted, Error]]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -75,7 +81,7 @@ def sync_detailed(
     client: Union[AuthenticatedClient, Client],
     body: CredentialSubmission,
     idempotency_key: str,
-) -> Response[Union[Any, CredentialAccepted, Error]]:
+) -> Response[Union[Any, BillingPaymentRequiredError, CredentialAccepted, Error]]:
     """Submit or rotate credentials (master | investor) — stored securely, response by reference, never
     echoed
 
@@ -110,7 +116,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[Any, CredentialAccepted, Error]]
+        Response[Union[Any, BillingPaymentRequiredError, CredentialAccepted, Error]]
     """
 
     kwargs = _get_kwargs(
@@ -132,7 +138,7 @@ def sync(
     client: Union[AuthenticatedClient, Client],
     body: CredentialSubmission,
     idempotency_key: str,
-) -> Optional[Union[Any, CredentialAccepted, Error]]:
+) -> Optional[Union[Any, BillingPaymentRequiredError, CredentialAccepted, Error]]:
     """Submit or rotate credentials (master | investor) — stored securely, response by reference, never
     echoed
 
@@ -167,7 +173,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[Any, CredentialAccepted, Error]
+        Union[Any, BillingPaymentRequiredError, CredentialAccepted, Error]
     """
 
     return sync_detailed(
@@ -184,7 +190,7 @@ async def asyncio_detailed(
     client: Union[AuthenticatedClient, Client],
     body: CredentialSubmission,
     idempotency_key: str,
-) -> Response[Union[Any, CredentialAccepted, Error]]:
+) -> Response[Union[Any, BillingPaymentRequiredError, CredentialAccepted, Error]]:
     """Submit or rotate credentials (master | investor) — stored securely, response by reference, never
     echoed
 
@@ -219,7 +225,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[Any, CredentialAccepted, Error]]
+        Response[Union[Any, BillingPaymentRequiredError, CredentialAccepted, Error]]
     """
 
     kwargs = _get_kwargs(
@@ -239,7 +245,7 @@ async def asyncio(
     client: Union[AuthenticatedClient, Client],
     body: CredentialSubmission,
     idempotency_key: str,
-) -> Optional[Union[Any, CredentialAccepted, Error]]:
+) -> Optional[Union[Any, BillingPaymentRequiredError, CredentialAccepted, Error]]:
     """Submit or rotate credentials (master | investor) — stored securely, response by reference, never
     echoed
 
@@ -274,7 +280,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[Any, CredentialAccepted, Error]
+        Union[Any, BillingPaymentRequiredError, CredentialAccepted, Error]
     """
 
     return (

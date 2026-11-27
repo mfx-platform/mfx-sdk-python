@@ -73,7 +73,10 @@ def sync_detailed(
     `copy.state_changed` (`why: leader_retired`). With `close_copied`, each follower's copied volume of
     this leader is closed, from the copied-position ledger, never the account's own positions; without
     it the copied positions stay open and are the account's own from then on. Retired is final: the
-    account may lead again as a new leader. A leader already retired is answered as it is.
+    account may lead again as a new leader. A leader already retired is answered as it is. The retire is
+    final when the call returns; each follower's close is one requested close (`cause: leader_retired`),
+    all of them under one `batch_id`, listed by `GET /copy/closes?leader_id=`, and final when it is
+    `done` or `incomplete`, with one `copy.closed` each.
 
     Args:
         id (UUID):
@@ -114,7 +117,10 @@ def sync(
     `copy.state_changed` (`why: leader_retired`). With `close_copied`, each follower's copied volume of
     this leader is closed, from the copied-position ledger, never the account's own positions; without
     it the copied positions stay open and are the account's own from then on. Retired is final: the
-    account may lead again as a new leader. A leader already retired is answered as it is.
+    account may lead again as a new leader. A leader already retired is answered as it is. The retire is
+    final when the call returns; each follower's close is one requested close (`cause: leader_retired`),
+    all of them under one `batch_id`, listed by `GET /copy/closes?leader_id=`, and final when it is
+    `done` or `incomplete`, with one `copy.closed` each.
 
     Args:
         id (UUID):
@@ -150,7 +156,10 @@ async def asyncio_detailed(
     `copy.state_changed` (`why: leader_retired`). With `close_copied`, each follower's copied volume of
     this leader is closed, from the copied-position ledger, never the account's own positions; without
     it the copied positions stay open and are the account's own from then on. Retired is final: the
-    account may lead again as a new leader. A leader already retired is answered as it is.
+    account may lead again as a new leader. A leader already retired is answered as it is. The retire is
+    final when the call returns; each follower's close is one requested close (`cause: leader_retired`),
+    all of them under one `batch_id`, listed by `GET /copy/closes?leader_id=`, and final when it is
+    `done` or `incomplete`, with one `copy.closed` each.
 
     Args:
         id (UUID):
@@ -189,7 +198,10 @@ async def asyncio(
     `copy.state_changed` (`why: leader_retired`). With `close_copied`, each follower's copied volume of
     this leader is closed, from the copied-position ledger, never the account's own positions; without
     it the copied positions stay open and are the account's own from then on. Retired is final: the
-    account may lead again as a new leader. A leader already retired is answered as it is.
+    account may lead again as a new leader. A leader already retired is answered as it is. The retire is
+    final when the call returns; each follower's close is one requested close (`cause: leader_retired`),
+    all of them under one `batch_id`, listed by `GET /copy/closes?leader_id=`, and final when it is
+    `done` or `incomplete`, with one `copy.closed` each.
 
     Args:
         id (UUID):

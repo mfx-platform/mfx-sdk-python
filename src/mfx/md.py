@@ -283,6 +283,9 @@ class MarketData:
 
         Subscribing twice with the same ``idempotency_key`` returns the same subscription rather
         than a second one.
+
+        Args:
+            server_id: The server's id from the catalogue.
         """
         subscription = await self._client.write(
             lambda: _create_subscription.asyncio_detailed(
@@ -306,7 +309,12 @@ class MarketData:
     async def subscriptions(
         self, *, cursor: str | None = None, limit: int | None = None
     ) -> Page[MdSubscription]:
-        """One page of what this tenant has subscribed, newest first."""
+        """One page of what this tenant has subscribed, newest first.
+
+        Args:
+            cursor: Where to continue from: the previous page's ``next_cursor``.
+            limit: How many to return at most, on one page.
+        """
         parsed = await self._client.read(
             lambda: _list_subscriptions.asyncio_detailed(
                 client=self._client.generated,
@@ -339,10 +347,15 @@ class MarketData:
         resource, not a command: it exists at once and is ``pending`` until the first spot arrives.
 
         One per account and symbol: asking again answers the live one, and asking after a stop
-        reopens it. Stop it with :meth:`unsubscribe`. An MT5 account is a
+        reopens it. Stop it with :meth:`unsubscribe`. A MetaTrader 5 account is a
         :class:`~mfx.errors.StateError` (``details["reason"] == "not_on_this_venue"``): it streams
         its server, so use :meth:`subscribe`. Another tenant's account, or none, is a
         :class:`~mfx.errors.NotFoundError`.
+
+        Args:
+            account_id: The trading account to act on. Another tenant's id answers 404, never 403.
+            idempotency_key: Required on every write and never defaulted. Sending again with the
+                same key answers the original; a fresh key asks for a new action.
         """
         subscription = await self._client.write(
             lambda: _create_account_subscription.asyncio_detailed(
@@ -358,7 +371,13 @@ class MarketData:
     async def account_subscriptions(
         self, account_id: Id, *, cursor: str | None = None, limit: int | None = None
     ) -> Page[AccountMdSubscription]:
-        """One page of an account's market-data subscriptions, newest first."""
+        """One page of an account's market-data subscriptions, newest first.
+
+        Args:
+            account_id: The trading account to act on. Another tenant's id answers 404, never 403.
+            cursor: Where to continue from: the previous page's ``next_cursor``.
+            limit: How many to return at most, on one page.
+        """
         parsed = await self._client.read(
             lambda: _list_account_subscriptions.asyncio_detailed(
                 id=_uuid(account_id),
@@ -373,7 +392,11 @@ class MarketData:
     async def all_account_subscriptions(
         self, account_id: Id
     ) -> AsyncIterator[AccountMdSubscription]:
-        """Every subscription of an account, following the cursor."""
+        """Every subscription of an account, following the cursor.
+
+        Args:
+            account_id: The trading account to act on. Another tenant's id answers 404, never 403.
+        """
         cursor: str | None = None
         while True:
             page = await self.account_subscriptions(account_id, cursor=cursor)
@@ -384,7 +407,12 @@ class MarketData:
             cursor = page.next_cursor
 
     async def unsubscribe(self, subscription_id: Id, *, idempotency_key: str) -> None:
-        """Stop streaming this symbol. The channel stops; nothing else is affected."""
+        """Stop streaming this symbol. The channel stops; nothing else is affected.
+
+        Args:
+            idempotency_key: Required on every write and never defaulted. Sending again with the
+                same key answers the original; a fresh key asks for a new action.
+        """
         await self._client.write(
             lambda: _delete_subscription.asyncio_detailed(
                 id=_uuid(subscription_id),
@@ -457,10 +485,16 @@ class MarketData:
         ``Retry-After``, and raised as :class:`~mfx.errors.RateLimitError` once it runs out).
 
         ``timeframe`` is one of M1, M5, M15, M30, H1, H4, D1, W1, MN1; any other is a
-        ``ValueError`` here, before the wire. An MT5 account is a :class:`~mfx.errors.StateError`
-        (``details["reason"] == "not_on_this_venue"``): its candles are its server's, so use
-        :meth:`candles`. An account whose runner is not connected is an
-        :class:`~mfx.errors.UpstreamError` (503). No bar in the window is an empty answer.
+        ``ValueError`` here, before the wire. A MetaTrader 5 account is a
+        :class:`~mfx.errors.StateError` (``details["reason"] == "not_on_this_venue"``): its
+        candles are its server's, so use :meth:`candles`. An account whose runner is not
+        connected is an :class:`~mfx.errors.UpstreamError` (503). No bar in the window is an
+        empty answer.
+
+        Args:
+            account_id: The trading account to act on. Another tenant's id answers 404, never 403.
+            symbol: The broker's own symbol name, exactly as the catalogue returns it. MFX Hub never
+                renames an instrument.
         """
         tf = GetAccountCandlesTf(timeframe)
         parsed = await self._client.read(
@@ -529,8 +563,12 @@ class MarketData:
         drops exactly those and yields the rest, which is easy to get subtly wrong by hand: drop
         by time alone and ticks are lost, drop nothing and they are doubled.
 
-        Every call is a round trip to a cell (a busy symbol passes 100,000 ticks a day): this is
+        Every call is a round trip to a host (a busy symbol passes 100,000 ticks a day): this is
         for reading history. The stream is the way to follow ticks as they happen.
+
+        Args:
+            symbol: The broker's own symbol name, exactly as the catalogue returns it. MFX Hub never
+                renames an instrument.
         """
         start = from_
         held: list[tuple[object, ...]] = []

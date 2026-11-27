@@ -109,13 +109,14 @@ async def test_a_queued_terminal_is_waited_on_at_its_expected_start_not_on_a_fix
     assert body_of(mfx.last)["queue"] is False
 
 
-async def test_a_bulk_restart_or_retire_goes_to_the_colon_route_and_reads_back_its_progress(
+async def test_a_bulk_restart_goes_to_the_colon_route_and_reads_back_its_progress(
     client: MfxClient, mfx: FakeMfx
 ) -> None:
-    """Given a tenant restarting a farm's terminals, then retiring a list of them / When it asks,
-    reads the action and cancels it / Then each is one call to the route as the contract names it
-    (``/v1/terminals:restart``, colon and all, under the base path), carrying the idempotency key,
-    and the answer is the action with what was refused and its expected finish."""
+    """Given a tenant restarting a farm's terminals, then a list of them at a broker / When it
+    asks, reads the action and cancels it / Then each is one call to the route as the contract
+    names it (``/v1/terminals:restart``, colon and all, under the base path), carrying the
+    idempotency key, and the answer is the action with what was refused and its expected finish.
+    There is no bulk retire: the platform does not serve one."""
     mfx.responses.append(httpx.Response(202, json=_bulk()))
     action = await client.terminals.bulk_restart(
         farm_id=FARM_ID, reason="broker maintenance done", idempotency_key="b-1"
@@ -126,15 +127,16 @@ async def test_a_bulk_restart_or_retire_goes_to_the_colon_route_and_reads_back_i
                                  "confirm_open_positions": False}  # fmt: skip
     assert action.refused[0].code == "positions_open" and action.counts.queued == 2
 
-    mfx.responses.append(httpx.Response(202, json=_bulk(kind="retire")))
-    await client.terminals.bulk_retire(
+    mfx.responses.append(httpx.Response(202, json=_bulk()))
+    await client.terminals.bulk_restart(
         terminal_ids=[TERMINAL_ID],
         broker_id=BROKER_ID,
         reason="done with them",
         idempotency_key="b-2",
         confirm_open_positions=True,
     )
-    assert mfx.last.url.path == "/v1/terminals:retire"
+    assert mfx.last.url.path == "/v1/terminals:restart"
+    assert not hasattr(client.terminals, "bulk_retire")
     assert body_of(mfx.last) == {"reason": "done with them", "broker_id": BROKER_ID,
                                  "terminal_ids": [TERMINAL_ID],
                                  "confirm_open_positions": True}  # fmt: skip

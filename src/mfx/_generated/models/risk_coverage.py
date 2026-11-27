@@ -113,7 +113,7 @@ class RiskCoverage:
             try:
                 if not isinstance(data, str):
                     raise TypeError()
-                detector_type_1 = RiskCoverageDetectorType1(data)
+                detector_type_1 = RiskCoverageDetectorType1._read(data)
 
                 return detector_type_1
             except:  # noqa: E722
@@ -121,7 +121,7 @@ class RiskCoverage:
             try:
                 if not isinstance(data, str):
                     raise TypeError()
-                detector_type_2_type_1 = RiskCoverageDetectorType2Type1(data)
+                detector_type_2_type_1 = RiskCoverageDetectorType2Type1._read(data)
 
                 return detector_type_2_type_1
             except:  # noqa: E722
@@ -129,7 +129,7 @@ class RiskCoverage:
             try:
                 if not isinstance(data, str):
                     raise TypeError()
-                detector_type_3_type_1 = RiskCoverageDetectorType3Type1(data)
+                detector_type_3_type_1 = RiskCoverageDetectorType3Type1._read(data)
 
                 return detector_type_3_type_1
             except:  # noqa: E722

@@ -61,7 +61,7 @@ class TenantExpertAdvisorDecisionType0:
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         d = dict(src_dict)
-        decision = TenantExpertAdvisorDecisionType0Decision(d.pop("decision"))
+        decision = TenantExpertAdvisorDecisionType0Decision._read(d.pop("decision"))
 
         def _parse_reason(data: object) -> Union[None, str]:
             if data is None:

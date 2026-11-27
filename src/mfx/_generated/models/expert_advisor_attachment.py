@@ -86,7 +86,7 @@ class ExpertAdvisorAttachment:
 
         expert_advisor = Ref.from_dict(d.pop("expert_advisor"))
 
-        state = ExpertAdvisorAttachmentState(d.pop("state"))
+        state = ExpertAdvisorAttachmentState._read(d.pop("state"))
 
         since = isoparse(d.pop("since"))
 

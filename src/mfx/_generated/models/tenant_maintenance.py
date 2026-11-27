@@ -125,7 +125,7 @@ class TenantMaintenance:
 
         label = d.pop("label")
 
-        state = TenantMaintenanceState(d.pop("state"))
+        state = TenantMaintenanceState._read(d.pop("state"))
 
         starts_at = isoparse(d.pop("starts_at"))
 
@@ -173,13 +173,13 @@ class TenantMaintenance:
         suspended = []
         _suspended = d.pop("suspended")
         for suspended_item_data in _suspended:
-            suspended_item = MaintenanceService(suspended_item_data)
+            suspended_item = MaintenanceService._read(suspended_item_data)
 
             suspended.append(suspended_item)
 
         terminals = d.pop("terminals")
 
-        console = TenantMaintenanceConsole(d.pop("console"))
+        console = TenantMaintenanceConsole._read(d.pop("console"))
 
         tenant_maintenance = cls(
             id=id,

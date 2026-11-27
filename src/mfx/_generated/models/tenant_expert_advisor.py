@@ -249,7 +249,7 @@ class TenantExpertAdvisor:
 
         version = d.pop("version")
 
-        state = TenantExpertAdvisorState(d.pop("state"))
+        state = TenantExpertAdvisorState._read(d.pop("state"))
 
         def _parse_verdict(data: object) -> Union[EaColour, None]:
             if data is None:
@@ -257,7 +257,7 @@ class TenantExpertAdvisor:
             try:
                 if not isinstance(data, str):
                     raise TypeError()
-                verdict_type_0 = EaColour(data)
+                verdict_type_0 = EaColour._read(data)
 
                 return verdict_type_0
             except:  # noqa: E722

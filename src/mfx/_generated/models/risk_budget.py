@@ -41,7 +41,7 @@ class RiskBudget:
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         d = dict(src_dict)
-        kind = RiskBudgetKind(d.pop("kind"))
+        kind = RiskBudgetKind._read(d.pop("kind"))
 
         value = d.pop("value")
 

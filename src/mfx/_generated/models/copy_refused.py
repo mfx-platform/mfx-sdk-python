@@ -24,6 +24,7 @@ from ..types import UNSET, Unset
 
 if TYPE_CHECKING:
     from ..models.copy_leader_deal import CopyLeaderDeal
+    from ..models.copy_refused_risk_type_0 import CopyRefusedRiskType0
 
 
 T = TypeVar("T", bound="CopyRefused")
@@ -53,12 +54,19 @@ class CopyRefused:
             its lifetime before it could be copied. skip_pending: the follower skips pending orders. close_only: the
             follower copies closes only. paused: the leader, the follower or its group is paused. account_not_connected: the
             follower account is not connected. market_closed: the symbol's market is closed. no_conversion: no current rate
-            to convert the leader's figures into the follower account's currency. not_on_this_venue: the follower's venue
-            cannot do what was asked. venue_unavailable: the venue did not answer. broker: the venue refused it; its own
-            code is in `venue_code`.
+            to convert the leader's figures into the follower account's currency, or, for a member of a group with an
+            exposure cap, to price the copy's exposure in US dollars. not_on_this_venue: the follower's venue cannot do what
+            was asked. venue_unavailable: the venue did not answer. broker: the venue refused it; its own code is in
+            `venue_code`.
         venue_code (Union[None, str]): The venue's own code beside broker
         why (Union[None, str]): The reason in words, for a person
         at (datetime.datetime):
+        risk (Union['CopyRefusedRiskType0', None, Unset]): Risk Management's detail of a risk_rule refusal, in the 422
+            risk_refused shape (reason, rule, policy_id, version, used, limit, would_be, and challenge_id, challenge_version
+            when a challenge's rule refused): figures as decimal strings in the follower account's currency (in US dollars
+            when reason is copy_exposure_cap, limit being the follower's share of its group's cap), every field null where
+            the host gave none. A host that predates the detail sends its reason alone, kept with every other field null.
+            Null on every other row
     """
 
     schema_version: str
@@ -73,10 +81,12 @@ class CopyRefused:
     venue_code: Union[None, str]
     why: Union[None, str]
     at: datetime.datetime
+    risk: Union["CopyRefusedRiskType0", None, Unset] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         from ..models.copy_leader_deal import CopyLeaderDeal
+        from ..models.copy_refused_risk_type_0 import CopyRefusedRiskType0
 
         schema_version = self.schema_version
 
@@ -104,6 +114,14 @@ class CopyRefused:
 
         at = self.at.isoformat()
 
+        risk: Union[None, Unset, dict[str, Any]]
+        if isinstance(self.risk, Unset):
+            risk = UNSET
+        elif isinstance(self.risk, CopyRefusedRiskType0):
+            risk = self.risk.to_dict()
+        else:
+            risk = self.risk
+
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
@@ -122,12 +140,15 @@ class CopyRefused:
                 "at": at,
             }
         )
+        if risk is not UNSET:
+            field_dict["risk"] = risk
 
         return field_dict
 
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         from ..models.copy_leader_deal import CopyLeaderDeal
+        from ..models.copy_refused_risk_type_0 import CopyRefusedRiskType0
 
         d = dict(src_dict)
         schema_version = d.pop("schema_version")
@@ -140,13 +161,13 @@ class CopyRefused:
 
         account_id = UUID(d.pop("account_id"))
 
-        venue = Venue(d.pop("venue"))
+        venue = Venue._read(d.pop("venue"))
 
         deal = CopyLeaderDeal.from_dict(d.pop("deal"))
 
-        outcome = CopyOutcome(d.pop("outcome"))
+        outcome = CopyOutcome._read(d.pop("outcome"))
 
-        reason = CopyReason(d.pop("reason"))
+        reason = CopyReason._read(d.pop("reason"))
 
         def _parse_venue_code(data: object) -> Union[None, str]:
             if data is None:
@@ -164,6 +185,23 @@ class CopyRefused:
 
         at = isoparse(d.pop("at"))
 
+        def _parse_risk(data: object) -> Union["CopyRefusedRiskType0", None, Unset]:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, dict):
+                    raise TypeError()
+                risk_type_0 = CopyRefusedRiskType0.from_dict(data)
+
+                return risk_type_0
+            except:  # noqa: E722
+                pass
+            return cast(Union["CopyRefusedRiskType0", None, Unset], data)
+
+        risk = _parse_risk(d.pop("risk", UNSET))
+
         copy_refused = cls(
             schema_version=schema_version,
             signal_id=signal_id,
@@ -177,6 +215,7 @@ class CopyRefused:
             venue_code=venue_code,
             why=why,
             at=at,
+            risk=risk,
         )
 
         copy_refused.additional_properties = d

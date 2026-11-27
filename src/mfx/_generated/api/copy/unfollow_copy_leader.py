@@ -73,7 +73,11 @@ def sync_detailed(
     follower. With `close_copied`, the volume copied from this leader is closed, from the copied-
     position ledger, never the account's own positions; on a netting account the close is of the copied
     volume only. Without it the copied positions stay open and are the account's own from then on. An
-    unfollowed follower is answered as it is.
+    unfollowed follower is answered as it is. The follow is final when the call returns (`unfollowed`);
+    the close is a requested close, the answer's `close`, carried to the account's copy host in its
+    signed mandate and final when it is `done` (every copied position closed or found closed) or
+    `incomplete` (any not closed), with one `copy.closed`. `GET /copy/closes/{id}` has each position and
+    each attempt.
 
     Args:
         id (UUID):
@@ -114,7 +118,11 @@ def sync(
     follower. With `close_copied`, the volume copied from this leader is closed, from the copied-
     position ledger, never the account's own positions; on a netting account the close is of the copied
     volume only. Without it the copied positions stay open and are the account's own from then on. An
-    unfollowed follower is answered as it is.
+    unfollowed follower is answered as it is. The follow is final when the call returns (`unfollowed`);
+    the close is a requested close, the answer's `close`, carried to the account's copy host in its
+    signed mandate and final when it is `done` (every copied position closed or found closed) or
+    `incomplete` (any not closed), with one `copy.closed`. `GET /copy/closes/{id}` has each position and
+    each attempt.
 
     Args:
         id (UUID):
@@ -150,7 +158,11 @@ async def asyncio_detailed(
     follower. With `close_copied`, the volume copied from this leader is closed, from the copied-
     position ledger, never the account's own positions; on a netting account the close is of the copied
     volume only. Without it the copied positions stay open and are the account's own from then on. An
-    unfollowed follower is answered as it is.
+    unfollowed follower is answered as it is. The follow is final when the call returns (`unfollowed`);
+    the close is a requested close, the answer's `close`, carried to the account's copy host in its
+    signed mandate and final when it is `done` (every copied position closed or found closed) or
+    `incomplete` (any not closed), with one `copy.closed`. `GET /copy/closes/{id}` has each position and
+    each attempt.
 
     Args:
         id (UUID):
@@ -189,7 +201,11 @@ async def asyncio(
     follower. With `close_copied`, the volume copied from this leader is closed, from the copied-
     position ledger, never the account's own positions; on a netting account the close is of the copied
     volume only. Without it the copied positions stay open and are the account's own from then on. An
-    unfollowed follower is answered as it is.
+    unfollowed follower is answered as it is. The follow is final when the call returns (`unfollowed`);
+    the close is a requested close, the answer's `close`, carried to the account's copy host in its
+    signed mandate and final when it is `done` (every copied position closed or found closed) or
+    `incomplete` (any not closed), with one `copy.closed`. `GET /copy/closes/{id}` has each position and
+    each attempt.
 
     Args:
         id (UUID):

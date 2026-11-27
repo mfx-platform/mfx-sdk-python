@@ -123,24 +123,24 @@ class TenantFarm:
 
         name = d.pop("name")
 
-        os = TenantFarmOs(d.pop("os"))
+        os = TenantFarmOs._read(d.pop("os"))
 
         region = d.pop("region")
 
         usages = []
         _usages = d.pop("usages")
         for usages_item_data in _usages:
-            usages_item = TenantFarmUsagesItem(usages_item_data)
+            usages_item = TenantFarmUsagesItem._read(usages_item_data)
 
             usages.append(usages_item)
 
-        redundancy = TenantFarmRedundancy(d.pop("redundancy"))
+        redundancy = TenantFarmRedundancy._read(d.pop("redundancy"))
 
-        refresh_ms = TenantFarmRefreshMs(d.pop("refresh_ms"))
+        refresh_ms = TenantFarmRefreshMs._read(d.pop("refresh_ms"))
 
         instruments_max = d.pop("instruments_max")
 
-        status = TenantFarmStatus(d.pop("status"))
+        status = TenantFarmStatus._read(d.pop("status"))
 
         def _parse_ha_region(data: object) -> Union[None, Unset, str]:
             if data is None:

@@ -1,5 +1,5 @@
 """Fail when anything internal would be published: in the built wheel, the source distribution,
-the public documents, or the whole public repository tree.
+the public documents and the SDK reference, or the whole public repository tree.
 
 This package is installed by customers, and its source and documents are read by them. Nothing in
 them may cite the team's internal designs, decisions, work items or test cases, or name an internal
@@ -30,15 +30,36 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[1]
 
+#: The test-case area codes: a case id of the second scheme is ``TC-``, one of these, and four
+#: digits. This closed list MUST agree with the one the test-results publisher holds (and the
+#: private tracker plugin copies), so nothing it would record can be published. Longest code
+#: first, as the publisher builds its pattern.
+_TC_AREAS = sorted(
+    (
+        "CP", "AGENT", "INFRA", "DOCS", "SDK", "ADMIN", "BILL", "SUP",
+        "PORTAL", "RISK", "SEC", "COPY", "CTRD", "IDN", "TRADE", "CX",
+    ),
+    key=lambda code: (-len(code), code),
+)  # fmt: skip
+
 #: Identifiers that are internal by their shape.
 INTERNAL = re.compile(
     # Written so that these lines do not match themselves when this file is scanned.
     r"design[/]|\bDEC-\d+|AB#\d+|\bADR-\d+|TC-S[1]-|§ ?\d"
+    # A test-case id of the area scheme; the codes are joined in, so no id is spelt out here.
+    r"|TC-(?:" + "|".join(_TC_AREAS) + r")-\d{4}"
     # A tracker area path is upper case - MFX, a backslash, a capital. A lower-case file path that
     # starts the same way is not one.
     r"|(?-i:MFX[\\]{1,2}[A-Z])|\bLane \d|-intern[a]l\b",
     re.IGNORECASE,
 )
+
+#: The SDK reference the docs site renders (``tools/sdkref.py``) is held to more: every word in it
+#: is read as the product's own, so it names no tracker or decision id even without a number, calls
+#: the trading terminal "the terminal" and the platform's machines "hosts", and names no private
+#: repository. Case matters for the terminal's short name only: ``mt5`` is a venue's value.
+REFERENCE = "docs/sdkref.json"
+REFERENCE_WORDS = re.compile(r"AB#|DEC-|(?-i:MT5)|\bcells?\b|-intern[a]l", re.IGNORECASE)
 
 #: Where the names live: one lower-case name a line, ``#`` starts a comment. Absent in the public
 #: repository, where the check runs on patterns alone.
@@ -129,8 +150,12 @@ def scan(sources: Iterable[tuple[str, str]], names: frozenset[str] = NAMES) -> l
     """Every line of ``sources`` that is internal, as ``where:line: match``."""
     out: list[str] = []
     for where, text in sources:
+        reference = where.endswith(REFERENCE)
         for number, line in enumerate(text.splitlines(), 1):
             hit = match(line, names)
+            if hit is None and reference:
+                found = REFERENCE_WORDS.search(line)
+                hit = found.group(0) if found else None
             if hit:
                 out.append(f"{where}:{number}: {hit}")
     return out
@@ -141,7 +166,7 @@ def findings(dist: Path, repo: Path = REPO, names: frozenset[str] = NAMES) -> li
     sources: list[tuple[str, str]] = []
     for path in sorted(dist.iterdir()):
         sources.extend(_archive(path))
-    for name in DOCUMENTS:
+    for name in (*DOCUMENTS, REFERENCE):
         if (repo / name).is_file():
             sources.append((name, (repo / name).read_text(encoding="utf-8")))
     return scan(sources, names)

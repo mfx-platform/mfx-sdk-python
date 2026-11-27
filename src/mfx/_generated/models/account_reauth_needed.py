@@ -75,9 +75,9 @@ class AccountReauthNeeded:
 
         account_id = UUID(d.pop("account_id"))
 
-        venue = AccountReauthNeededVenue(d.pop("venue"))
+        venue = AccountReauthNeededVenue._read(d.pop("venue"))
 
-        reason = AccountReauthNeededReason(d.pop("reason"))
+        reason = AccountReauthNeededReason._read(d.pop("reason"))
 
         ts = isoparse(d.pop("ts"))
 

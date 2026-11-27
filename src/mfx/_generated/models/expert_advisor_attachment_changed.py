@@ -150,7 +150,7 @@ class ExpertAdvisorAttachmentChanged:
 
         attachment_id = UUID(d.pop("attachment_id"))
 
-        state = ExpertAdvisorAttachmentChangedState(d.pop("state"))
+        state = ExpertAdvisorAttachmentChangedState._read(d.pop("state"))
 
         def _parse_was(
             data: object,
@@ -165,7 +165,7 @@ class ExpertAdvisorAttachmentChanged:
             try:
                 if not isinstance(data, str):
                     raise TypeError()
-                was_type_1 = ExpertAdvisorAttachmentChangedWasType1(data)
+                was_type_1 = ExpertAdvisorAttachmentChangedWasType1._read(data)
 
                 return was_type_1
             except:  # noqa: E722
@@ -173,7 +173,7 @@ class ExpertAdvisorAttachmentChanged:
             try:
                 if not isinstance(data, str):
                     raise TypeError()
-                was_type_2_type_1 = ExpertAdvisorAttachmentChangedWasType2Type1(data)
+                was_type_2_type_1 = ExpertAdvisorAttachmentChangedWasType2Type1._read(data)
 
                 return was_type_2_type_1
             except:  # noqa: E722
@@ -181,7 +181,7 @@ class ExpertAdvisorAttachmentChanged:
             try:
                 if not isinstance(data, str):
                     raise TypeError()
-                was_type_3_type_1 = ExpertAdvisorAttachmentChangedWasType3Type1(data)
+                was_type_3_type_1 = ExpertAdvisorAttachmentChangedWasType3Type1._read(data)
 
                 return was_type_3_type_1
             except:  # noqa: E722
@@ -216,7 +216,7 @@ class ExpertAdvisorAttachmentChanged:
             try:
                 if not isinstance(data, str):
                     raise TypeError()
-                reason_type_1 = ExpertAdvisorAttachmentChangedReasonType1(data)
+                reason_type_1 = ExpertAdvisorAttachmentChangedReasonType1._read(data)
 
                 return reason_type_1
             except:  # noqa: E722
@@ -224,7 +224,7 @@ class ExpertAdvisorAttachmentChanged:
             try:
                 if not isinstance(data, str):
                     raise TypeError()
-                reason_type_2_type_1 = ExpertAdvisorAttachmentChangedReasonType2Type1(data)
+                reason_type_2_type_1 = ExpertAdvisorAttachmentChangedReasonType2Type1._read(data)
 
                 return reason_type_2_type_1
             except:  # noqa: E722
@@ -232,7 +232,7 @@ class ExpertAdvisorAttachmentChanged:
             try:
                 if not isinstance(data, str):
                     raise TypeError()
-                reason_type_3_type_1 = ExpertAdvisorAttachmentChangedReasonType3Type1(data)
+                reason_type_3_type_1 = ExpertAdvisorAttachmentChangedReasonType3Type1._read(data)
 
                 return reason_type_3_type_1
             except:  # noqa: E722

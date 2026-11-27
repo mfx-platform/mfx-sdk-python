@@ -100,17 +100,22 @@ def sync_detailed(
     to: datetime.datetime,
     limit: Union[Unset, int] = 1000,
 ) -> Response[Union[CandleList, Error]]:
-    """Historical candles of one of your cTrader accounts by bar time, read from Spotware through the
-    account; at most 1000 bars per call, the newest of the window
+    """Historical candles of one of your cTrader accounts by bar time, from the platform's store when it
+    holds the window, else read from Spotware through the account; at most 1000 bars per call, the
+    newest of the window
 
      The cTrader counterpart of `GET /md/candles`, keyed on the account instead of a broker and server.
     The bars are Spotware's trendbars for the account's own symbol name (`GET /accounts/{id}/symbols`),
     in UTC, `v` the bar's tick volume, oldest first, the forming bar included when the window reaches
-    now. `source` is `terminal`: the account's runner read them, and nothing is stored. The read counts
-    against the same per-terminal limit a minute as `GET /md/candles` (429 `terminal_reads_limit`).
-    Another tenant's account, or none, is 404; an unknown symbol is 404; an MT5 account is 409
-    `state_error` with `details.reason` `not_on_this_venue` (its candles are its server's: `GET
-    /md/candles`).
+    now. `source` says where they came from, as on `GET /md/candles`: `store` when the platform's store
+    holds the window complete (no read of Spotware), `terminal` when the account's runner read them,
+    `store+terminal` for closed bars from the store and the forming bar through the runner;
+    `complete_from` and `complete_to` are the span the store vouches for. The store is kept by the
+    broker and environment, so two of your accounts there read one store. A read through the runner
+    counts against the same per-terminal limit a minute as `GET /md/candles` (429
+    `terminal_reads_limit`), and makes the series stored from then on. Another tenant's account, or
+    none, is 404; an unknown symbol is 404; an MT5 account is 409 `state_error` with `details.reason`
+    `not_on_this_venue` (its candles are its server's: `GET /md/candles`).
 
     Args:
         id (UUID):
@@ -154,17 +159,22 @@ def sync(
     to: datetime.datetime,
     limit: Union[Unset, int] = 1000,
 ) -> Optional[Union[CandleList, Error]]:
-    """Historical candles of one of your cTrader accounts by bar time, read from Spotware through the
-    account; at most 1000 bars per call, the newest of the window
+    """Historical candles of one of your cTrader accounts by bar time, from the platform's store when it
+    holds the window, else read from Spotware through the account; at most 1000 bars per call, the
+    newest of the window
 
      The cTrader counterpart of `GET /md/candles`, keyed on the account instead of a broker and server.
     The bars are Spotware's trendbars for the account's own symbol name (`GET /accounts/{id}/symbols`),
     in UTC, `v` the bar's tick volume, oldest first, the forming bar included when the window reaches
-    now. `source` is `terminal`: the account's runner read them, and nothing is stored. The read counts
-    against the same per-terminal limit a minute as `GET /md/candles` (429 `terminal_reads_limit`).
-    Another tenant's account, or none, is 404; an unknown symbol is 404; an MT5 account is 409
-    `state_error` with `details.reason` `not_on_this_venue` (its candles are its server's: `GET
-    /md/candles`).
+    now. `source` says where they came from, as on `GET /md/candles`: `store` when the platform's store
+    holds the window complete (no read of Spotware), `terminal` when the account's runner read them,
+    `store+terminal` for closed bars from the store and the forming bar through the runner;
+    `complete_from` and `complete_to` are the span the store vouches for. The store is kept by the
+    broker and environment, so two of your accounts there read one store. A read through the runner
+    counts against the same per-terminal limit a minute as `GET /md/candles` (429
+    `terminal_reads_limit`), and makes the series stored from then on. Another tenant's account, or
+    none, is 404; an unknown symbol is 404; an MT5 account is 409 `state_error` with `details.reason`
+    `not_on_this_venue` (its candles are its server's: `GET /md/candles`).
 
     Args:
         id (UUID):
@@ -203,17 +213,22 @@ async def asyncio_detailed(
     to: datetime.datetime,
     limit: Union[Unset, int] = 1000,
 ) -> Response[Union[CandleList, Error]]:
-    """Historical candles of one of your cTrader accounts by bar time, read from Spotware through the
-    account; at most 1000 bars per call, the newest of the window
+    """Historical candles of one of your cTrader accounts by bar time, from the platform's store when it
+    holds the window, else read from Spotware through the account; at most 1000 bars per call, the
+    newest of the window
 
      The cTrader counterpart of `GET /md/candles`, keyed on the account instead of a broker and server.
     The bars are Spotware's trendbars for the account's own symbol name (`GET /accounts/{id}/symbols`),
     in UTC, `v` the bar's tick volume, oldest first, the forming bar included when the window reaches
-    now. `source` is `terminal`: the account's runner read them, and nothing is stored. The read counts
-    against the same per-terminal limit a minute as `GET /md/candles` (429 `terminal_reads_limit`).
-    Another tenant's account, or none, is 404; an unknown symbol is 404; an MT5 account is 409
-    `state_error` with `details.reason` `not_on_this_venue` (its candles are its server's: `GET
-    /md/candles`).
+    now. `source` says where they came from, as on `GET /md/candles`: `store` when the platform's store
+    holds the window complete (no read of Spotware), `terminal` when the account's runner read them,
+    `store+terminal` for closed bars from the store and the forming bar through the runner;
+    `complete_from` and `complete_to` are the span the store vouches for. The store is kept by the
+    broker and environment, so two of your accounts there read one store. A read through the runner
+    counts against the same per-terminal limit a minute as `GET /md/candles` (429
+    `terminal_reads_limit`), and makes the series stored from then on. Another tenant's account, or
+    none, is 404; an unknown symbol is 404; an MT5 account is 409 `state_error` with `details.reason`
+    `not_on_this_venue` (its candles are its server's: `GET /md/candles`).
 
     Args:
         id (UUID):
@@ -255,17 +270,22 @@ async def asyncio(
     to: datetime.datetime,
     limit: Union[Unset, int] = 1000,
 ) -> Optional[Union[CandleList, Error]]:
-    """Historical candles of one of your cTrader accounts by bar time, read from Spotware through the
-    account; at most 1000 bars per call, the newest of the window
+    """Historical candles of one of your cTrader accounts by bar time, from the platform's store when it
+    holds the window, else read from Spotware through the account; at most 1000 bars per call, the
+    newest of the window
 
      The cTrader counterpart of `GET /md/candles`, keyed on the account instead of a broker and server.
     The bars are Spotware's trendbars for the account's own symbol name (`GET /accounts/{id}/symbols`),
     in UTC, `v` the bar's tick volume, oldest first, the forming bar included when the window reaches
-    now. `source` is `terminal`: the account's runner read them, and nothing is stored. The read counts
-    against the same per-terminal limit a minute as `GET /md/candles` (429 `terminal_reads_limit`).
-    Another tenant's account, or none, is 404; an unknown symbol is 404; an MT5 account is 409
-    `state_error` with `details.reason` `not_on_this_venue` (its candles are its server's: `GET
-    /md/candles`).
+    now. `source` says where they came from, as on `GET /md/candles`: `store` when the platform's store
+    holds the window complete (no read of Spotware), `terminal` when the account's runner read them,
+    `store+terminal` for closed bars from the store and the forming bar through the runner;
+    `complete_from` and `complete_to` are the span the store vouches for. The store is kept by the
+    broker and environment, so two of your accounts there read one store. A read through the runner
+    counts against the same per-terminal limit a minute as `GET /md/candles` (429
+    `terminal_reads_limit`), and makes the series stored from then on. Another tenant's account, or
+    none, is 404; an unknown symbol is 404; an MT5 account is 409 `state_error` with `details.reason`
+    `not_on_this_venue` (its candles are its server's: `GET /md/candles`).
 
     Args:
         id (UUID):

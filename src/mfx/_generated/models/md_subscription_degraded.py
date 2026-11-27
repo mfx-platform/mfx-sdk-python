@@ -107,9 +107,9 @@ class MdSubscriptionDegraded:
 
         symbol = d.pop("symbol")
 
-        reason = MdSubscriptionDegradedReason(d.pop("reason"))
+        reason = MdSubscriptionDegradedReason._read(d.pop("reason"))
 
-        cause = MdSubscriptionDegradedCause(d.pop("cause"))
+        cause = MdSubscriptionDegradedCause._read(d.pop("cause"))
 
         since = isoparse(d.pop("since"))
 

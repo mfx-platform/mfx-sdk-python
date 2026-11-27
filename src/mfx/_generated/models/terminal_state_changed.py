@@ -92,9 +92,9 @@ class TerminalStateChanged:
 
         terminal_id = UUID(d.pop("terminal_id"))
 
-        from_ = TerminalStateChangedFrom(d.pop("from"))
+        from_ = TerminalStateChangedFrom._read(d.pop("from"))
 
-        to = TerminalStateChangedTo(d.pop("to"))
+        to = TerminalStateChangedTo._read(d.pop("to"))
 
         reason = d.pop("reason")
 

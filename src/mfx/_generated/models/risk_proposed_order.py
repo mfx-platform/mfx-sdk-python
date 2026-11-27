@@ -94,9 +94,9 @@ class RiskProposedOrder:
         d = dict(src_dict)
         symbol = d.pop("symbol")
 
-        side = RiskProposedOrderSide(d.pop("side"))
+        side = RiskProposedOrderSide._read(d.pop("side"))
 
-        type_ = RiskProposedOrderType(d.pop("type"))
+        type_ = RiskProposedOrderType._read(d.pop("type"))
 
         volume = d.pop("volume")
 

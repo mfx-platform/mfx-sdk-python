@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import json
 import re
+import sys
 from decimal import Decimal
 from pathlib import Path
 from typing import Any
@@ -20,6 +21,9 @@ from .conftest import FARM_ID, TERMINAL_ID, FakeMfx, error, page
 
 COMMAND_ID = "0191f0c2-bbbb-7ccc-8ddd-000000000002"
 REPO = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(REPO / "tools"))
+
+from tenant_spec import NOT_SERVED  # noqa: E402 - after the path insert, by necessity
 
 
 def _accepted() -> httpx.Response:
@@ -112,7 +116,8 @@ async def test_the_farms_the_plan_allows_are_listed_following_the_cursor_and_rea
 
 
 def _unwrapped() -> set[str]:
-    """The contract's tenant operations that no module of the SDK calls."""
+    """The contract's tenant operations that no module of the SDK calls, leaving out those the
+    platform does not serve (``tools/tenant_spec.NOT_SERVED``): they are not generated at all."""
     spec = yaml.safe_load((REPO / "spec" / "openapi.yaml").read_text(encoding="utf-8"))
     operations = {
         op["operationId"]
@@ -129,7 +134,7 @@ def _unwrapped() -> set[str]:
     def snake(name: str) -> str:
         return re.sub(r"(?<!^)(?=[A-Z])", "_", name).lower()
 
-    return {op for op in operations if snake(op) not in used} - {"openStream"}
+    return {op for op in operations if snake(op) not in used} - {"openStream"} - NOT_SERVED
 
 
 def test_the_readme_lists_exactly_the_contracts_operations_the_sdk_leaves_to_plain_https() -> None:

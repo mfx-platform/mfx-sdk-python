@@ -81,7 +81,7 @@ class AccountConnected:
 
         account_id = UUID(d.pop("account_id"))
 
-        venue = AccountConnectedVenue(d.pop("venue"))
+        venue = AccountConnectedVenue._read(d.pop("venue"))
 
         ts = isoparse(d.pop("ts"))
 

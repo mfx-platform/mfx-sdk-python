@@ -138,7 +138,7 @@ class CopyCopied:
 
         account_id = UUID(d.pop("account_id"))
 
-        venue = Venue(d.pop("venue"))
+        venue = Venue._read(d.pop("venue"))
 
         command_id = UUID(d.pop("command_id"))
 

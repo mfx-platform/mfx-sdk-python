@@ -119,15 +119,15 @@ class TerminalConditionChanged:
 
         terminal_id = UUID(d.pop("terminal_id"))
 
-        condition = TerminalConditionChangedCondition(d.pop("condition"))
+        condition = TerminalConditionChangedCondition._read(d.pop("condition"))
 
-        status = ConditionStatus(d.pop("status"))
+        status = ConditionStatus._read(d.pop("status"))
 
         reason = d.pop("reason")
 
         since = isoparse(d.pop("since"))
 
-        attributed_to = TerminalConditionChangedAttributedTo(d.pop("attributed_to"))
+        attributed_to = TerminalConditionChangedAttributedTo._read(d.pop("attributed_to"))
 
         broker_words = d.pop("broker_words", UNSET)
 
@@ -136,7 +136,7 @@ class TerminalConditionChanged:
         if isinstance(_refusal_kind, Unset):
             refusal_kind = UNSET
         else:
-            refusal_kind = TerminalConditionChangedRefusalKind(_refusal_kind)
+            refusal_kind = TerminalConditionChangedRefusalKind._read(_refusal_kind)
 
         terminal_condition_changed = cls(
             schema_version=schema_version,

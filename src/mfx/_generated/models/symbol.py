@@ -404,7 +404,7 @@ class Symbol:
 
         volume_step = d.pop("volume_step")
 
-        trade_mode = SymbolTradeMode(d.pop("trade_mode"))
+        trade_mode = SymbolTradeMode._read(d.pop("trade_mode"))
 
         margin_currency = d.pop("margin_currency")
 
@@ -527,7 +527,7 @@ class Symbol:
             try:
                 if not isinstance(data, str):
                     raise TypeError()
-                swap_type_type_1 = SymbolSwapTypeType1(data)
+                swap_type_type_1 = SymbolSwapTypeType1._read(data)
 
                 return swap_type_type_1
             except:  # noqa: E722
@@ -535,7 +535,7 @@ class Symbol:
             try:
                 if not isinstance(data, str):
                     raise TypeError()
-                swap_type_type_2_type_1 = SymbolSwapTypeType2Type1(data)
+                swap_type_type_2_type_1 = SymbolSwapTypeType2Type1._read(data)
 
                 return swap_type_type_2_type_1
             except:  # noqa: E722
@@ -543,7 +543,7 @@ class Symbol:
             try:
                 if not isinstance(data, str):
                     raise TypeError()
-                swap_type_type_3_type_1 = SymbolSwapTypeType3Type1(data)
+                swap_type_type_3_type_1 = SymbolSwapTypeType3Type1._read(data)
 
                 return swap_type_type_3_type_1
             except:  # noqa: E722
@@ -601,7 +601,7 @@ class Symbol:
                 filling_modes_type_0 = []
                 _filling_modes_type_0 = data
                 for filling_modes_type_0_item_data in _filling_modes_type_0:
-                    filling_modes_type_0_item = SymbolFillingModesType0Item(
+                    filling_modes_type_0_item = SymbolFillingModesType0Item._read(
                         filling_modes_type_0_item_data
                     )
 

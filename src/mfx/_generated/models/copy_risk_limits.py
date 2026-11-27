@@ -110,7 +110,7 @@ class CopyRiskLimits:
         if isinstance(_basis, Unset):
             basis = UNSET
         else:
-            basis = CopyRiskLimitsBasis(_basis)
+            basis = CopyRiskLimitsBasis._read(_basis)
 
         copy_risk_limits = cls(
             daily_pct=daily_pct,

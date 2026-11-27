@@ -116,7 +116,7 @@ class CopyLeaderCreate:
         from ..models.copy_who_may_join import CopyWhoMayJoin
 
         d = dict(src_dict)
-        source = CopyLeaderSource(d.pop("source"))
+        source = CopyLeaderSource._read(d.pop("source"))
 
         signal_lifetime_s = d.pop("signal_lifetime_s")
 

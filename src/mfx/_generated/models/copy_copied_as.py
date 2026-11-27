@@ -65,7 +65,7 @@ class CopyCopiedAs:
         d = dict(src_dict)
         symbol = d.pop("symbol")
 
-        side = CopyCopiedAsSide(d.pop("side"))
+        side = CopyCopiedAsSide._read(d.pop("side"))
 
         volume = d.pop("volume")
 

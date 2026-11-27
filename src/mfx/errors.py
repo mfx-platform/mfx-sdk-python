@@ -19,11 +19,14 @@ import datetime as dt
 import json
 from collections.abc import Mapping
 from dataclasses import dataclass
+from decimal import Decimal, InvalidOperation
 from http import HTTPStatus
 from typing import Any, Final
 
 __all__ = [
     "AuthError",
+    "BillingAction",
+    "BillingPaymentRequiredError",
     "ConflictError",
     "ForbiddenError",
     "InternalError",
@@ -32,16 +35,21 @@ __all__ = [
     "MfxTimeout",
     "MfxTransportError",
     "NotFoundError",
+    "PaymentRequiredError",
     "PlacementError",
+    "PlanChange",
     "RateLimitError",
     "RiskOverrideRequiredError",
     "RiskRefusal",
     "RiskRefusedError",
+    "ServiceAgreementNotAccepted",
     "StateError",
     "TenantDisabledError",
     "TenantSuspendedError",
+    "TermsNotAccepted",
     "UnsupportedBrokerError",
     "DependencyUnavailableError",
+    "DocumentDue",
     "EdgeError",
     "MaintenanceError",
     "UpstreamError",
@@ -65,6 +73,7 @@ class MfxTransportError(MfxError):
 
     def __init__(self, message: str = "", *, may_have_reached: bool = True) -> None:
         super().__init__(message)
+        #: False only when the connection never opened, so nothing was sent.
         self.may_have_reached = may_have_reached
 
 
@@ -88,9 +97,14 @@ class MfxApiError(MfxError):
         #: The platform's sentence alone, as it was written. ``str()`` puts the code and the
         #: status in front of it; this is the part to show a person.
         self.message = message
+        #: The HTTP status of the answer.
         self.status = status
+        #: The API's error code, such as ``not_found``: what to branch on, rather than the status.
         self.code = code
+        #: What the platform added about this failure; empty when it added nothing.
         self.details = details or {}
+        #: How long the platform asked you to wait before trying again, in seconds; None when it
+        #: did not say.
         self.retry_after_s = retry_after_s
 
     def __str__(self) -> str:
@@ -202,7 +216,8 @@ class MaintenanceError(ForbiddenError):
 
 @dataclass(frozen=True, slots=True)
 class RiskRefusal:
-    """What a Risk Management refusal names (the contract's ``RiskRefusalDetails``). Figures stay
+    """What a Risk Management refusal names: the rule, the figures and the policy or challenge
+    behind it, as a refusal's details and a copy refusal's ``risk`` carry them. Figures stay
     text, as the platform wrote them; ``policy_id`` and ``version`` are None when a challenge's
     rule refused, and ``challenge_id`` and ``challenge_version`` are None when a policy's did."""
 
@@ -260,6 +275,117 @@ class RiskOverrideRequiredError(ForbiddenError):
     ``risk:override`` and a ``reason``. Nothing was changed."""
 
 
+class PaymentRequiredError(MfxApiError):
+    """402: a payment is missing. Not retryable unchanged: it ends when someone pays.
+
+    :class:`BillingPaymentRequiredError` is the one the platform sends with an API key; a 402
+    whose code this version does not know arrives as this class, by its status.
+    """
+
+
+@dataclass(frozen=True, slots=True)
+class BillingAction:
+    """What clears a billing standing (the contract's ``BillingAction``).
+
+    ``kind`` is ``top_up`` or ``pay_invoice``. ``portal_path`` is the portal page that does it,
+    relative to the portal's address (``/billing/top-up``): join it to the portal's address to
+    give a person a link. ``amount_usd`` is at least what clears it, exact; ``invoice_id`` is the
+    invoice to pay, None for a top-up.
+    """
+
+    kind: str
+    portal_path: str
+    amount_usd: Decimal | None
+    invoice_id: str | None
+
+
+def _decimal_or_none(details: Mapping[str, Any], name: str) -> Decimal | None:
+    value = details.get(name)
+    if not isinstance(value, str) or not value:
+        return None
+    try:
+        figure = Decimal(value)
+    except InvalidOperation:
+        return None
+    return figure if figure.is_finite() else None
+
+
+class BillingPaymentRequiredError(PaymentRequiredError):
+    """402 ``billing_payment_required``: a payment is missing on the billing profile the request
+    falls under, and nothing was done.
+
+    It is **not retryable**: sending the same request again changes nothing until the payment is
+    made. At ``stage`` ``reminder`` it comes only from a request that adds something billed (a new
+    account, an add-on switched on). Once ``stage`` is ``suspended`` it can come from **any
+    write** on the tenant or the profile - orders, account changes, copy settings - whatever route
+    it was sent to, not only the routes that document it. **Reads keep working** throughout, the
+    billing reads (``client.billing``) included.
+
+    What a caller does: show ``message`` and :attr:`action` to a person. ``action.portal_path`` is
+    the portal page where they fix it (a top-up, or the invoice to pay), relative to the portal's
+    address. Once paid, the accounts are released, usually within the hour; then send the request
+    again (a write under the same idempotency key). ``pay_by`` is the last moment a payment avoids
+    the suspension that begins at ``suspends_at``.
+
+    Execution methods never raise: an order refused for billing comes back as a refused
+    ``ExecutionResult`` whose ``detail`` carries this error's text.
+    """
+
+    @property
+    def tenant_id(self) -> str | None:
+        """The tenant the refusal concerns."""
+        return _text_or_none(self.details, "tenant_id")
+
+    @property
+    def billing_profile_id(self) -> str | None:
+        """The billing profile the request falls under; on Standard, its one profile."""
+        return _text_or_none(self.details, "billing_profile_id")
+
+    @property
+    def stage(self) -> str | None:
+        """``reminder`` (only what adds something billed is refused) or ``suspended`` (every
+        write on the profile's accounts is). Read a word you do not know as text."""
+        value = self.details.get("stage")
+        return value if isinstance(value, str) else None
+
+    @property
+    def cause(self) -> str | None:
+        """Why: ``balance_used_up`` or ``invoice_overdue``."""
+        value = self.details.get("cause")
+        return value if isinstance(value, str) else None
+
+    @property
+    def since(self) -> dt.datetime | None:
+        """When the stage began, aware; None if the platform did not say."""
+        return _time_in(self.details, "since")
+
+    @property
+    def suspends_at(self) -> dt.datetime | None:
+        """The first suspended moment, aware; None if the platform did not say."""
+        return _time_in(self.details, "suspends_at")
+
+    @property
+    def pay_by(self) -> dt.datetime | None:
+        """The last moment a payment avoids the suspension, aware; None if not said."""
+        return _time_in(self.details, "pay_by")
+
+    @property
+    def action(self) -> BillingAction | None:
+        """What clears it, with the portal page that does it; None if the platform named none."""
+        raw = self.details.get("action")
+        if not isinstance(raw, Mapping):
+            return None
+        kind, path = raw.get("kind"), raw.get("portal_path")
+        if not isinstance(kind, str) or not isinstance(path, str):
+            return None
+        return BillingAction(
+            kind=kind,
+            portal_path=path,
+            amount_usd=_decimal_or_none(raw, "amount_usd"),
+            invoice_id=_text_or_none(raw, "invoice_id"),
+        )
+
+
 class NotFoundError(MfxApiError):
     """No such object *for this tenant*. Another tenant's id is a 404 here, never a 403."""
 
@@ -315,6 +441,131 @@ class UnsupportedBrokerError(ConflictError):
         """The broker server the refusal concerns, when the platform names one."""
         value = self.details.get("server_id")
         return value if isinstance(value, str) else None
+
+
+@dataclass(frozen=True, slots=True)
+class DocumentDue:
+    """A legal document version the organisation must accept before it can add anything.
+
+    ``document`` is the document's key: ``terms``, ``mt5_licence``, or a plan's Service
+    Agreement, ``service_agreement_<plan>`` (``service_agreement_enterprise``). The list is open:
+    read a key you do not know as one more document, by its name. ``number`` is the version,
+    ``plan`` the plan an agreement belongs to (None for the Terms and the licence), and
+    ``grace_ends_at`` when its grace period ends or ended, aware; None for a plan change's
+    agreement, which waits for acceptance instead.
+    """
+
+    document: str
+    number: int | None
+    plan: str | None
+    grace_ends_at: dt.datetime | None
+
+
+@dataclass(frozen=True, slots=True)
+class PlanChange:
+    """A move from one plan to another, as the customer sees it (the contract's
+    ``PlanChangeSummary``).
+
+    ``from_`` is the plan in force and ``to`` the plan after acceptance; ``state`` is
+    ``awaiting_acceptance``, ``active``, ``lapsed`` or ``withdrawn`` (read a word you do not know
+    as text). ``until`` is when an awaiting change lapses if nobody accepts it, None once decided.
+    ``requested_by_operator`` is True when MFX Hub asked for the change, False when the
+    organisation did, None if the platform did not say.
+    """
+
+    id: str
+    from_: str
+    to: str
+    state: str
+    requested_at: dt.datetime | None
+    until: dt.datetime | None
+    requested_by_operator: bool | None
+
+
+def _documents_due(details: Mapping[str, Any]) -> list[DocumentDue]:
+    """``details.documents``, keeping only the entries that name a document."""
+    raw = details.get("documents")
+    if not isinstance(raw, list):
+        return []
+    documents = []
+    for entry in raw:
+        if not isinstance(entry, Mapping) or not isinstance(entry.get("document"), str):
+            continue
+        number = entry.get("number")
+        documents.append(
+            DocumentDue(
+                document=entry["document"],
+                number=number if isinstance(number, int) and not isinstance(number, bool) else None,
+                plan=_text_or_none(entry, "plan"),
+                grace_ends_at=_time_in(entry, "grace_ends_at"),
+            )
+        )
+    return documents
+
+
+class TermsNotAccepted(ConflictError):  # noqa: N818 - the name the SDKs share
+    """409 ``terms_not_accepted``: a Terms of Service or MetaTrader 5 licence version the
+    organisation must accept is past its grace period unaccepted, and nothing was done.
+
+    Only additions are refused - a new terminal, attaching an expert advisor. Nothing running is
+    touched: reads, orders, positions, restarts and detaches all work. It is **not retryable**
+    unchanged: an owner or admin of the organisation accepts the version in the customer portal,
+    then send the request again (a write under the same idempotency key). :attr:`documents` names
+    each version due.
+    """
+
+    @property
+    def documents(self) -> list[DocumentDue]:
+        """Each document version due, with when its grace period ended."""
+        return _documents_due(self.details)
+
+
+class ServiceAgreementNotAccepted(ConflictError):  # noqa: N818 - the name the SDKs share
+    """409 ``service_agreement_not_accepted``: a plan change awaits acceptance of the new plan's
+    Service Agreement, or a version of the plan's agreement is past its grace period unaccepted,
+    and nothing was done.
+
+    Only additions are refused - a new terminal, attaching an expert advisor, generating or
+    replacing an API key, asking for higher limits. Nothing running is touched: reads, orders,
+    positions and anything already running all work. While a plan change waits, the plan in force
+    stays as it is. Where the Terms are held as well, this is the error that answers, and
+    :attr:`documents` lists every document due.
+
+    It is **not retryable** unchanged. What a caller does: show ``message`` and :attr:`accept_url`
+    to a person; an owner or admin of the organisation accepts there, then send the request again
+    (a write under the same idempotency key). ``client.tenant.service_agreement()`` says what is
+    due at any time.
+    """
+
+    @property
+    def plan_change(self) -> PlanChange | None:
+        """The plan change awaiting acceptance; None when there is none or it cannot be read."""
+        raw = self.details.get("plan_change")
+        if not isinstance(raw, Mapping):
+            return None
+        names = ("id", "from", "to", "state")
+        if not all(isinstance(raw.get(name), str) for name in names):
+            return None
+        by_operator = raw.get("requested_by_operator")
+        return PlanChange(
+            id=raw["id"],
+            from_=raw["from"],
+            to=raw["to"],
+            state=raw["state"],
+            requested_at=_time_in(raw, "requested_at"),
+            until=_time_in(raw, "until"),
+            requested_by_operator=by_operator if isinstance(by_operator, bool) else None,
+        )
+
+    @property
+    def documents(self) -> list[DocumentDue]:
+        """Each document version due: the new plan's agreement, and any other held with it."""
+        return _documents_due(self.details)
+
+    @property
+    def accept_url(self) -> str | None:
+        """Where an owner or admin accepts, in the customer portal; None if not said."""
+        return _text_or_none(self.details, "accept_url")
 
 
 class RateLimitError(MfxApiError):
@@ -380,6 +631,9 @@ _BY_CODE: Final[dict[str, type[MfxApiError]]] = {
     "tenant_suspended": TenantSuspendedError,
     # 403 too, and not about the key either: a planned window, which ends at details.ends_at.
     "maintenance": MaintenanceError,
+    # 402, and about neither the key nor the request: a payment is missing on the billing
+    # profile. Mapped by code because once a profile is suspended any write can answer it.
+    "billing_payment_required": BillingPaymentRequiredError,
     "not_found": NotFoundError,
     "conflict": ConflictError,
     "state_error": StateError,
@@ -396,6 +650,11 @@ _BY_CODE: Final[dict[str, type[MfxApiError]]] = {
     # second is a fact about the platform that may change in an hour. Mapping by status would merge
     # them again.
     "broker_not_supported": UnsupportedBrokerError,
+    # 409, and about neither the request nor the object: the organisation has something to
+    # accept before it can add anything. Nothing running is refused, so a caller tells these
+    # apart from a conflict to show a person where to accept.
+    "terms_not_accepted": TermsNotAccepted,
+    "service_agreement_not_accepted": ServiceAgreementNotAccepted,
     "rate_limited": RateLimitError,
     "upstream_error": UpstreamError,
     # 503 as well, and told apart by its code alone: a store of the platform's own, with
@@ -408,6 +667,7 @@ _BY_CODE: Final[dict[str, type[MfxApiError]]] = {
 _BY_STATUS: Final[dict[int, type[MfxApiError]]] = {
     400: ValidationError,
     401: AuthError,
+    402: PaymentRequiredError,
     403: ForbiddenError,
     404: NotFoundError,
     409: ConflictError,

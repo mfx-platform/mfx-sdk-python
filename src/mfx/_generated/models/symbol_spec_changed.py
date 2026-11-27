@@ -147,7 +147,7 @@ class SymbolSpecChanged:
 
         symbol = d.pop("symbol")
 
-        change = SymbolSpecChangedChange(d.pop("change"))
+        change = SymbolSpecChangedChange._read(d.pop("change"))
 
         def _parse_before(data: object) -> Union["SymbolSpecChangedBeforeType0", None]:
             if data is None:

@@ -164,7 +164,7 @@ class TerminalCreate:
         if isinstance(_redundancy, Unset):
             redundancy = UNSET
         else:
-            redundancy = TerminalCreateRedundancy(_redundancy)
+            redundancy = TerminalCreateRedundancy._read(_redundancy)
 
         _ha = d.pop("ha", UNSET)
         ha: Union[Unset, TerminalHa]
@@ -178,7 +178,7 @@ class TerminalCreate:
         if isinstance(_refresh_ms, Unset):
             refresh_ms = UNSET
         else:
-            refresh_ms = TerminalCreateRefreshMs(_refresh_ms)
+            refresh_ms = TerminalCreateRefreshMs._read(_refresh_ms)
 
         terminal_create = cls(
             broker_id=broker_id,

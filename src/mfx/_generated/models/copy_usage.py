@@ -39,7 +39,9 @@ class CopyUsage:
                 it yet, and how much of it is in use where that is measured. Under `key` it is the figure for the calling key;
                 under `tenant` the ceiling for all the tenant's keys together.
             log_retention_days (Union[None, int]): How long the copy log keeps a row; null when your contract sets it
-            copied_commands_today (Union[None, int]): Orders copied in the current UTC day; null where not yet measured
+            copied_commands_today (Union[None, int]): Copies of leader deals filled in the current UTC day, from the copy
+                log, each on the day of its leader's deal; the closes MFX orders itself (stop-outs, requested closes) are not
+                copies. Shown, never enforced or billed. Null where not yet measured
     """
 
     leaders: "UsageLimit"

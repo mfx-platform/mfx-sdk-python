@@ -13,10 +13,12 @@ from typing import Any
 
 import httpx
 import pytest
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
 from mfx.client import MfxClient
 from mfx.execution import Execution
 from mfx.results import CommandState, ExecutionResult, Reason
+from mfx.sync import SyncMfxClient
 
 from .conftest import BASE_URL, KEY_ID, TERMINAL_ID, FakeMfx, body_of, error
 
@@ -519,6 +521,101 @@ async def test_a_computed_float_is_refused_at_the_call_site_not_sent(client: Mfx
         await client.execution.close_position_partial(
             TERMINAL_ID, 8811, volume=0.05, idempotency_key="f3"
         )
+
+
+async def test_a_comment_longer_than_31_characters_is_refused_at_the_call_site_not_sent(
+    client: MfxClient, mfx: FakeMfx
+) -> None:
+    """Given an order comment of 32 characters, which the terminal would cut without saying so
+    When it is passed to place_order, on a terminal or on an account
+    Then the SDK raises ValueError saying the limit, why, and how long the comment was, and
+    nothing is sent; a comment of exactly 31
+    characters, counted as characters and not bytes, is sent whole."""
+    said = r"^comment is at most 31 characters; the terminal would cut a longer one \(32 given\)$"
+    for place in (client.execution.place_order, client.trading_accounts.place_order):
+        with pytest.raises(ValueError, match=said):
+            await place(
+                TERMINAL_ID,
+                symbol="EURUSD.sd",
+                side="buy",
+                volume="0.1",
+                idempotency_key="c1",
+                comment="x" * 32,
+            )
+    assert mfx.requests == [], "nothing is sent"
+
+    whole = "é" * 31
+    mfx.responses.append(httpx.Response(202, json={"command_id": "c", "state": "QUEUED"}))
+    await client.execution.place_order(
+        TERMINAL_ID,
+        symbol="EURUSD.sd",
+        side="buy",
+        volume="0.1",
+        idempotency_key="c2",
+        comment=whole,
+    )
+    assert body_of(mfx.last)["comment"] == whole
+
+
+async def test_a_close_writes_its_comment_on_the_closing_deal_and_refuses_one_over_31_characters(
+    client: MfxClient, mfx: FakeMfx
+) -> None:
+    """Given a full close and a partial close, on a terminal and on an account
+    When each is sent with a comment of 31 characters, then with none, then with 32
+    Then the 31-character comment, counted as characters and not bytes, is in the close body
+    whole, to be written on the closing deal; with none the body carries no comment and the deal
+    takes the position's own; and 32 characters raise ValueError saying the limit, with nothing
+    sent, as place_order does."""
+    whole = "é" * 31
+    closes = []
+    for orders in (client.execution, client.trading_accounts):
+        closes.append(
+            lambda key, o=orders, **c: o.close_position(TERMINAL_ID, 8811, idempotency_key=key, **c)
+        )
+        closes.append(
+            lambda key, o=orders, **c: o.close_position_partial(
+                TERMINAL_ID, 8811, volume="0.05", idempotency_key=key, **c
+            )
+        )
+    for n, close in enumerate(closes):
+        mfx.responses.append(httpx.Response(202, json={"command_id": "c", "state": "QUEUED"}))
+        await close(f"w{n}", comment=whole)
+        assert body_of(mfx.last)["comment"] == whole
+        mfx.responses.append(httpx.Response(202, json={"command_id": "c", "state": "QUEUED"}))
+        await close(f"n{n}")
+        assert "comment" not in body_of(mfx.last)
+        sent = len(mfx.requests)
+        with pytest.raises(ValueError, match=r"the terminal would cut a longer one \(32 given\)"):
+            await close(f"x{n}", comment="x" * 32)
+        assert len(mfx.requests) == sent, "nothing is sent"
+
+
+def test_the_sync_client_closes_with_a_comment_and_refuses_one_over_31_characters(
+    mfx: FakeMfx, private_key: Ed25519PrivateKey
+) -> None:
+    """Given a script with no event loop holding a SyncMfxClient
+    When it closes in full and in part, on a terminal and on an account, with a comment
+    Then each close body carries the comment, and a 32-character comment raises the same
+    ValueError before anything is sent."""
+    with SyncMfxClient(BASE_URL, KEY_ID, private_key, transport=mfx.transport) as sync:
+        closes = [
+            lambda **c: sync.close_position(TERMINAL_ID, 8811, idempotency_key="s1", **c),
+            lambda **c: sync.close_position_partial(
+                TERMINAL_ID, 8811, volume="0.05", idempotency_key="s2", **c
+            ),
+            lambda **c: sync.close_account_position(TERMINAL_ID, 8811, idempotency_key="s3", **c),
+            lambda **c: sync.close_account_position_partial(
+                TERMINAL_ID, 8811, volume="0.05", idempotency_key="s4", **c
+            ),
+        ]
+        for close in closes:
+            mfx.responses.append(httpx.Response(202, json={"command_id": "c", "state": "QUEUED"}))
+            close(comment="mine-7")
+            assert body_of(mfx.last)["comment"] == "mine-7"
+            sent = len(mfx.requests)
+            with pytest.raises(ValueError, match=r"at most 31 characters; the terminal would cut"):
+                close(comment="x" * 32)
+            assert len(mfx.requests) == sent
 
 
 @pytest.mark.parametrize(

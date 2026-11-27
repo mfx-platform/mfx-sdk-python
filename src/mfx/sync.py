@@ -39,10 +39,39 @@ from mfx.pages import Page
 
 if TYPE_CHECKING:
     from mfx._generated.models.account import Account
+    from mfx._generated.models.billing_forecast import BillingForecast
+    from mfx._generated.models.billing_invoice import BillingInvoice
+    from mfx._generated.models.billing_invoice_detail import BillingInvoiceDetail
+    from mfx._generated.models.billing_invoice_page import BillingInvoicePage
+    from mfx._generated.models.billing_price_list import BillingPriceList
+    from mfx._generated.models.billing_profile import BillingProfile
+    from mfx._generated.models.billing_summary import BillingSummary
     from mfx._generated.models.broker_catalogue import BrokerCatalogue
     from mfx._generated.models.candle_list import CandleList
+    from mfx._generated.models.copy_close import CopyClose
+    from mfx._generated.models.copy_close_page_stats import CopyClosePageStats
+    from mfx._generated.models.copy_follower import CopyFollower
+    from mfx._generated.models.copy_follower_page_stats import CopyFollowerPageStats
+    from mfx._generated.models.copy_group import CopyGroup
+    from mfx._generated.models.copy_group_close_result import CopyGroupCloseResult
+    from mfx._generated.models.copy_group_members_result import CopyGroupMembersResult
+    from mfx._generated.models.copy_group_page_stats import CopyGroupPageStats
+    from mfx._generated.models.copy_group_rollover_result import CopyGroupRolloverResult
+    from mfx._generated.models.copy_leader import CopyLeader
+    from mfx._generated.models.copy_leader_page_stats import CopyLeaderPageStats
+    from mfx._generated.models.copy_log_entry import CopyLogEntry
+    from mfx._generated.models.copy_log_page_stats import CopyLogPageStats
+    from mfx._generated.models.copy_preview import CopyPreview
+    from mfx._generated.models.copy_signal_accepted import CopySignalAccepted
+    from mfx._generated.models.copy_signal_entry import CopySignalEntry
+    from mfx._generated.models.copy_signal_page_stats import CopySignalPageStats
+    from mfx._generated.models.copy_stopout import CopyStopout
+    from mfx._generated.models.copy_tenant_stopout_page_stats import CopyTenantStopoutPageStats
     from mfx._generated.models.credential_accepted import CredentialAccepted
+    from mfx._generated.models.ctrader_grant import CtraderGrant
+    from mfx._generated.models.ctrader_grant_started import CtraderGrantStarted
     from mfx._generated.models.deal import Deal
+    from mfx._generated.models.own_contacts import OwnContacts
     from mfx._generated.models.pending_order_list import PendingOrderList
     from mfx._generated.models.position_list import PositionList
     from mfx._generated.models.spread_list import SpreadList
@@ -50,11 +79,16 @@ if TYPE_CHECKING:
     from mfx._generated.models.symbol_quote import SymbolQuote
     from mfx._generated.models.tenant_broker import TenantBroker
     from mfx._generated.models.tenant_broker_server import TenantBrokerServer
+    from mfx._generated.models.tenant_service_agreement import TenantServiceAgreement
     from mfx._generated.models.tenant_terminal import TenantTerminal
     from mfx._generated.models.terminal_journal import TerminalJournal
     from mfx._generated.models.tick_list import TickList
     from mfx._generated.models.trading_account import TradingAccount
+    from mfx._generated.models.trading_symbol_list import TradingSymbolList
     from mfx._generated.models.usage import Usage
+    from mfx.billing import Billing
+    from mfx.copy_trading import Copy, CopyPage
+    from mfx.expert_advisors import Tenant
     from mfx.results import ExecutionResult
     from mfx.secrets import Secret
     from mfx.terminals import CredentialType, Id, Redundancy, TerminalStateName
@@ -90,6 +124,12 @@ class SyncMfxClient:
         self._thread = threading.Thread(target=self._loop.run_forever, name="mfx-sync", daemon=True)
         self._thread.start()
         self._closed = False
+        #: Copy Trading, blocking: the same methods as ``MfxClient.copy``.
+        self.copy = SyncCopy(self)
+        #: Billing reads, blocking: the same methods as ``MfxClient.billing``.
+        self.billing = SyncBilling(self)
+        #: What the tenant reads about itself, blocking: the same methods as ``MfxClient.tenant``.
+        self.tenant = SyncTenant(self)
 
     # ---------------------------------------------------------------- the loop, and the one rule
 
@@ -178,6 +218,119 @@ class SyncMfxClient:
         return self._pages(
             lambda cursor: self._client.trading_accounts.page(
                 cursor=cursor, limit=limit, venue=venue, environment=environment, state=state
+            )
+        )
+
+    # ------------------------------------------------------------- trading accounts, by account
+    # Every venue's account, read and traded by the account's own id. The names say "account"
+    # where the terminal-keyed method above already has the short one (`positions`, `place_order`).
+
+    def trading_account_funds(self, account_id: Id) -> Account:
+        """Blocking form of :meth:`mfx.trading_accounts.TradingAccounts.funds`."""
+        return self._run(lambda: self._client.trading_accounts.funds(account_id))
+
+    def trading_account_positions(self, account_id: Id) -> PositionList:
+        """Blocking form of :meth:`mfx.trading_accounts.TradingAccounts.positions`."""
+        return self._run(lambda: self._client.trading_accounts.positions(account_id))
+
+    def trading_account_pending_orders(self, account_id: Id) -> PendingOrderList:
+        """Blocking form of :meth:`mfx.trading_accounts.TradingAccounts.pending_orders`."""
+        return self._run(lambda: self._client.trading_accounts.pending_orders(account_id))
+
+    def trading_account_deals(
+        self,
+        account_id: Id,
+        *,
+        from_: dt.datetime,
+        to: dt.datetime,
+        position: int | None = None,
+    ) -> Iterator[Deal]:
+        """Every deal in the window, following the cursor.
+
+        Blocking form of :meth:`mfx.trading_accounts.TradingAccounts.deals`.
+        """
+        return self._pages(
+            lambda cursor: self._client.trading_accounts.deals(
+                account_id, from_=from_, to=to, position=position, cursor=cursor
+            )
+        )
+
+    def trading_account_symbols(self, account_id: Id) -> TradingSymbolList:
+        """Blocking form of :meth:`mfx.trading_accounts.TradingAccounts.symbols`."""
+        return self._run(lambda: self._client.trading_accounts.symbols(account_id))
+
+    def place_account_order(self, *args: Any, **kwargs: Any) -> ExecutionResult:
+        """Never raises for a refused or failed order, as :meth:`place_order`; see
+        :meth:`mfx.trading_accounts.TradingAccounts.place_order`."""
+        return self._run(lambda: self._client.trading_accounts.place_order(*args, **kwargs))
+
+    def cancel_account_order(self, *args: Any, **kwargs: Any) -> ExecutionResult:
+        """Blocking form of :meth:`mfx.trading_accounts.TradingAccounts.cancel_order`."""
+        return self._run(lambda: self._client.trading_accounts.cancel_order(*args, **kwargs))
+
+    def modify_account_order(self, *args: Any, **kwargs: Any) -> ExecutionResult:
+        """Blocking form of :meth:`mfx.trading_accounts.TradingAccounts.modify_order`."""
+        return self._run(lambda: self._client.trading_accounts.modify_order(*args, **kwargs))
+
+    def modify_account_position(self, *args: Any, **kwargs: Any) -> ExecutionResult:
+        """Blocking form of :meth:`mfx.trading_accounts.TradingAccounts.modify_position`."""
+        return self._run(lambda: self._client.trading_accounts.modify_position(*args, **kwargs))
+
+    def close_account_position(self, *args: Any, **kwargs: Any) -> ExecutionResult:
+        """Blocking form of :meth:`mfx.trading_accounts.TradingAccounts.close_position`."""
+        return self._run(lambda: self._client.trading_accounts.close_position(*args, **kwargs))
+
+    def close_account_position_by(self, *args: Any, **kwargs: Any) -> ExecutionResult:
+        """Blocking form of :meth:`mfx.trading_accounts.TradingAccounts.close_position_by`."""
+        return self._run(lambda: self._client.trading_accounts.close_position_by(*args, **kwargs))
+
+    def close_account_position_partial(self, *args: Any, **kwargs: Any) -> ExecutionResult:
+        """Blocking form of :meth:`mfx.trading_accounts.TradingAccounts.close_position_partial`."""
+        return self._run(
+            lambda: self._client.trading_accounts.close_position_partial(*args, **kwargs)
+        )
+
+    def set_account_trailing_stop(self, *args: Any, **kwargs: Any) -> ExecutionResult:
+        """Blocking form of :meth:`mfx.trading_accounts.TradingAccounts.set_trailing_stop`."""
+        return self._run(lambda: self._client.trading_accounts.set_trailing_stop(*args, **kwargs))
+
+    def clear_account_trailing_stop(self, *args: Any, **kwargs: Any) -> ExecutionResult:
+        """Blocking form of :meth:`mfx.trading_accounts.TradingAccounts.clear_trailing_stop`."""
+        return self._run(lambda: self._client.trading_accounts.clear_trailing_stop(*args, **kwargs))
+
+    def wait_for(self, *args: Any, **kwargs: Any) -> ExecutionResult:
+        """Blocking form of :meth:`mfx.execution.Execution.wait_for`: poll a command until it is
+        final. A non-final result is never a reason to send again."""
+        return self._run(lambda: self._client.execution.wait_for(*args, **kwargs))
+
+    # ---------------------------------------------------------------------- cTrader grants
+
+    def start_ctrader_grant(self, **kwargs: Any) -> CtraderGrantStarted:
+        """Blocking form of :meth:`mfx.trading_accounts.TradingAccounts.start_ctrader_grant`."""
+        return self._run(lambda: self._client.trading_accounts.start_ctrader_grant(**kwargs))
+
+    def ctrader_grant(self, grant_id: Id) -> CtraderGrant:
+        """Blocking form of :meth:`mfx.trading_accounts.TradingAccounts.ctrader_grant`."""
+        return self._run(lambda: self._client.trading_accounts.ctrader_grant(grant_id))
+
+    def connect_ctrader_accounts(
+        self, grant_id: Id, ctid_trader_account_ids: Sequence[str | int], *, idempotency_key: str
+    ) -> list[TradingAccount]:
+        """Blocking form of :meth:`mfx.trading_accounts.TradingAccounts.connect_ctrader_accounts`.
+
+        1 to 50 ids; none is a ``ValueError``.
+        """
+        return self._run(
+            lambda: self._client.trading_accounts.connect_ctrader_accounts(
+                grant_id, ctid_trader_account_ids, idempotency_key=idempotency_key
+            )
+        )
+
+    def revoke_ctrader_grant(self, grant_id: Id, *, idempotency_key: str) -> CtraderGrant:
+        """Blocking form of :meth:`mfx.trading_accounts.TradingAccounts.revoke_ctrader_grant`."""
+        return self._run(
+            lambda: self._client.trading_accounts.revoke_ctrader_grant(
+                grant_id, idempotency_key=idempotency_key
             )
         )
 
@@ -398,3 +551,299 @@ class SyncMfxClient:
 
     def __repr__(self) -> str:
         return f"SyncMfxClient({self._client!r})"
+
+
+class SyncCopy:
+    """Blocking form of :class:`mfx.copy_trading.Copy`: ``SyncMfxClient.copy``.
+
+    Method for method the async namespace, taking the same arguments; a page method answers the
+    same :class:`~mfx.copy_trading.CopyPage`, and each ``all_*`` method is an ordinary iterator
+    that reads one page a call, never ahead.
+    """
+
+    def __init__(self, sync: SyncMfxClient) -> None:
+        self._sync = sync
+
+    def _copy(self) -> Copy:
+        return self._sync._client.copy
+
+    def create_leader(self, **kwargs: Any) -> CopyLeader:
+        """Blocking form of :meth:`mfx.copy_trading.Copy.create_leader`."""
+        return self._sync._run(lambda: self._copy().create_leader(**kwargs))
+
+    def get_leader(self, leader_id: Id) -> CopyLeader:
+        """Blocking form of :meth:`mfx.copy_trading.Copy.get_leader`."""
+        return self._sync._run(lambda: self._copy().get_leader(leader_id))
+
+    def leaders(self, **kwargs: Any) -> CopyPage[CopyLeader, CopyLeaderPageStats]:
+        """Blocking form of :meth:`mfx.copy_trading.Copy.leaders`."""
+        return self._sync._run(lambda: self._copy().leaders(**kwargs))
+
+    def all_leaders(self, **kwargs: Any) -> Iterator[CopyLeader]:
+        """Every leader, following the cursor; narrowed as :meth:`mfx.copy_trading.Copy.leaders`."""
+        return self._sync._pages(lambda cursor: self._copy().leaders(cursor=cursor, **kwargs))
+
+    def update_leader(self, leader_id: Id, **kwargs: Any) -> CopyLeader:
+        """Blocking form of :meth:`mfx.copy_trading.Copy.update_leader`."""
+        return self._sync._run(lambda: self._copy().update_leader(leader_id, **kwargs))
+
+    def pause_leader(self, leader_id: Id, *, idempotency_key: str) -> CopyLeader:
+        """Blocking form of :meth:`mfx.copy_trading.Copy.pause_leader`."""
+        return self._sync._run(
+            lambda: self._copy().pause_leader(leader_id, idempotency_key=idempotency_key)
+        )
+
+    def resume_leader(self, leader_id: Id, *, idempotency_key: str) -> CopyLeader:
+        """Blocking form of :meth:`mfx.copy_trading.Copy.resume_leader`."""
+        return self._sync._run(
+            lambda: self._copy().resume_leader(leader_id, idempotency_key=idempotency_key)
+        )
+
+    def retire_leader(self, leader_id: Id, **kwargs: Any) -> CopyLeader:
+        """Blocking form of :meth:`mfx.copy_trading.Copy.retire_leader`."""
+        return self._sync._run(lambda: self._copy().retire_leader(leader_id, **kwargs))
+
+    def send_open_signal(self, leader_id: Id, **kwargs: Any) -> CopySignalAccepted:
+        """Blocking form of :meth:`mfx.copy_trading.Copy.send_open_signal`."""
+        return self._sync._run(lambda: self._copy().send_open_signal(leader_id, **kwargs))
+
+    def send_close_signal(self, leader_id: Id, **kwargs: Any) -> CopySignalAccepted:
+        """Blocking form of :meth:`mfx.copy_trading.Copy.send_close_signal`."""
+        return self._sync._run(lambda: self._copy().send_close_signal(leader_id, **kwargs))
+
+    def create_follower(self, **kwargs: Any) -> CopyFollower:
+        """Blocking form of :meth:`mfx.copy_trading.Copy.create_follower`."""
+        return self._sync._run(lambda: self._copy().create_follower(**kwargs))
+
+    def preview_follower(self, **kwargs: Any) -> CopyPreview:
+        """Blocking form of :meth:`mfx.copy_trading.Copy.preview_follower`."""
+        return self._sync._run(lambda: self._copy().preview_follower(**kwargs))
+
+    def get_follower(self, follower_id: Id) -> CopyFollower:
+        """Blocking form of :meth:`mfx.copy_trading.Copy.get_follower`."""
+        return self._sync._run(lambda: self._copy().get_follower(follower_id))
+
+    def followers(self, **kwargs: Any) -> CopyPage[CopyFollower, CopyFollowerPageStats]:
+        """Blocking form of :meth:`mfx.copy_trading.Copy.followers`."""
+        return self._sync._run(lambda: self._copy().followers(**kwargs))
+
+    def all_followers(self, **kwargs: Any) -> Iterator[CopyFollower]:
+        """Every follower, following the cursor; narrowed as
+        :meth:`mfx.copy_trading.Copy.followers`."""
+        return self._sync._pages(lambda cursor: self._copy().followers(cursor=cursor, **kwargs))
+
+    def update_follower(self, follower_id: Id, **kwargs: Any) -> CopyFollower:
+        """Blocking form of :meth:`mfx.copy_trading.Copy.update_follower`."""
+        return self._sync._run(lambda: self._copy().update_follower(follower_id, **kwargs))
+
+    def pause_follower(self, follower_id: Id, *, idempotency_key: str) -> CopyFollower:
+        """Blocking form of :meth:`mfx.copy_trading.Copy.pause_follower`."""
+        return self._sync._run(
+            lambda: self._copy().pause_follower(follower_id, idempotency_key=idempotency_key)
+        )
+
+    def resume_follower(self, follower_id: Id, *, idempotency_key: str) -> CopyFollower:
+        """Blocking form of :meth:`mfx.copy_trading.Copy.resume_follower`."""
+        return self._sync._run(
+            lambda: self._copy().resume_follower(follower_id, idempotency_key=idempotency_key)
+        )
+
+    def resync_follower(self, follower_id: Id, *, idempotency_key: str) -> CopyFollower:
+        """Blocking form of :meth:`mfx.copy_trading.Copy.resync_follower`."""
+        return self._sync._run(
+            lambda: self._copy().resync_follower(follower_id, idempotency_key=idempotency_key)
+        )
+
+    def unfollow(self, follower_id: Id, **kwargs: Any) -> CopyFollower:
+        """Blocking form of :meth:`mfx.copy_trading.Copy.unfollow`."""
+        return self._sync._run(lambda: self._copy().unfollow(follower_id, **kwargs))
+
+    def stopouts(self, follower_id: Id, **kwargs: Any) -> Page[CopyStopout]:
+        """Blocking form of :meth:`mfx.copy_trading.Copy.stopouts`."""
+        return self._sync._run(lambda: self._copy().stopouts(follower_id, **kwargs))
+
+    def all_stopouts(self, follower_id: Id, **kwargs: Any) -> Iterator[CopyStopout]:
+        """Every stop-out of a follower, following the cursor."""
+        return self._sync._pages(
+            lambda cursor: self._copy().stopouts(follower_id, cursor=cursor, **kwargs)
+        )
+
+    def reset_stopouts(self, follower_id: Id, **kwargs: Any) -> CopyFollower:
+        """Blocking form of :meth:`mfx.copy_trading.Copy.reset_stopouts`."""
+        return self._sync._run(lambda: self._copy().reset_stopouts(follower_id, **kwargs))
+
+    def create_group(self, **kwargs: Any) -> CopyGroup:
+        """Blocking form of :meth:`mfx.copy_trading.Copy.create_group`."""
+        return self._sync._run(lambda: self._copy().create_group(**kwargs))
+
+    def get_group(self, group_id: Id) -> CopyGroup:
+        """Blocking form of :meth:`mfx.copy_trading.Copy.get_group`."""
+        return self._sync._run(lambda: self._copy().get_group(group_id))
+
+    def groups(self, **kwargs: Any) -> CopyPage[CopyGroup, CopyGroupPageStats]:
+        """Blocking form of :meth:`mfx.copy_trading.Copy.groups`."""
+        return self._sync._run(lambda: self._copy().groups(**kwargs))
+
+    def all_groups(self, **kwargs: Any) -> Iterator[CopyGroup]:
+        """Every group, following the cursor."""
+        return self._sync._pages(lambda cursor: self._copy().groups(cursor=cursor, **kwargs))
+
+    def update_group(self, group_id: Id, **kwargs: Any) -> CopyGroup:
+        """Blocking form of :meth:`mfx.copy_trading.Copy.update_group`."""
+        return self._sync._run(lambda: self._copy().update_group(group_id, **kwargs))
+
+    def add_group_followers(
+        self, group_id: Id, follower_ids: Sequence[Id], *, idempotency_key: str
+    ) -> CopyGroupMembersResult:
+        """Blocking form of :meth:`mfx.copy_trading.Copy.add_group_followers`."""
+        return self._sync._run(
+            lambda: self._copy().add_group_followers(
+                group_id, follower_ids, idempotency_key=idempotency_key
+            )
+        )
+
+    def remove_group_followers(
+        self, group_id: Id, follower_ids: Sequence[Id], *, idempotency_key: str
+    ) -> CopyGroupMembersResult:
+        """Blocking form of :meth:`mfx.copy_trading.Copy.remove_group_followers`."""
+        return self._sync._run(
+            lambda: self._copy().remove_group_followers(
+                group_id, follower_ids, idempotency_key=idempotency_key
+            )
+        )
+
+    def pause_group(self, group_id: Id, *, idempotency_key: str) -> CopyGroup:
+        """Blocking form of :meth:`mfx.copy_trading.Copy.pause_group`."""
+        return self._sync._run(
+            lambda: self._copy().pause_group(group_id, idempotency_key=idempotency_key)
+        )
+
+    def resume_group(self, group_id: Id, *, idempotency_key: str) -> CopyGroup:
+        """Blocking form of :meth:`mfx.copy_trading.Copy.resume_group`."""
+        return self._sync._run(
+            lambda: self._copy().resume_group(group_id, idempotency_key=idempotency_key)
+        )
+
+    def close_group(
+        self, group_id: Id, *, reason: str, pause: bool, idempotency_key: str
+    ) -> CopyGroupCloseResult:
+        """Blocking form of :meth:`mfx.copy_trading.Copy.close_group`."""
+        return self._sync._run(
+            lambda: self._copy().close_group(
+                group_id, reason=reason, pause=pause, idempotency_key=idempotency_key
+            )
+        )
+
+    def rollover_group(self, group_id: Id, **kwargs: Any) -> CopyGroupRolloverResult:
+        """Blocking form of :meth:`mfx.copy_trading.Copy.rollover_group`."""
+        return self._sync._run(lambda: self._copy().rollover_group(group_id, **kwargs))
+
+    def closes(self, **kwargs: Any) -> CopyPage[CopyClose, CopyClosePageStats]:
+        """Blocking form of :meth:`mfx.copy_trading.Copy.closes`."""
+        return self._sync._run(lambda: self._copy().closes(**kwargs))
+
+    def all_closes(self, **kwargs: Any) -> Iterator[CopyClose]:
+        """Every requested close the filters and window match, following the cursor."""
+        return self._sync._pages(lambda cursor: self._copy().closes(cursor=cursor, **kwargs))
+
+    def get_close(self, close_id: Id) -> CopyClose:
+        """Blocking form of :meth:`mfx.copy_trading.Copy.get_close`."""
+        return self._sync._run(lambda: self._copy().get_close(close_id))
+
+    def signals(self, **kwargs: Any) -> CopyPage[CopySignalEntry, CopySignalPageStats]:
+        """Blocking form of :meth:`mfx.copy_trading.Copy.signals`."""
+        return self._sync._run(lambda: self._copy().signals(**kwargs))
+
+    def all_signals(self, **kwargs: Any) -> Iterator[CopySignalEntry]:
+        """Every signal the filters and window match, following the cursor."""
+        return self._sync._pages(lambda cursor: self._copy().signals(cursor=cursor, **kwargs))
+
+    def tenant_stopouts(self, **kwargs: Any) -> CopyPage[CopyStopout, CopyTenantStopoutPageStats]:
+        """Blocking form of :meth:`mfx.copy_trading.Copy.tenant_stopouts`."""
+        return self._sync._run(lambda: self._copy().tenant_stopouts(**kwargs))
+
+    def all_tenant_stopouts(self, **kwargs: Any) -> Iterator[CopyStopout]:
+        """Every stop-out of your followers the filters and window match, following the cursor."""
+        return self._sync._pages(
+            lambda cursor: self._copy().tenant_stopouts(cursor=cursor, **kwargs)
+        )
+
+    def log(self, **kwargs: Any) -> CopyPage[CopyLogEntry, CopyLogPageStats]:
+        """Blocking form of :meth:`mfx.copy_trading.Copy.log`."""
+        return self._sync._run(lambda: self._copy().log(**kwargs))
+
+    def all_log(self, **kwargs: Any) -> Iterator[CopyLogEntry]:
+        """Every row of the copy log the filters and window match, following the cursor."""
+        return self._sync._pages(lambda cursor: self._copy().log(cursor=cursor, **kwargs))
+
+
+class SyncBilling:
+    """Blocking form of :class:`mfx.billing.Billing`: ``SyncMfxClient.billing``.
+
+    Method for method the async namespace; :meth:`invoices` is an ordinary iterator that reads
+    one page a call, never ahead.
+    """
+
+    def __init__(self, sync: SyncMfxClient) -> None:
+        self._sync = sync
+
+    def _billing(self) -> Billing:
+        return self._sync._client.billing
+
+    def price_list(self) -> BillingPriceList:
+        """Blocking form of :meth:`mfx.billing.Billing.price_list`."""
+        return self._sync._run(lambda: self._billing().price_list())
+
+    def summary(self) -> BillingSummary:
+        """Blocking form of :meth:`mfx.billing.Billing.summary`."""
+        return self._sync._run(lambda: self._billing().summary())
+
+    def profile(self, profile_id: Id) -> BillingProfile:
+        """Blocking form of :meth:`mfx.billing.Billing.profile`."""
+        return self._sync._run(lambda: self._billing().profile(profile_id))
+
+    def forecast(self, profile_id: Id, *, month: str | None = None) -> BillingForecast:
+        """Blocking form of :meth:`mfx.billing.Billing.forecast`."""
+        return self._sync._run(lambda: self._billing().forecast(profile_id, month=month))
+
+    def prices(self) -> BillingPriceList:
+        """Blocking form of :meth:`mfx.billing.Billing.prices`."""
+        return self._sync._run(lambda: self._billing().prices())
+
+    def invoice(self, invoice_id: Id) -> BillingInvoiceDetail:
+        """Blocking form of :meth:`mfx.billing.Billing.invoice`."""
+        return self._sync._run(lambda: self._billing().invoice(invoice_id))
+
+    def invoices_page(self, **kwargs: Any) -> BillingInvoicePage:
+        """Blocking form of :meth:`mfx.billing.Billing.invoices_page`."""
+        return self._sync._run(lambda: self._billing().invoices_page(**kwargs))
+
+    def invoices(self, **kwargs: Any) -> Iterator[BillingInvoice]:
+        """Every invoice, following the cursor; narrowed as
+        :meth:`mfx.billing.Billing.invoices_page`."""
+        cursor: str | None = None
+        while True:
+            fetch = functools.partial(self._billing().invoices_page, cursor=cursor, **kwargs)
+            page = self._sync._run(fetch)
+            yield from page.items
+            cursor = page.next_cursor if isinstance(page.next_cursor, str) else None
+            if not cursor:
+                return
+
+
+class SyncTenant:
+    """Blocking form of :class:`mfx.expert_advisors.Tenant`: ``SyncMfxClient.tenant``."""
+
+    def __init__(self, sync: SyncMfxClient) -> None:
+        self._sync = sync
+
+    def _tenant(self) -> Tenant:
+        return self._sync._client.tenant
+
+    def contacts(self) -> OwnContacts:
+        """Blocking form of :meth:`mfx.expert_advisors.Tenant.contacts`."""
+        return self._sync._run(lambda: self._tenant().contacts())
+
+    def service_agreement(self) -> TenantServiceAgreement:
+        """Blocking form of :meth:`mfx.expert_advisors.Tenant.service_agreement`."""
+        return self._sync._run(lambda: self._tenant().service_agreement())

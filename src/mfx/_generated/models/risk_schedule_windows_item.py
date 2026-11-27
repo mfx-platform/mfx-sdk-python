@@ -63,7 +63,7 @@ class RiskScheduleWindowsItem:
         days = []
         _days = d.pop("days")
         for days_item_data in _days:
-            days_item = RiskScheduleWindowsItemDaysItem(days_item_data)
+            days_item = RiskScheduleWindowsItemDaysItem._read(days_item_data)
 
             days.append(days_item)
 

@@ -51,7 +51,7 @@ class TerminalUpdate:
         if isinstance(_refresh_ms, Unset):
             refresh_ms = UNSET
         else:
-            refresh_ms = TerminalUpdateRefreshMs(_refresh_ms)
+            refresh_ms = TerminalUpdateRefreshMs._read(_refresh_ms)
 
         terminal_update = cls(
             refresh_ms=refresh_ms,

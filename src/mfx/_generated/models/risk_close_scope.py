@@ -87,7 +87,7 @@ class RiskCloseScope:
         d = dict(src_dict)
         account_id = UUID(d.pop("account_id"))
 
-        scope = RiskCloseScopeScope(d.pop("scope"))
+        scope = RiskCloseScopeScope._read(d.pop("scope"))
 
         def _parse_read_at(data: object) -> Union[None, datetime.datetime]:
             if data is None:

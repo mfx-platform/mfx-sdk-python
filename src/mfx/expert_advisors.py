@@ -43,6 +43,9 @@ from mfx._generated.api.expert_advisors import (
 from mfx._generated.api.expert_advisors import (
     withdraw_expert_advisor as _withdraw,
 )
+from mfx._generated.api.usage import (
+    get_tenant_service_agreement as _service_agreement,
+)
 from mfx._generated.models.expert_advisor_upload import ExpertAdvisorUpload
 from mfx._generated.models.expert_advisor_upload_files_item import ExpertAdvisorUploadFilesItem
 from mfx._generated.types import UNSET
@@ -52,6 +55,7 @@ if TYPE_CHECKING:  # pragma: no cover - typing only
     from mfx._generated.models.ea_report import EaReport
     from mfx._generated.models.own_contacts import OwnContacts
     from mfx._generated.models.tenant_expert_advisor import TenantExpertAdvisor
+    from mfx._generated.models.tenant_service_agreement import TenantServiceAgreement
     from mfx.client import MfxClient
     from mfx.streaming import StreamMessage
 
@@ -94,7 +98,12 @@ class ExpertAdvisors:
         as UTF-8 text. Never a compiled file. A new bundle answers its version in ``uploaded``, with
         the checks started; the same bundle again answers the version it made, as it stands. A
         file the platform will not take is 422 with ``details.why``; no farm that runs customer
-        code is 409 ``no_customer_code_farm``."""
+        code is 409 ``no_customer_code_farm``.
+
+        Args:
+            idempotency_key: Required on every write and never defaulted. Sending again with the
+                same key answers the original; a fresh key asks for a new action.
+        """
         body = ExpertAdvisorUpload(
             name=name,
             files=[
@@ -114,7 +123,11 @@ class ExpertAdvisors:
 
     async def get(self, expert_advisor_id: Id) -> TenantExpertAdvisor:
         """One version: its state, verdict, each check and where it stands, and the terminals
-        that carry it. Never its bytes."""
+        that carry it. Never its bytes.
+
+        Args:
+            expert_advisor_id: The expert advisor to act on.
+        """
         version = await self._client.read(
             lambda: _get.asyncio_detailed(
                 id=_uuid(expert_advisor_id), client=self._client.generated
@@ -126,7 +139,12 @@ class ExpertAdvisors:
     async def page(
         self, *, cursor: str | None = None, limit: int | None = None
     ) -> Page[TenantExpertAdvisor]:
-        """One page of the tenant's versions, newest first."""
+        """One page of the tenant's versions, newest first.
+
+        Args:
+            cursor: Where to continue from: the previous page's ``next_cursor``.
+            limit: How many to return at most, on one page.
+        """
         parsed = await self._client.read(
             lambda: _list.asyncio_detailed(
                 client=self._client.generated,
@@ -138,7 +156,11 @@ class ExpertAdvisors:
         return page_of(parsed)
 
     async def list(self, *, limit: int | None = None) -> AsyncIterator[TenantExpertAdvisor]:
-        """Every version, following the cursor to the end."""
+        """Every version, following the cursor to the end.
+
+        Args:
+            limit: How many to return at most, on one page.
+        """
         cursor: str | None = None
         while True:
             page = await self.page(cursor=cursor, limit=limit)
@@ -150,7 +172,11 @@ class ExpertAdvisors:
 
     async def report(self, expert_advisor_id: Id) -> EaReport:
         """The checks' report: each finding with its rule, colour and line. 409 until the verdict
-        is set; wait for it with :meth:`wait_for_verdict`."""
+        is set; wait for it with :meth:`wait_for_verdict`.
+
+        Args:
+            expert_advisor_id: The expert advisor to act on.
+        """
         report = await self._client.read(
             lambda: _report.asyncio_detailed(
                 id=_uuid(expert_advisor_id), client=self._client.generated
@@ -160,7 +186,13 @@ class ExpertAdvisors:
         return report  # type: ignore[no-any-return]
 
     async def delete(self, expert_advisor_id: Id, *, idempotency_key: str) -> TenantExpertAdvisor:
-        """Withdraw a version; a check still running stops. 409 while a terminal carries it."""
+        """Withdraw a version; a check still running stops. 409 while a terminal carries it.
+
+        Args:
+            expert_advisor_id: The expert advisor to act on.
+            idempotency_key: Required on every write and never defaulted. Sending again with the
+                same key answers the original; a fresh key asks for a new action.
+        """
         version = await self._client.write(
             lambda: _withdraw.asyncio_detailed(
                 id=_uuid(expert_advisor_id),
@@ -176,7 +208,11 @@ class ExpertAdvisors:
     ) -> TenantExpertAdvisor:
         """Read the version until its checks have settled it (approved, held, rejected,
         withdrawn or revoked), or until ``timeout_s``. Returns the last read either way: a version
-        still being checked when the time runs out is reported as it is, not raised."""
+        still being checked when the time runs out is reported as it is, not raised.
+
+        Args:
+            expert_advisor_id: The expert advisor to act on.
+        """
         deadline = self._client.wall() + timeout_s
         wait = _POLL_FROM_S
         version = await self.get(expert_advisor_id)
@@ -207,6 +243,22 @@ class Tenant:
         )
         return contacts  # type: ignore[no-any-return]
 
+    async def service_agreement(self) -> TenantServiceAgreement:
+        """What the organisation must accept before it can add terminals, expert advisors or
+        keys. Any key may read it, whatever its scopes.
+
+        ``due`` is True while something waits to be accepted: a plan change awaiting the new
+        plan's Service Agreement, or a version of an agreement, the Terms or the MetaTrader 5
+        licence. ``held`` is True while additions are refused (``ServiceAgreementNotAccepted``
+        or ``TermsNotAccepted``); nothing running ever is. An owner or admin accepts at
+        ``accept_url``.
+        """
+        agreement = await self._client.read(
+            lambda: _service_agreement.asyncio_detailed(client=self._client.generated),
+            "GET /tenant/service-agreement",
+        )
+        return agreement  # type: ignore[no-any-return]
+
 
 @dataclass(frozen=True, slots=True)
 class EaRecord:
@@ -220,7 +272,7 @@ class EaRecord:
 
 @dataclass(frozen=True, slots=True)
 class EaTelemetry:
-    """A batch of records, in the order written. ``skipped`` (lines the cell could not read) and
+    """A batch of records, in the order written. ``skipped`` (lines the host could not read) and
     ``dropped`` (left out by the platform) count since the message before."""
 
     channel: str

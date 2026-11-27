@@ -46,6 +46,8 @@ from uuid import UUID
 
 from mfx._generated.api.risk import activate_risk_policy as _activate
 from mfx._generated.api.risk import amend_risk_plan as _amend_plan
+from mfx._generated.api.risk import archive_risk_challenge as _archive_challenge
+from mfx._generated.api.risk import archive_risk_policy as _archive
 from mfx._generated.api.risk import check_risk_order as _check
 from mfx._generated.api.risk import clear_risk_breach as _clear
 from mfx._generated.api.risk import create_risk_challenge as _create_challenge
@@ -110,6 +112,7 @@ from mfx._generated.models.risk_policy_version_create import RiskPolicyVersionCr
 from mfx._generated.models.risk_preview_request import RiskPreviewRequest
 from mfx._generated.models.risk_reason import RiskReason
 from mfx._generated.types import UNSET
+from mfx._words import refuse_unknown_words
 
 if TYPE_CHECKING:  # pragma: no cover - typing only
     from mfx._generated.models.risk_account import RiskAccount
@@ -171,7 +174,13 @@ def _model[M](kind: type[M], value: M | Body) -> M:
     """A body as the generated model: given as one already, or as a mapping in its shape."""
     if isinstance(value, kind):
         return value
-    return kind.from_dict(_wire(value))  # type: ignore[attr-defined, no-any-return]
+    return _request(kind, _wire(value))
+
+
+def _request[M](kind: type[M], body: Any) -> M:  # noqa: ANN401 - JSON values
+    """A request body as the generated model, refusing an enum word the contract does not list:
+    ``from_dict`` reads one as UNKNOWN, which is right for an answer and wrong for a request."""
+    return refuse_unknown_words(kind.from_dict(body))  # type: ignore[attr-defined, no-any-return]
 
 
 def _many[E: Enum](values: str | Sequence[str] | None, kind: type[E]) -> Any:  # noqa: ANN401
@@ -227,8 +236,13 @@ class Risk:
     async def create_policy(
         self, name: str, rules: Body, *, reset: Body, idempotency_key: str
     ) -> RiskPolicy:
-        """A new policy at version 1. It protects nothing until it is activated on accounts."""
-        body = RiskPolicyCreate.from_dict(_wire({"name": name, "rules": rules, "reset": reset}))
+        """A new policy at version 1. It protects nothing until it is activated on accounts.
+
+        Args:
+            idempotency_key: Required on every write and never defaulted. Sending again with the
+                same key answers the original; a fresh key asks for a new action.
+        """
+        body = _request(RiskPolicyCreate, _wire({"name": name, "rules": rules, "reset": reset}))
         created = await self._client.write(
             lambda: _create_policy.asyncio_detailed(
                 client=self._g, body=body, idempotency_key=idempotency_key
@@ -247,9 +261,15 @@ class Risk:
         idempotency_key: str,
     ) -> RiskPolicyVersion:
         """A new version of the policy. One that relaxes protection needs ``risk:override`` and
-        a ``reason`` (403 ``risk_override_required`` otherwise)."""
-        body = RiskPolicyVersionCreate.from_dict(
-            _wire(_given(rules=rules, reset=reset, reason=reason))
+        a ``reason`` (403 ``risk_override_required`` otherwise).
+
+        Args:
+            policy_id: The policy to act on.
+            idempotency_key: Required on every write and never defaulted. Sending again with the
+                same key answers the original; a fresh key asks for a new action.
+        """
+        body = _request(
+            RiskPolicyVersionCreate, _wire(_given(rules=rules, reset=reset, reason=reason))
         )
         created = await self._client.write(
             lambda: _policy_version.asyncio_detailed(
@@ -258,6 +278,24 @@ class Risk:
             f"POST /risk/policies/{policy_id}/versions",
         )
         return created  # type: ignore[no-any-return]
+
+    async def archive_policy(self, policy_id: Id, *, idempotency_key: str) -> RiskPolicy:
+        """Archive the policy: it can no longer be activated or given a new version. Refused 409
+        ``state_error`` while any account holds it, active or paused (``details.accounts`` names
+        them); archiving it again answers it unchanged.
+
+        Args:
+            policy_id: The policy to act on.
+            idempotency_key: Required on every write and never defaulted. Sending again with the
+                same key answers the original; a fresh key asks for a new action.
+        """
+        archived = await self._client.write(
+            lambda: _archive.asyncio_detailed(
+                id=_uuid(policy_id), client=self._g, idempotency_key=idempotency_key
+            ),
+            f"POST /risk/policies/{policy_id}/archive",
+        )
+        return archived  # type: ignore[no-any-return]
 
     async def activate(
         self,
@@ -268,8 +306,14 @@ class Risk:
         reason: str | None = None,
         idempotency_key: str,
     ) -> RiskActivationResult:
-        """Put a version in force on accounts; each account's outcome separately."""
-        body = RiskActivate.from_dict(
+        """Put a version in force on accounts; each account's outcome separately.
+
+        Args:
+            policy_id: The policy to act on.
+            idempotency_key: Required on every write and never defaulted. Sending again with the
+                same key answers the original; a fresh key asks for a new action.
+        """
+        body = _request(RiskActivate,
             _given(account_ids=[str(_uuid(a)) for a in account_ids], version=version,
                    reason=reason)
         )  # fmt: skip
@@ -282,7 +326,11 @@ class Risk:
         return result  # type: ignore[no-any-return]
 
     async def policy(self, policy_id: Id) -> RiskPolicy:
-        """A policy, its current version and the accounts it is on."""
+        """A policy, its current version and the accounts it is on.
+
+        Args:
+            policy_id: The policy to act on.
+        """
         found = await self._client.read(
             lambda: _get_policy.asyncio_detailed(id=_uuid(policy_id), client=self._g),
             f"GET /risk/policies/{policy_id}",
@@ -290,7 +338,11 @@ class Risk:
         return found  # type: ignore[no-any-return]
 
     async def policy_version(self, policy_id: Id, version: int) -> RiskPolicyVersion:
-        """One version of a policy, with what changed and who made it."""
+        """One version of a policy, with what changed and who made it.
+
+        Args:
+            policy_id: The policy to act on.
+        """
         found = await self._client.read(
             lambda: _get_policy_version.asyncio_detailed(
                 id=_uuid(policy_id), version=version, client=self._g
@@ -306,7 +358,11 @@ class Risk:
         sort: TimeSort = "newest",
         limit: int | None = None,
     ) -> AsyncIterator[RiskPolicy]:
-        """Every policy, newest first (or ``sort="oldest"``)."""
+        """Every policy, newest first (or ``sort="oldest"``).
+
+        Args:
+            limit: How many to return at most, on one page.
+        """
         kept = UNSET if state is None else ListRiskPoliciesState(state)
         order = ListRiskPoliciesSort(sort)
         return self._all(
@@ -317,7 +373,12 @@ class Risk:
         )  # fmt: skip
 
     def policy_versions(self, policy_id: Id, *, limit: int | None = None) -> AsyncIterator[Any]:
-        """Every version of a policy, newest first."""
+        """Every version of a policy, newest first.
+
+        Args:
+            policy_id: The policy to act on.
+            limit: How many to return at most, on one page.
+        """
         return self._all(
             lambda after: _list_policy_versions.asyncio_detailed(
                 id=_uuid(policy_id), client=self._g, cursor=_opt(after), limit=_opt(limit)
@@ -336,7 +397,12 @@ class Risk:
         cursor: str | None = None,
         limit: int | None = None,
     ) -> RiskAccountPage:
-        """One page of accounts with their figures, and ``stats`` over the whole set."""
+        """One page of accounts with their figures, and ``stats`` over the whole set.
+
+        Args:
+            cursor: Where to continue from: the previous page's ``next_cursor``.
+            limit: How many to return at most, on one page.
+        """
         covered = _many(coverage, ListRiskAccountsCoverageItem)
         restricted = _many(restriction, ListRiskAccountsRestrictionItem)
         order = ListRiskAccountsSort(sort)
@@ -369,7 +435,11 @@ class Risk:
                 return
 
     async def account(self, account_id: Id) -> RiskAccount:
-        """One account's figures, each with its inputs and their times."""
+        """One account's figures, each with its inputs and their times.
+
+        Args:
+            account_id: The trading account to act on. Another tenant's id answers 404, never 403.
+        """
         found = await self._client.read(
             lambda: _get_account.asyncio_detailed(id=_uuid(account_id), client=self._g),
             f"GET /risk/accounts/{account_id}",
@@ -379,7 +449,11 @@ class Risk:
     async def equity(
         self, account_id: Id, start: dt.datetime, end: dt.datetime | None = None
     ) -> RiskEquitySeries:
-        """The account's equity and balance from its stored reads, between two moments."""
+        """The account's equity and balance from its stored reads, between two moments.
+
+        Args:
+            account_id: The trading account to act on. Another tenant's id answers 404, never 403.
+        """
         found = await self._client.read(
             lambda: _equity.asyncio_detailed(
                 id=_uuid(account_id), client=self._g, from_=start, to=_opt(end)
@@ -390,7 +464,11 @@ class Risk:
 
     async def close_scope(self, account_id: Id, scope: CloseScope) -> RiskCloseScope:
         """The positions a ``close_positions`` action would close now under ``scope``: only those
-        MFX Hub placed (``mfx_positions``), or every one (``all_positions``)."""
+        MFX Hub placed (``mfx_positions``), or every one (``all_positions``).
+
+        Args:
+            account_id: The trading account to act on. Another tenant's id answers 404, never 403.
+        """
         found = await self._client.read(
             lambda: _close_scope.asyncio_detailed(
                 id=_uuid(account_id), client=self._g, scope=GetRiskAccountCloseScopeScope(scope)
@@ -400,7 +478,14 @@ class Risk:
         return found  # type: ignore[no-any-return]
 
     async def deactivate(self, account_id: Id, *, reason: str, idempotency_key: str) -> Any:  # noqa: ANN401
-        """End the account's activation (``risk:override``): no rule applies after it."""
+        """End the account's activation (``risk:override``): no rule applies after it.
+
+        Args:
+            account_id: The trading account to act on. Another tenant's id answers 404, never 403.
+            reason: Your own words, recorded with the action.
+            idempotency_key: Required on every write and never defaulted. Sending again with the
+                same key answers the original; a fresh key asks for a new action.
+        """
         body = RiskReason(reason=reason)
         return await self._client.write(
             lambda: _deactivate.asyncio_detailed(
@@ -417,8 +502,15 @@ class Risk:
         reason: str,
         idempotency_key: str,
     ) -> Any:  # noqa: ANN401
-        """Clear a breach, or lift a restriction before it clears itself (``risk:override``)."""
-        body = RiskClear.from_dict({"rule": rule, "reason": reason})
+        """Clear a breach, or lift a restriction before it clears itself (``risk:override``).
+
+        Args:
+            account_id: The trading account to act on. Another tenant's id answers 404, never 403.
+            reason: Your own words, recorded with the action.
+            idempotency_key: Required on every write and never defaulted. Sending again with the
+                same key answers the original; a fresh key asks for a new action.
+        """
+        body = _request(RiskClear, {"rule": rule, "reason": reason})
         return await self._client.write(
             lambda: _clear.asyncio_detailed(
                 id=_uuid(account_id), client=self._g, body=body, idempotency_key=idempotency_key
@@ -445,9 +537,13 @@ class Risk:
         return found  # type: ignore[no-any-return]
 
     async def check(self, account_id: Id, order: Body) -> RiskCheckResult:
-        """Check an order already sized, exactly as the pre-trade check would."""
-        body = RiskCheckRequest.from_dict(
-            _wire({"account_id": str(_uuid(account_id)), "order": order})
+        """Check an order already sized, exactly as the pre-trade check would.
+
+        Args:
+            account_id: The trading account to act on. Another tenant's id answers 404, never 403.
+        """
+        body = _request(
+            RiskCheckRequest, _wire({"account_id": str(_uuid(account_id)), "order": order})
         )
         found = await self._client.read(
             lambda: _check.asyncio_detailed(client=self._g, body=body), "POST /risk/planner/check"
@@ -457,7 +553,12 @@ class Risk:
     # --- exit plans ----------------------------------------------------------------------------
 
     async def create_plan(self, plan: RiskPlanCreate | Body, *, idempotency_key: str) -> RiskPlan:
-        """An exit plan on a held position (``ticket``) or placed with its order (``order``)."""
+        """An exit plan on a held position (``ticket``) or placed with its order (``order``).
+
+        Args:
+            idempotency_key: Required on every write and never defaulted. Sending again with the
+                same key answers the original; a fresh key asks for a new action.
+        """
         body = _model(RiskPlanCreate, plan)
         created = await self._client.write(
             lambda: _create_plan.asyncio_detailed(
@@ -468,7 +569,11 @@ class Risk:
         return created  # type: ignore[no-any-return]
 
     async def plan(self, plan_id: Id) -> RiskPlan:
-        """An exit plan, each step with its holder, state and outcome, and ``r_now``."""
+        """An exit plan, each step with its holder, state and outcome, and ``r_now``.
+
+        Args:
+            plan_id: The plan to act on.
+        """
         found = await self._client.read(
             lambda: _get_plan.asyncio_detailed(id=_uuid(plan_id), client=self._g),
             f"GET /risk/plans/{plan_id}",
@@ -484,7 +589,12 @@ class Risk:
         cursor: str | None = None,
         limit: int | None = None,
     ) -> RiskPlanPage:
-        """One page of plans, with ``stats`` over the filtered set."""
+        """One page of plans, with ``stats`` over the filtered set.
+
+        Args:
+            cursor: Where to continue from: the previous page's ``next_cursor``.
+            limit: How many to return at most, on one page.
+        """
         accounts, states = _ids(account_id), _many(state, ListRiskPlansStateItem)
         order = ListRiskPlansSort(sort)
         page = await self._client.read(
@@ -517,8 +627,14 @@ class Risk:
         self, plan_id: Id, steps: Sequence[Body], *, reason: str | None = None,
         idempotency_key: str,
     ) -> RiskPlan:  # fmt: skip
-        """A new version of the plan's steps."""
-        body = RiskPlanAmend.from_dict(_wire(_given(steps=list(steps), reason=reason)))
+        """A new version of the plan's steps.
+
+        Args:
+            plan_id: The plan to act on.
+            idempotency_key: Required on every write and never defaulted. Sending again with the
+                same key answers the original; a fresh key asks for a new action.
+        """
+        body = _request(RiskPlanAmend, _wire(_given(steps=list(steps), reason=reason)))
         found = await self._client.write(
             lambda: _amend_plan.asyncio_detailed(
                 id=_uuid(plan_id), client=self._g, body=body, idempotency_key=idempotency_key
@@ -528,7 +644,14 @@ class Risk:
         return found  # type: ignore[no-any-return]
 
     async def pause_plan(self, plan_id: Id, *, reason: str, idempotency_key: str) -> RiskPlan:
-        """Pause the plan's MFX-held steps; stops held at the broker stay where they are."""
+        """Pause the plan's MFX-held steps; stops held at the broker stay where they are.
+
+        Args:
+            plan_id: The plan to act on.
+            reason: Your own words, recorded with the action.
+            idempotency_key: Required on every write and never defaulted. Sending again with the
+                same key answers the original; a fresh key asks for a new action.
+        """
         body = RiskReason(reason=reason)
         found = await self._client.write(
             lambda: _pause_plan.asyncio_detailed(
@@ -539,7 +662,13 @@ class Risk:
         return found  # type: ignore[no-any-return]
 
     async def resume_plan(self, plan_id: Id, *, idempotency_key: str) -> RiskPlan:
-        """Resume the plan's MFX-held steps."""
+        """Resume the plan's MFX-held steps.
+
+        Args:
+            plan_id: The plan to act on.
+            idempotency_key: Required on every write and never defaulted. Sending again with the
+                same key answers the original; a fresh key asks for a new action.
+        """
         found = await self._client.write(
             lambda: _resume_plan.asyncio_detailed(
                 id=_uuid(plan_id), client=self._g, idempotency_key=idempotency_key
@@ -549,7 +678,13 @@ class Risk:
         return found  # type: ignore[no-any-return]
 
     async def end_plan(self, plan_id: Id, *, idempotency_key: str) -> RiskPlan:
-        """End the plan; stops held at the broker stay where they are."""
+        """End the plan; stops held at the broker stay where they are.
+
+        Args:
+            plan_id: The plan to act on.
+            idempotency_key: Required on every write and never defaulted. Sending again with the
+                same key answers the original; a fresh key asks for a new action.
+        """
         found = await self._client.write(
             lambda: _end_plan.asyncio_detailed(
                 id=_uuid(plan_id), client=self._g, idempotency_key=idempotency_key
@@ -563,9 +698,14 @@ class Risk:
     async def create_challenge(
         self, name: str, rules: RiskChallengeRules | Body, *, idempotency_key: str
     ) -> RiskChallenge:
-        """A challenge at version 1: one rule set over many accounts."""
+        """A challenge at version 1: one rule set over many accounts.
+
+        Args:
+            idempotency_key: Required on every write and never defaulted. Sending again with the
+                same key answers the original; a fresh key asks for a new action.
+        """
         given = rules.to_dict() if isinstance(rules, RiskChallengeRules) else _wire(rules)
-        body = RiskChallengeCreate.from_dict({"name": name, "rules": given})
+        body = _request(RiskChallengeCreate, {"name": name, "rules": given})
         created = await self._client.write(
             lambda: _create_challenge.asyncio_detailed(
                 client=self._g, body=body, idempotency_key=idempotency_key
@@ -577,7 +717,13 @@ class Risk:
     async def add_challenge_version(
         self, challenge_id: Id, rules: RiskChallengeRules | Body, *, idempotency_key: str
     ) -> RiskChallenge:
-        """A new version, for accounts enrolled after it; one already running keeps its own."""
+        """A new version, for accounts enrolled after it; one already running keeps its own.
+
+        Args:
+            challenge_id: The challenge to act on.
+            idempotency_key: Required on every write and never defaulted. Sending again with the
+                same key answers the original; a fresh key asks for a new action.
+        """
         body = _model(RiskChallengeRules, rules)
         created = await self._client.write(
             lambda: _challenge_version.asyncio_detailed(
@@ -588,8 +734,30 @@ class Risk:
         )  # fmt: skip
         return created  # type: ignore[no-any-return]
 
+    async def archive_challenge(self, challenge_id: Id, *, idempotency_key: str) -> RiskChallenge:
+        """Archive the challenge: no account can be enrolled in it or given a new version of it.
+        Refused 409 ``state_error`` while any account is in progress (``details.accounts`` names
+        them); archiving it again answers it unchanged.
+
+        Args:
+            challenge_id: The challenge to act on.
+            idempotency_key: Required on every write and never defaulted. Sending again with the
+                same key answers the original; a fresh key asks for a new action.
+        """
+        archived = await self._client.write(
+            lambda: _archive_challenge.asyncio_detailed(
+                id=_uuid(challenge_id), client=self._g, idempotency_key=idempotency_key
+            ),
+            f"POST /risk/challenges/{challenge_id}/archive",
+        )
+        return archived  # type: ignore[no-any-return]
+
     async def challenge(self, challenge_id: Id) -> RiskChallenge:
-        """A challenge, its current rule set and its counts."""
+        """A challenge, its current rule set and its counts.
+
+        Args:
+            challenge_id: The challenge to act on.
+        """
         found = await self._client.read(
             lambda: _get_challenge.asyncio_detailed(id=_uuid(challenge_id), client=self._g),
             f"GET /risk/challenges/{challenge_id}",
@@ -597,7 +765,11 @@ class Risk:
         return found  # type: ignore[no-any-return]
 
     def challenges(self, *, limit: int | None = None) -> AsyncIterator[RiskChallenge]:
-        """Every challenge, newest first, each with its counts."""
+        """Every challenge, newest first, each with its counts.
+
+        Args:
+            limit: How many to return at most, on one page.
+        """
         return self._all(
             lambda after: _list_challenges.asyncio_detailed(
                 client=self._g, cursor=_opt(after), limit=_opt(limit)
@@ -609,8 +781,14 @@ class Risk:
         self, challenge_id: Id, account_ids: Sequence[Id], *, idempotency_key: str
     ) -> Any:  # noqa: ANN401
         """Enrol accounts in the challenge's current version; each account's outcome
-        separately (one with a stale read is refused ``risk_inputs_stale``)."""
-        body = RiskEnrol.from_dict({"account_ids": [str(_uuid(a)) for a in account_ids]})
+        separately (one with a stale read is refused ``risk_inputs_stale``).
+
+        Args:
+            challenge_id: The challenge to act on.
+            idempotency_key: Required on every write and never defaulted. Sending again with the
+                same key answers the original; a fresh key asks for a new action.
+        """
+        body = _request(RiskEnrol, {"account_ids": [str(_uuid(a)) for a in account_ids]})
         return await self._client.write(
             lambda: _enrol.asyncio_detailed(
                 id=_uuid(challenge_id), client=self._g, body=body,
@@ -631,7 +809,13 @@ class Risk:
         limit: int | None = None,
     ) -> RiskChallengeAccountPage:
         """One page of the challenge's accounts, with ``stats`` over the filtered set. This list,
-        paged, is the export."""
+        paged, is the export.
+
+        Args:
+            challenge_id: The challenge to act on.
+            cursor: Where to continue from: the previous page's ``next_cursor``.
+            limit: How many to return at most, on one page.
+        """
         states = _many(state, ListRiskChallengeAccountsStateItem)
         rules = _many(rule, ListRiskChallengeAccountsRuleItem)
         order = ListRiskChallengeAccountsSort(sort)
@@ -653,7 +837,11 @@ class Risk:
         below_min_days: bool | None = None,
         sort: ChallengeSort = "daily_loss_used",
     ) -> AsyncIterator[RiskChallengeAccount]:
-        """Every account of the challenge, in the order ``sort`` names."""
+        """Every account of the challenge, in the order ``sort`` names.
+
+        Args:
+            challenge_id: The challenge to act on.
+        """
         cursor: str | None = None
         while True:
             page = await self.challenge_accounts_page(
@@ -669,7 +857,12 @@ class Risk:
     async def challenge_account(
         self, challenge_id: Id, account_id: Id
     ) -> RiskChallengeAccountDetail:
-        """One enrolled account, its result and its periods with their statistics."""
+        """One enrolled account, its result and its periods with their statistics.
+
+        Args:
+            challenge_id: The challenge to act on.
+            account_id: The trading account to act on. Another tenant's id answers 404, never 403.
+        """
         found = await self._client.read(
             lambda: _get_enrolled.asyncio_detailed(
                 id=_uuid(challenge_id), account_id=_uuid(account_id), client=self._g
@@ -692,7 +885,12 @@ class Risk:
         cursor: str | None = None,
         limit: int | None = None,
     ) -> RiskActivityPage:
-        """One page of activity, unresolved first by default, with ``stats``."""
+        """One page of activity, unresolved first by default, with ``stats``.
+
+        Args:
+            cursor: Where to continue from: the previous page's ``next_cursor``.
+            limit: How many to return at most, on one page.
+        """
         kinds, accounts = _many(kind, RiskActivityKind), _ids(account_id)
         outcomes, order = _many(outcome, RiskOutcome), ListRiskActivitySort(sort)
         page = await self._client.read(

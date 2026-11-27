@@ -103,7 +103,7 @@ class RiskDrawdown:
         from ..models.risk_amount import RiskAmount
 
         d = dict(src_dict)
-        kind = RiskDrawdownKind(d.pop("kind"))
+        kind = RiskDrawdownKind._read(d.pop("kind"))
 
         limit = RiskAmount.from_dict(d.pop("limit"))
 
@@ -120,14 +120,14 @@ class RiskDrawdown:
         if isinstance(_peak_basis, Unset):
             peak_basis = UNSET
         else:
-            peak_basis = RiskDrawdownPeakBasis(_peak_basis)
+            peak_basis = RiskDrawdownPeakBasis._read(_peak_basis)
 
         _peak_when = d.pop("peak_when", UNSET)
         peak_when: Union[Unset, RiskDrawdownPeakWhen]
         if isinstance(_peak_when, Unset):
             peak_when = UNSET
         else:
-            peak_when = RiskDrawdownPeakWhen(_peak_when)
+            peak_when = RiskDrawdownPeakWhen._read(_peak_when)
 
         risk_drawdown = cls(
             kind=kind,

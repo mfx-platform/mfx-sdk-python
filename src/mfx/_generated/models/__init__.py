@@ -6,6 +6,9 @@ from .account_connected_venue import AccountConnectedVenue
 from .account_marks_message import AccountMarksMessage
 from .account_md_subscription import AccountMdSubscription
 from .account_md_subscription_create import AccountMdSubscriptionCreate
+from .account_md_subscription_create_timeframes_item import (
+    AccountMdSubscriptionCreateTimeframesItem,
+)
 from .account_md_subscription_page import AccountMdSubscriptionPage
 from .account_md_subscription_state import AccountMdSubscriptionState
 from .account_profile_changed import AccountProfileChanged
@@ -22,6 +25,124 @@ from .account_reauth_needed_venue import AccountReauthNeededVenue
 from .account_snapshot_message import AccountSnapshotMessage
 from .account_snapshot_type_0 import AccountSnapshotType0
 from .age import Age
+from .billing_action import BillingAction
+from .billing_action_kind import BillingActionKind
+from .billing_affects import BillingAffects
+from .billing_affects_accounts_item import BillingAffectsAccountsItem
+from .billing_affects_accounts_item_venue import BillingAffectsAccountsItemVenue
+from .billing_agreement_ref import BillingAgreementRef
+from .billing_agreement_ref_payment_mode import BillingAgreementRefPaymentMode
+from .billing_automatic_top_up import BillingAutomaticTopUp
+from .billing_forecast import BillingForecast
+from .billing_forecast_lines_item import BillingForecastLinesItem
+from .billing_invoice import BillingInvoice
+from .billing_invoice_detail import BillingInvoiceDetail
+from .billing_invoice_detail_history_item import BillingInvoiceDetailHistoryItem
+from .billing_invoice_detail_pay_by_transfer_type_0 import (
+    BillingInvoiceDetailPayByTransferType0,
+)
+from .billing_invoice_detail_receipts_item import BillingInvoiceDetailReceiptsItem
+from .billing_invoice_detail_receipts_item_state import (
+    BillingInvoiceDetailReceiptsItemState,
+)
+from .billing_invoice_detail_receipts_item_uploaded_by import (
+    BillingInvoiceDetailReceiptsItemUploadedBy,
+)
+from .billing_invoice_detail_summary_item import BillingInvoiceDetailSummaryItem
+from .billing_invoice_detail_tax import BillingInvoiceDetailTax
+from .billing_invoice_detail_tax_rule import BillingInvoiceDetailTaxRule
+from .billing_invoice_page import BillingInvoicePage
+from .billing_invoice_page_stats import BillingInvoicePageStats
+from .billing_invoice_paid_by_type_0 import BillingInvoicePaidByType0
+from .billing_invoice_paid_by_type_0_rail import BillingInvoicePaidByType0Rail
+from .billing_invoice_replaced_by_type_0 import BillingInvoiceReplacedByType0
+from .billing_invoice_settlement import BillingInvoiceSettlement
+from .billing_invoice_settlement_paid_by import BillingInvoiceSettlementPaidBy
+from .billing_invoice_settlement_paid_by_person_type_0 import (
+    BillingInvoiceSettlementPaidByPersonType0,
+)
+from .billing_invoice_settlement_paid_by_rail import BillingInvoiceSettlementPaidByRail
+from .billing_invoice_state import BillingInvoiceState
+from .billing_last_failure import BillingLastFailure
+from .billing_last_failure_decline import BillingLastFailureDecline
+from .billing_payment_method import BillingPaymentMethod
+from .billing_payment_method_added_by import BillingPaymentMethodAddedBy
+from .billing_payment_method_kind import BillingPaymentMethodKind
+from .billing_payment_method_profiles_item import BillingPaymentMethodProfilesItem
+from .billing_payment_method_profiles_item_role import (
+    BillingPaymentMethodProfilesItemRole,
+)
+from .billing_payment_method_state import BillingPaymentMethodState
+from .billing_payment_required_details import BillingPaymentRequiredDetails
+from .billing_payment_required_details_cause import BillingPaymentRequiredDetailsCause
+from .billing_payment_required_details_stage import BillingPaymentRequiredDetailsStage
+from .billing_payment_required_error import BillingPaymentRequiredError
+from .billing_payment_required_error_error import BillingPaymentRequiredErrorError
+from .billing_plan_ref import BillingPlanRef
+from .billing_price_list import BillingPriceList
+from .billing_price_list_accounts_type_0 import BillingPriceListAccountsType0
+from .billing_price_list_currency import BillingPriceListCurrency
+from .billing_price_list_items_item import BillingPriceListItemsItem
+from .billing_price_list_items_item_kind import BillingPriceListItemsItemKind
+from .billing_price_list_items_item_plans import BillingPriceListItemsItemPlans
+from .billing_price_list_items_item_plans_additional_property import (
+    BillingPriceListItemsItemPlansAdditionalProperty,
+)
+from .billing_price_list_items_item_unit import BillingPriceListItemsItemUnit
+from .billing_price_list_items_item_venue_type_1 import (
+    BillingPriceListItemsItemVenueType1,
+)
+from .billing_price_list_items_item_venue_type_2_type_1 import (
+    BillingPriceListItemsItemVenueType2Type1,
+)
+from .billing_price_list_items_item_venue_type_3_type_1 import (
+    BillingPriceListItemsItemVenueType3Type1,
+)
+from .billing_price_list_next_type_0 import BillingPriceListNextType0
+from .billing_price_list_next_type_0_changes_item import (
+    BillingPriceListNextType0ChangesItem,
+)
+from .billing_price_list_plans_item import BillingPriceListPlansItem
+from .billing_price_list_plans_item_pay_type_1 import BillingPriceListPlansItemPayType1
+from .billing_price_list_plans_item_pay_type_2_type_1 import (
+    BillingPriceListPlansItemPayType2Type1,
+)
+from .billing_price_list_plans_item_pay_type_3_type_1 import (
+    BillingPriceListPlansItemPayType3Type1,
+)
+from .billing_price_list_scope import BillingPriceListScope
+from .billing_price_list_talk_to_sales_when_type_0 import (
+    BillingPriceListTalkToSalesWhenType0,
+)
+from .billing_profile import BillingProfile
+from .billing_profile_at_cap import BillingProfileAtCap
+from .billing_profile_covers_summary import BillingProfileCoversSummary
+from .billing_profile_methods import BillingProfileMethods
+from .billing_profile_mode import BillingProfileMode
+from .billing_profile_mode_source import BillingProfileModeSource
+from .billing_profile_scope_item import BillingProfileScopeItem
+from .billing_profile_scope_item_kind import BillingProfileScopeItemKind
+from .billing_profile_summary import BillingProfileSummary
+from .billing_profile_summary_at_cap import BillingProfileSummaryAtCap
+from .billing_profile_summary_covers_summary import BillingProfileSummaryCoversSummary
+from .billing_profile_summary_mode import BillingProfileSummaryMode
+from .billing_profile_summary_mode_source import BillingProfileSummaryModeSource
+from .billing_recipient import BillingRecipient
+from .billing_recipient_events_item import BillingRecipientEventsItem
+from .billing_recipient_kind import BillingRecipientKind
+from .billing_rules import BillingRules
+from .billing_standing import BillingStanding
+from .billing_standing_cause_type_1 import BillingStandingCauseType1
+from .billing_standing_cause_type_2_type_1 import BillingStandingCauseType2Type1
+from .billing_standing_cause_type_3_type_1 import BillingStandingCauseType3Type1
+from .billing_standing_planned_item import BillingStandingPlannedItem
+from .billing_standing_planned_item_step import BillingStandingPlannedItemStep
+from .billing_standing_stage import BillingStandingStage
+from .billing_summary import BillingSummary
+from .billing_summary_currency import BillingSummaryCurrency
+from .billing_summary_open_invoices import BillingSummaryOpenInvoices
+from .billing_verification_ref import BillingVerificationRef
+from .billing_verification_ref_status import BillingVerificationRefStatus
 from .book_message import BookMessage
 from .broker_catalogue import BrokerCatalogue
 from .broker_catalogue_list import BrokerCatalogueList
@@ -48,6 +169,32 @@ from .command_tickets import CommandTickets
 from .command_unknown import CommandUnknown
 from .condition_status import ConditionStatus
 from .copy_bounds import CopyBounds
+from .copy_close import CopyClose
+from .copy_close_attempt import CopyCloseAttempt
+from .copy_close_attempt_outcome import CopyCloseAttemptOutcome
+from .copy_close_cause import CopyCloseCause
+from .copy_close_entry import CopyCloseEntry
+from .copy_close_entry_state import CopyCloseEntryState
+from .copy_close_entry_why_type_1 import CopyCloseEntryWhyType1
+from .copy_close_entry_why_type_2_type_1 import CopyCloseEntryWhyType2Type1
+from .copy_close_entry_why_type_3_type_1 import CopyCloseEntryWhyType3Type1
+from .copy_close_page import CopyClosePage
+from .copy_close_page_stats import CopyClosePageStats
+from .copy_close_state import CopyCloseState
+from .copy_close_summary import CopyCloseSummary
+from .copy_closed_event import CopyClosedEvent
+from .copy_closed_event_closed_item import CopyClosedEventClosedItem
+from .copy_closed_event_not_closed_item import CopyClosedEventNotClosedItem
+from .copy_closed_event_not_closed_item_why_type_1 import (
+    CopyClosedEventNotClosedItemWhyType1,
+)
+from .copy_closed_event_not_closed_item_why_type_2_type_1 import (
+    CopyClosedEventNotClosedItemWhyType2Type1,
+)
+from .copy_closed_event_not_closed_item_why_type_3_type_1 import (
+    CopyClosedEventNotClosedItemWhyType3Type1,
+)
+from .copy_closed_event_state import CopyClosedEventState
 from .copy_copied import CopyCopied
 from .copy_copied_as import CopyCopiedAs
 from .copy_copied_as_side import CopyCopiedAsSide
@@ -59,14 +206,22 @@ from .copy_external_open_side import CopyExternalOpenSide
 from .copy_follower import CopyFollower
 from .copy_follower_create import CopyFollowerCreate
 from .copy_follower_create_symbol_map import CopyFollowerCreateSymbolMap
+from .copy_follower_drift import CopyFollowerDrift
+from .copy_follower_exposure import CopyFollowerExposure
 from .copy_follower_page import CopyFollowerPage
 from .copy_follower_page_stats import CopyFollowerPageStats
 from .copy_follower_state import CopyFollowerState
 from .copy_follower_symbol_map import CopyFollowerSymbolMap
+from .copy_follower_today import CopyFollowerToday
 from .copy_follower_update import CopyFollowerUpdate
 from .copy_follower_update_symbol_map import CopyFollowerUpdateSymbolMap
+from .copy_follower_venue_state import CopyFollowerVenueState
 from .copy_group import CopyGroup
+from .copy_group_close import CopyGroupClose
+from .copy_group_close_result import CopyGroupCloseResult
 from .copy_group_create import CopyGroupCreate
+from .copy_group_exposure import CopyGroupExposure
+from .copy_group_exposure_leavers import CopyGroupExposureLeavers
 from .copy_group_members import CopyGroupMembers
 from .copy_group_members_result import CopyGroupMembersResult
 from .copy_group_members_result_results_item import CopyGroupMembersResultResultsItem
@@ -75,6 +230,19 @@ from .copy_group_members_result_results_item_outcome import (
 )
 from .copy_group_page import CopyGroupPage
 from .copy_group_page_stats import CopyGroupPageStats
+from .copy_group_rollover import CopyGroupRollover
+from .copy_group_rollover_fields_item import CopyGroupRolloverFieldsItem
+from .copy_group_rollover_result import CopyGroupRolloverResult
+from .copy_group_rollover_result_results_item import CopyGroupRolloverResultResultsItem
+from .copy_group_rollover_result_results_item_changes import (
+    CopyGroupRolloverResultResultsItemChanges,
+)
+from .copy_group_rollover_result_results_item_changes_additional_property import (
+    CopyGroupRolloverResultResultsItemChangesAdditionalProperty,
+)
+from .copy_group_rollover_result_results_item_outcome import (
+    CopyGroupRolloverResultResultsItemOutcome,
+)
 from .copy_group_state import CopyGroupState
 from .copy_group_template import CopyGroupTemplate
 from .copy_group_update import CopyGroupUpdate
@@ -94,13 +262,17 @@ from .copy_leader_source import CopyLeaderSource
 from .copy_leader_state import CopyLeaderState
 from .copy_leader_update import CopyLeaderUpdate
 from .copy_limit_kind import CopyLimitKind
+from .copy_limits_use import CopyLimitsUse
+from .copy_limits_use_limits_item import CopyLimitsUseLimitsItem
 from .copy_log_entry import CopyLogEntry
 from .copy_log_entry_action import CopyLogEntryAction
+from .copy_log_entry_risk_type_0 import CopyLogEntryRiskType0
 from .copy_log_entry_side import CopyLogEntrySide
 from .copy_log_page import CopyLogPage
 from .copy_log_page_stats import CopyLogPageStats
 from .copy_match import CopyMatch
 from .copy_options import CopyOptions
+from .copy_options_when_risk_unchecked import CopyOptionsWhenRiskUnchecked
 from .copy_outcome import CopyOutcome
 from .copy_preview import CopyPreview
 from .copy_preview_inputs import CopyPreviewInputs
@@ -109,13 +281,30 @@ from .copy_preview_request import CopyPreviewRequest
 from .copy_preview_request_rows_item import CopyPreviewRequestRowsItem
 from .copy_preview_request_symbol_map import CopyPreviewRequestSymbolMap
 from .copy_preview_rows_item import CopyPreviewRowsItem
+from .copy_preview_rows_item_follower_volume_unit_type_1 import (
+    CopyPreviewRowsItemFollowerVolumeUnitType1,
+)
+from .copy_preview_rows_item_follower_volume_unit_type_2_type_1 import (
+    CopyPreviewRowsItemFollowerVolumeUnitType2Type1,
+)
+from .copy_preview_rows_item_follower_volume_unit_type_3_type_1 import (
+    CopyPreviewRowsItemFollowerVolumeUnitType3Type1,
+)
 from .copy_reason import CopyReason
 from .copy_refused import CopyRefused
+from .copy_refused_risk_type_0 import CopyRefusedRiskType0
 from .copy_risk_limits import CopyRiskLimits
 from .copy_risk_limits_basis import CopyRiskLimitsBasis
 from .copy_scaling import CopyScaling
 from .copy_scaling_mode import CopyScalingMode
 from .copy_signal_accepted import CopySignalAccepted
+from .copy_signal_entry import CopySignalEntry
+from .copy_signal_entry_action import CopySignalEntryAction
+from .copy_signal_entry_kind import CopySignalEntryKind
+from .copy_signal_entry_outcomes import CopySignalEntryOutcomes
+from .copy_signal_entry_side import CopySignalEntrySide
+from .copy_signal_page import CopySignalPage
+from .copy_signal_page_stats import CopySignalPageStats
 from .copy_stages import CopyStages
 from .copy_state_changed import CopyStateChanged
 from .copy_stopout import CopyStopout
@@ -126,6 +315,8 @@ from .copy_stopout_page import CopyStopoutPage
 from .copy_stopout_reset import CopyStopoutReset
 from .copy_stopout_reset_type_0 import CopyStopoutResetType0
 from .copy_stopout_state import CopyStopoutState
+from .copy_tenant_stopout_page import CopyTenantStopoutPage
+from .copy_tenant_stopout_page_stats import CopyTenantStopoutPageStats
 from .copy_unfollow import CopyUnfollow
 from .copy_usage import CopyUsage
 from .copy_who_may_join import CopyWhoMayJoin
@@ -145,6 +336,15 @@ from .ctrader_grant_environment import CtraderGrantEnvironment
 from .ctrader_grant_scope import CtraderGrantScope
 from .ctrader_grant_started import CtraderGrantStarted
 from .ctrader_grant_state import CtraderGrantState
+from .ctrader_return_origins import CtraderReturnOrigins
+from .ctrader_return_origins_set import CtraderReturnOriginsSet
+from .custody import Custody
+from .custody_data_row import CustodyDataRow
+from .custody_data_row_data import CustodyDataRowData
+from .custody_data_row_held import CustodyDataRowHeld
+from .custody_data_row_readers_item import CustodyDataRowReadersItem
+from .custody_key import CustodyKey
+from .custody_stated_limit import CustodyStatedLimit
 from .deal import Deal
 from .deal_close_reason_type_1 import DealCloseReasonType1
 from .deal_close_reason_type_2_type_1 import DealCloseReasonType2Type1
@@ -156,6 +356,16 @@ from .ea_colour import EaColour
 from .ea_finding import EaFinding
 from .ea_finding_colour import EaFindingColour
 from .ea_finding_found_by import EaFindingFoundBy
+from .ea_parameter_definition import EaParameterDefinition
+from .ea_parameter_definition_type import EaParameterDefinitionType
+from .ea_parameter_definitions import EaParameterDefinitions
+from .ea_parameter_definitions_put import EaParameterDefinitionsPut
+from .ea_parameter_definitions_put_definitions_item import (
+    EaParameterDefinitionsPutDefinitionsItem,
+)
+from .ea_parameter_definitions_put_definitions_item_type import (
+    EaParameterDefinitionsPutDefinitionsItemType,
+)
 from .ea_report import EaReport
 from .ea_report_categories_item import EaReportCategoriesItem
 from .ea_report_trial import EaReportTrial
@@ -217,7 +427,11 @@ from .get_account_candles_tf import GetAccountCandlesTf
 from .get_candles_tf import GetCandlesTf
 from .get_risk_account_close_scope_scope import GetRiskAccountCloseScopeScope
 from .journal_line import JournalLine
+from .list_billing_invoices_state_item import ListBillingInvoicesStateItem
+from .list_copy_followers_sort import ListCopyFollowersSort
 from .list_copy_log_sort import ListCopyLogSort
+from .list_copy_signals_action_item import ListCopySignalsActionItem
+from .list_copy_signals_kind_item import ListCopySignalsKindItem
 from .list_maintenance_state_item import ListMaintenanceStateItem
 from .list_risk_accounts_coverage_item import ListRiskAccountsCoverageItem
 from .list_risk_accounts_restriction_item import ListRiskAccountsRestrictionItem
@@ -241,6 +455,13 @@ from .maintenance_window_changed_change import MaintenanceWindowChangedChange
 from .maintenance_window_changed_state import MaintenanceWindowChangedState
 from .md_candle_closed import MdCandleClosed
 from .md_candle_closed_timeframe import MdCandleClosedTimeframe
+from .md_quotes_message import MdQuotesMessage
+from .md_server_quote import MdServerQuote
+from .md_server_subscription import MdServerSubscription
+from .md_server_subscription_interval_ms import MdServerSubscriptionIntervalMs
+from .md_server_subscription_put import MdServerSubscriptionPut
+from .md_server_subscription_put_interval_ms import MdServerSubscriptionPutIntervalMs
+from .md_server_subscription_state import MdServerSubscriptionState
 from .md_status_message import MdStatusMessage
 from .md_status_message_status import MdStatusMessageStatus
 from .md_subscription import MdSubscription
@@ -270,6 +491,7 @@ from .md_subscription_recovered import MdSubscriptionRecovered
 from .md_subscription_recovered_cause import MdSubscriptionRecoveredCause
 from .md_subscription_recovered_reason import MdSubscriptionRecoveredReason
 from .md_subscription_state import MdSubscriptionState
+from .md_tick_message import MdTickMessage
 from .operation_accepted import OperationAccepted
 from .operation_accepted_state import OperationAcceptedState
 from .operation_queue import OperationQueue
@@ -299,6 +521,8 @@ from .pending_order import PendingOrder
 from .pending_order_list import PendingOrderList
 from .pending_order_order_type import PendingOrderOrderType
 from .pending_order_side import PendingOrderSide
+from .plan_change_summary import PlanChangeSummary
+from .plan_change_summary_state import PlanChangeSummaryState
 from .position import Position
 from .position_close import PositionClose
 from .position_close_by import PositionCloseBy
@@ -502,6 +726,9 @@ from .risk_schedule import RiskSchedule
 from .risk_schedule_mode import RiskScheduleMode
 from .risk_schedule_windows_item import RiskScheduleWindowsItem
 from .risk_schedule_windows_item_days_item import RiskScheduleWindowsItemDaysItem
+from .risk_stops import RiskStops
+from .risk_stops_account import RiskStopsAccount
+from .risk_stops_account_closed_by_magic_item import RiskStopsAccountClosedByMagicItem
 from .spread import Spread
 from .spread_list import SpreadList
 from .symbol import Symbol
@@ -574,6 +801,8 @@ from .tenant_maintenance_state import TenantMaintenanceState
 from .tenant_maintenance_terminal import TenantMaintenanceTerminal
 from .tenant_maintenance_terminal_page import TenantMaintenanceTerminalPage
 from .tenant_maintenance_terminal_state import TenantMaintenanceTerminalState
+from .tenant_service_agreement import TenantServiceAgreement
+from .tenant_service_agreement_documents_item import TenantServiceAgreementDocumentsItem
 from .tenant_terminal import TenantTerminal
 from .tenant_terminal_conditions import TenantTerminalConditions
 from .tenant_terminal_conditions_additional_property import (
@@ -762,6 +991,7 @@ __all__ = (
     "AccountMarksMessage",
     "AccountMdSubscription",
     "AccountMdSubscriptionCreate",
+    "AccountMdSubscriptionCreateTimeframesItem",
     "AccountMdSubscriptionPage",
     "AccountMdSubscriptionState",
     "AccountProfileChanged",
@@ -778,6 +1008,98 @@ __all__ = (
     "AccountSnapshotMessage",
     "AccountSnapshotType0",
     "Age",
+    "BillingAction",
+    "BillingActionKind",
+    "BillingAffects",
+    "BillingAffectsAccountsItem",
+    "BillingAffectsAccountsItemVenue",
+    "BillingAgreementRef",
+    "BillingAgreementRefPaymentMode",
+    "BillingAutomaticTopUp",
+    "BillingForecast",
+    "BillingForecastLinesItem",
+    "BillingInvoice",
+    "BillingInvoiceDetail",
+    "BillingInvoiceDetailHistoryItem",
+    "BillingInvoiceDetailPayByTransferType0",
+    "BillingInvoiceDetailReceiptsItem",
+    "BillingInvoiceDetailReceiptsItemState",
+    "BillingInvoiceDetailReceiptsItemUploadedBy",
+    "BillingInvoiceDetailSummaryItem",
+    "BillingInvoiceDetailTax",
+    "BillingInvoiceDetailTaxRule",
+    "BillingInvoicePage",
+    "BillingInvoicePageStats",
+    "BillingInvoicePaidByType0",
+    "BillingInvoicePaidByType0Rail",
+    "BillingInvoiceReplacedByType0",
+    "BillingInvoiceSettlement",
+    "BillingInvoiceSettlementPaidBy",
+    "BillingInvoiceSettlementPaidByPersonType0",
+    "BillingInvoiceSettlementPaidByRail",
+    "BillingInvoiceState",
+    "BillingLastFailure",
+    "BillingLastFailureDecline",
+    "BillingPaymentMethod",
+    "BillingPaymentMethodAddedBy",
+    "BillingPaymentMethodKind",
+    "BillingPaymentMethodProfilesItem",
+    "BillingPaymentMethodProfilesItemRole",
+    "BillingPaymentMethodState",
+    "BillingPaymentRequiredDetails",
+    "BillingPaymentRequiredDetailsCause",
+    "BillingPaymentRequiredDetailsStage",
+    "BillingPaymentRequiredError",
+    "BillingPaymentRequiredErrorError",
+    "BillingPlanRef",
+    "BillingPriceList",
+    "BillingPriceListAccountsType0",
+    "BillingPriceListCurrency",
+    "BillingPriceListItemsItem",
+    "BillingPriceListItemsItemKind",
+    "BillingPriceListItemsItemPlans",
+    "BillingPriceListItemsItemPlansAdditionalProperty",
+    "BillingPriceListItemsItemUnit",
+    "BillingPriceListItemsItemVenueType1",
+    "BillingPriceListItemsItemVenueType2Type1",
+    "BillingPriceListItemsItemVenueType3Type1",
+    "BillingPriceListNextType0",
+    "BillingPriceListNextType0ChangesItem",
+    "BillingPriceListPlansItem",
+    "BillingPriceListPlansItemPayType1",
+    "BillingPriceListPlansItemPayType2Type1",
+    "BillingPriceListPlansItemPayType3Type1",
+    "BillingPriceListScope",
+    "BillingPriceListTalkToSalesWhenType0",
+    "BillingProfile",
+    "BillingProfileAtCap",
+    "BillingProfileCoversSummary",
+    "BillingProfileMethods",
+    "BillingProfileMode",
+    "BillingProfileModeSource",
+    "BillingProfileScopeItem",
+    "BillingProfileScopeItemKind",
+    "BillingProfileSummary",
+    "BillingProfileSummaryAtCap",
+    "BillingProfileSummaryCoversSummary",
+    "BillingProfileSummaryMode",
+    "BillingProfileSummaryModeSource",
+    "BillingRecipient",
+    "BillingRecipientEventsItem",
+    "BillingRecipientKind",
+    "BillingRules",
+    "BillingStanding",
+    "BillingStandingCauseType1",
+    "BillingStandingCauseType2Type1",
+    "BillingStandingCauseType3Type1",
+    "BillingStandingPlannedItem",
+    "BillingStandingPlannedItemStep",
+    "BillingStandingStage",
+    "BillingSummary",
+    "BillingSummaryCurrency",
+    "BillingSummaryOpenInvoices",
+    "BillingVerificationRef",
+    "BillingVerificationRefStatus",
     "BookMessage",
     "BrokerCatalogue",
     "BrokerCatalogueList",
@@ -804,6 +1126,26 @@ __all__ = (
     "CommandUnknown",
     "ConditionStatus",
     "CopyBounds",
+    "CopyClose",
+    "CopyCloseAttempt",
+    "CopyCloseAttemptOutcome",
+    "CopyCloseCause",
+    "CopyClosedEvent",
+    "CopyClosedEventClosedItem",
+    "CopyClosedEventNotClosedItem",
+    "CopyClosedEventNotClosedItemWhyType1",
+    "CopyClosedEventNotClosedItemWhyType2Type1",
+    "CopyClosedEventNotClosedItemWhyType3Type1",
+    "CopyClosedEventState",
+    "CopyCloseEntry",
+    "CopyCloseEntryState",
+    "CopyCloseEntryWhyType1",
+    "CopyCloseEntryWhyType2Type1",
+    "CopyCloseEntryWhyType3Type1",
+    "CopyClosePage",
+    "CopyClosePageStats",
+    "CopyCloseState",
+    "CopyCloseSummary",
     "CopyCopied",
     "CopyCopiedAs",
     "CopyCopiedAsSide",
@@ -815,20 +1157,35 @@ __all__ = (
     "CopyFollower",
     "CopyFollowerCreate",
     "CopyFollowerCreateSymbolMap",
+    "CopyFollowerDrift",
+    "CopyFollowerExposure",
     "CopyFollowerPage",
     "CopyFollowerPageStats",
     "CopyFollowerState",
     "CopyFollowerSymbolMap",
+    "CopyFollowerToday",
     "CopyFollowerUpdate",
     "CopyFollowerUpdateSymbolMap",
+    "CopyFollowerVenueState",
     "CopyGroup",
+    "CopyGroupClose",
+    "CopyGroupCloseResult",
     "CopyGroupCreate",
+    "CopyGroupExposure",
+    "CopyGroupExposureLeavers",
     "CopyGroupMembers",
     "CopyGroupMembersResult",
     "CopyGroupMembersResultResultsItem",
     "CopyGroupMembersResultResultsItemOutcome",
     "CopyGroupPage",
     "CopyGroupPageStats",
+    "CopyGroupRollover",
+    "CopyGroupRolloverFieldsItem",
+    "CopyGroupRolloverResult",
+    "CopyGroupRolloverResultResultsItem",
+    "CopyGroupRolloverResultResultsItemChanges",
+    "CopyGroupRolloverResultResultsItemChangesAdditionalProperty",
+    "CopyGroupRolloverResultResultsItemOutcome",
     "CopyGroupState",
     "CopyGroupTemplate",
     "CopyGroupUpdate",
@@ -848,13 +1205,17 @@ __all__ = (
     "CopyLeaderState",
     "CopyLeaderUpdate",
     "CopyLimitKind",
+    "CopyLimitsUse",
+    "CopyLimitsUseLimitsItem",
     "CopyLogEntry",
     "CopyLogEntryAction",
+    "CopyLogEntryRiskType0",
     "CopyLogEntrySide",
     "CopyLogPage",
     "CopyLogPageStats",
     "CopyMatch",
     "CopyOptions",
+    "CopyOptionsWhenRiskUnchecked",
     "CopyOutcome",
     "CopyPreview",
     "CopyPreviewInputs",
@@ -863,13 +1224,24 @@ __all__ = (
     "CopyPreviewRequestRowsItem",
     "CopyPreviewRequestSymbolMap",
     "CopyPreviewRowsItem",
+    "CopyPreviewRowsItemFollowerVolumeUnitType1",
+    "CopyPreviewRowsItemFollowerVolumeUnitType2Type1",
+    "CopyPreviewRowsItemFollowerVolumeUnitType3Type1",
     "CopyReason",
     "CopyRefused",
+    "CopyRefusedRiskType0",
     "CopyRiskLimits",
     "CopyRiskLimitsBasis",
     "CopyScaling",
     "CopyScalingMode",
     "CopySignalAccepted",
+    "CopySignalEntry",
+    "CopySignalEntryAction",
+    "CopySignalEntryKind",
+    "CopySignalEntryOutcomes",
+    "CopySignalEntrySide",
+    "CopySignalPage",
+    "CopySignalPageStats",
     "CopyStages",
     "CopyStateChanged",
     "CopyStopout",
@@ -880,6 +1252,8 @@ __all__ = (
     "CopyStopoutReset",
     "CopyStopoutResetType0",
     "CopyStopoutState",
+    "CopyTenantStopoutPage",
+    "CopyTenantStopoutPageStats",
     "CopyUnfollow",
     "CopyUsage",
     "CopyWhoMayJoin",
@@ -899,6 +1273,15 @@ __all__ = (
     "CtraderGrantScope",
     "CtraderGrantStarted",
     "CtraderGrantState",
+    "CtraderReturnOrigins",
+    "CtraderReturnOriginsSet",
+    "Custody",
+    "CustodyDataRow",
+    "CustodyDataRowData",
+    "CustodyDataRowHeld",
+    "CustodyDataRowReadersItem",
+    "CustodyKey",
+    "CustodyStatedLimit",
     "Deal",
     "DealCloseReasonType1",
     "DealCloseReasonType2Type1",
@@ -910,6 +1293,12 @@ __all__ = (
     "EaFinding",
     "EaFindingColour",
     "EaFindingFoundBy",
+    "EaParameterDefinition",
+    "EaParameterDefinitions",
+    "EaParameterDefinitionsPut",
+    "EaParameterDefinitionsPutDefinitionsItem",
+    "EaParameterDefinitionsPutDefinitionsItemType",
+    "EaParameterDefinitionType",
     "EaReport",
     "EaReportCategoriesItem",
     "EaReportTrial",
@@ -955,7 +1344,11 @@ __all__ = (
     "GetCandlesTf",
     "GetRiskAccountCloseScopeScope",
     "JournalLine",
+    "ListBillingInvoicesStateItem",
+    "ListCopyFollowersSort",
     "ListCopyLogSort",
+    "ListCopySignalsActionItem",
+    "ListCopySignalsKindItem",
     "ListMaintenanceStateItem",
     "ListRiskAccountsCoverageItem",
     "ListRiskAccountsRestrictionItem",
@@ -979,6 +1372,13 @@ __all__ = (
     "MaintenanceWindowChangedState",
     "MdCandleClosed",
     "MdCandleClosedTimeframe",
+    "MdQuotesMessage",
+    "MdServerQuote",
+    "MdServerSubscription",
+    "MdServerSubscriptionIntervalMs",
+    "MdServerSubscriptionPut",
+    "MdServerSubscriptionPutIntervalMs",
+    "MdServerSubscriptionState",
     "MdStatusMessage",
     "MdStatusMessageStatus",
     "MdSubscription",
@@ -1000,6 +1400,7 @@ __all__ = (
     "MdSubscriptionRecoveredCause",
     "MdSubscriptionRecoveredReason",
     "MdSubscriptionState",
+    "MdTickMessage",
     "OperationAccepted",
     "OperationAcceptedState",
     "OperationQueue",
@@ -1029,6 +1430,8 @@ __all__ = (
     "PendingOrderList",
     "PendingOrderOrderType",
     "PendingOrderSide",
+    "PlanChangeSummary",
+    "PlanChangeSummaryState",
     "Position",
     "PositionClose",
     "PositionCloseBy",
@@ -1218,6 +1621,9 @@ __all__ = (
     "RiskScheduleMode",
     "RiskScheduleWindowsItem",
     "RiskScheduleWindowsItemDaysItem",
+    "RiskStops",
+    "RiskStopsAccount",
+    "RiskStopsAccountClosedByMagicItem",
     "Spread",
     "SpreadList",
     "Symbol",
@@ -1274,6 +1680,8 @@ __all__ = (
     "TenantMaintenanceTerminal",
     "TenantMaintenanceTerminalPage",
     "TenantMaintenanceTerminalState",
+    "TenantServiceAgreement",
+    "TenantServiceAgreementDocumentsItem",
     "TenantTerminal",
     "TenantTerminalConditions",
     "TenantTerminalConditionsAdditionalProperty",

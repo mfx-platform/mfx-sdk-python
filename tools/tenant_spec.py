@@ -24,16 +24,36 @@ one ``models/__init__.py`` that imports every model by name, so removing those f
 ``import mfx`` outright. And a name-based list misses the admin-only schemas that are not called
 ``admin_*`` — ``BrokerDetail``, ``ServerDisable``, ``EnrollmentRequest``, ``CellDrainState`` — and
 goes on missing each new one silently. Reachability is the only filter that cannot rot.
+
+**Operations the platform does not serve.** A v1 change is additive, so a tenant route the platform
+decided never to serve stays in the contract, marked ``deprecated: true`` and documented as
+answering 404 (``POST /terminals:retire``). A generated function for it would only ever
+fail, so :data:`NOT_SERVED` cuts it here, and the schemas only it reached go with it.
 """
 
 from __future__ import annotations
 
 from typing import Any
 
-__all__ = ["ADMIN_PREFIX", "tenant_only"]
+__all__ = ["ADMIN_PREFIX", "NOT_SERVED", "NotServedListStaleError", "tenant_only"]
 
 #: Every operator path. The spec's own convention, and the thing `mfx-adminbff` alone serves.
 ADMIN_PREFIX = "/admin/"
+
+#: The operationIds the contract keeps but the platform does not serve and never will.
+# DECISION: a named list, not "every deprecated operation": a later deprecation may be a route that
+# is still served while a successor beds in, and cutting it would take a working method from
+# customers silently. An entry found in the spec without `deprecated: true` stops the cut
+# (:class:`NotServedListStaleError`), so the list cannot hide a served route; and the real-spec test
+# asserts every entry is still in the vendored contract, so it does not outlive its route.
+NOT_SERVED: frozenset[str] = frozenset({"bulkRetireTerminals"})
+
+_METHODS = frozenset({"get", "put", "post", "delete", "options", "head", "patch", "trace"})
+
+
+class NotServedListStaleError(ValueError):
+    """An entry of :data:`NOT_SERVED` is in the spec but no longer marked deprecated."""
+
 
 #: Component sections whose members are pruned when nothing reachable refers to them. `schemas` is
 #: the one that matters; the others are small and kept whole so a response or parameter shared by
@@ -62,18 +82,49 @@ def _named(ref: str, section: str) -> str | None:
     return ref[len(prefix) :] if ref.startswith(prefix) else None
 
 
+def _served(paths: dict[str, Any]) -> dict[str, Any]:
+    """``paths`` without the :data:`NOT_SERVED` operations, and without a path left with none.
+
+    Raises :class:`NotServedListStaleError` when an entry is there but not deprecated: the
+    contract says it is served again, and the list must be deleted from rather than overrule it.
+    """
+    seen: dict[str, bool] = {}
+    kept: dict[str, Any] = {}
+    for path, item in paths.items():
+        operations = {
+            method: op
+            for method, op in item.items()
+            if method in _METHODS and isinstance(op, dict) and op.get("operationId") in NOT_SERVED
+        }
+        for op in operations.values():
+            seen[op["operationId"]] = op.get("deprecated") is True
+        if not operations:
+            kept[path] = item
+            continue
+        rest = {key: value for key, value in item.items() if key not in operations}
+        if any(key in _METHODS for key in rest):
+            kept[path] = rest
+    served = sorted(name for name, deprecated in seen.items() if not deprecated)
+    if served:
+        raise NotServedListStaleError(f"NOT_SERVED names operations the spec serves: {served}")
+    return kept
+
+
 def tenant_only(spec: dict[str, Any]) -> dict[str, Any]:
-    """``spec`` without the admin paths, and without the schemas only they reached.
+    """``spec`` without the admin paths and the :data:`NOT_SERVED` operations, and without the
+    schemas only they reached.
 
     Pure: the input is not modified, so a caller can diff the two. The walk is transitive — a
     schema kept only because an admin schema referenced it goes too, and a schema a tenant path
     reaches through three others stays.
     """
-    kept_paths = {
-        path: item
-        for path, item in (spec.get("paths") or {}).items()
-        if not path.startswith(ADMIN_PREFIX)
-    }
+    kept_paths = _served(
+        {
+            path: item
+            for path, item in (spec.get("paths") or {}).items()
+            if not path.startswith(ADMIN_PREFIX)
+        }
+    )
     cut = {**spec, "paths": kept_paths}
 
     components = spec.get("components") or {}

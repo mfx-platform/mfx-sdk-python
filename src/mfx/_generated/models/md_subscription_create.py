@@ -92,7 +92,7 @@ class MdSubscriptionCreate:
         timeframes = []
         _timeframes = d.pop("timeframes", UNSET)
         for timeframes_item_data in _timeframes or []:
-            timeframes_item = MdSubscriptionCreateTimeframesItem(timeframes_item_data)
+            timeframes_item = MdSubscriptionCreateTimeframesItem._read(timeframes_item_data)
 
             timeframes.append(timeframes_item)
 
@@ -101,7 +101,7 @@ class MdSubscriptionCreate:
         if isinstance(_delivery, Unset):
             delivery = UNSET
         else:
-            delivery = MdSubscriptionCreateDelivery(_delivery)
+            delivery = MdSubscriptionCreateDelivery._read(_delivery)
 
         def _parse_connector_id(data: object) -> Union[None, UUID, Unset]:
             if data is None:

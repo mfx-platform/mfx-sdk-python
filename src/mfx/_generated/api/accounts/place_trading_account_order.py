@@ -6,6 +6,7 @@ import httpx
 
 from ... import errors
 from ...client import AuthenticatedClient, Client
+from ...models.billing_payment_required_error import BillingPaymentRequiredError
 from ...models.command_accepted import CommandAccepted
 from ...models.error import Error
 from ...models.order_place import OrderPlace
@@ -38,11 +39,16 @@ def _get_kwargs(
 
 def _parse_response(
     *, client: Union[AuthenticatedClient, Client], response: httpx.Response
-) -> Union[CommandAccepted, Error]:
+) -> Union[BillingPaymentRequiredError, CommandAccepted, Error]:
     if response.status_code == 202:
         response_202 = CommandAccepted.from_dict(response.json())
 
         return response_202
+
+    if response.status_code == 402:
+        response_402 = BillingPaymentRequiredError.from_dict(response.json())
+
+        return response_402
 
     if response.status_code == 403:
         response_403 = Error.from_dict(response.json())
@@ -66,7 +72,7 @@ def _parse_response(
 
 def _build_response(
     *, client: Union[AuthenticatedClient, Client], response: httpx.Response
-) -> Response[Union[CommandAccepted, Error]]:
+) -> Response[Union[BillingPaymentRequiredError, CommandAccepted, Error]]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -81,7 +87,7 @@ def sync_detailed(
     client: Union[AuthenticatedClient, Client],
     body: OrderPlace,
     idempotency_key: str,
-) -> Response[Union[CommandAccepted, Error]]:
+) -> Response[Union[BillingPaymentRequiredError, CommandAccepted, Error]]:
     """Place a market or pending order on a trading account, on any venue → 202 + command_id
 
      The order goes to the account's lead runner (its writer, else its only runner) and is the same
@@ -132,7 +138,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[CommandAccepted, Error]]
+        Response[Union[BillingPaymentRequiredError, CommandAccepted, Error]]
     """
 
     kwargs = _get_kwargs(
@@ -154,7 +160,7 @@ def sync(
     client: Union[AuthenticatedClient, Client],
     body: OrderPlace,
     idempotency_key: str,
-) -> Optional[Union[CommandAccepted, Error]]:
+) -> Optional[Union[BillingPaymentRequiredError, CommandAccepted, Error]]:
     """Place a market or pending order on a trading account, on any venue → 202 + command_id
 
      The order goes to the account's lead runner (its writer, else its only runner) and is the same
@@ -205,7 +211,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[CommandAccepted, Error]
+        Union[BillingPaymentRequiredError, CommandAccepted, Error]
     """
 
     return sync_detailed(
@@ -222,7 +228,7 @@ async def asyncio_detailed(
     client: Union[AuthenticatedClient, Client],
     body: OrderPlace,
     idempotency_key: str,
-) -> Response[Union[CommandAccepted, Error]]:
+) -> Response[Union[BillingPaymentRequiredError, CommandAccepted, Error]]:
     """Place a market or pending order on a trading account, on any venue → 202 + command_id
 
      The order goes to the account's lead runner (its writer, else its only runner) and is the same
@@ -273,7 +279,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[CommandAccepted, Error]]
+        Response[Union[BillingPaymentRequiredError, CommandAccepted, Error]]
     """
 
     kwargs = _get_kwargs(
@@ -293,7 +299,7 @@ async def asyncio(
     client: Union[AuthenticatedClient, Client],
     body: OrderPlace,
     idempotency_key: str,
-) -> Optional[Union[CommandAccepted, Error]]:
+) -> Optional[Union[BillingPaymentRequiredError, CommandAccepted, Error]]:
     """Place a market or pending order on a trading account, on any venue → 202 + command_id
 
      The order goes to the account's lead runner (its writer, else its only runner) and is the same
@@ -344,7 +350,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[CommandAccepted, Error]
+        Union[BillingPaymentRequiredError, CommandAccepted, Error]
     """
 
     return (

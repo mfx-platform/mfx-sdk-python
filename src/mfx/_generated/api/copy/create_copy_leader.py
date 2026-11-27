@@ -5,6 +5,7 @@ import httpx
 
 from ... import errors
 from ...client import AuthenticatedClient, Client
+from ...models.billing_payment_required_error import BillingPaymentRequiredError
 from ...models.copy_leader import CopyLeader
 from ...models.copy_leader_create import CopyLeaderCreate
 from ...models.error import Error
@@ -34,11 +35,16 @@ def _get_kwargs(
 
 def _parse_response(
     *, client: Union[AuthenticatedClient, Client], response: httpx.Response
-) -> Union[CopyLeader, Error]:
+) -> Union[BillingPaymentRequiredError, CopyLeader, Error]:
     if response.status_code == 201:
         response_201 = CopyLeader.from_dict(response.json())
 
         return response_201
+
+    if response.status_code == 402:
+        response_402 = BillingPaymentRequiredError.from_dict(response.json())
+
+        return response_402
 
     if response.status_code == 409:
         response_409 = Error.from_dict(response.json())
@@ -57,7 +63,7 @@ def _parse_response(
 
 def _build_response(
     *, client: Union[AuthenticatedClient, Client], response: httpx.Response
-) -> Response[Union[CopyLeader, Error]]:
+) -> Response[Union[BillingPaymentRequiredError, CopyLeader, Error]]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -71,7 +77,7 @@ def sync_detailed(
     client: Union[AuthenticatedClient, Client],
     body: CopyLeaderCreate,
     idempotency_key: str,
-) -> Response[Union[CopyLeader, Error]]:
+) -> Response[Union[BillingPaymentRequiredError, CopyLeader, Error]]:
     """Make one of your accounts, or an external signal source, a leader
 
      An account leads once: a second live leader on the same account is 409 `conflict` with
@@ -89,7 +95,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[CopyLeader, Error]]
+        Response[Union[BillingPaymentRequiredError, CopyLeader, Error]]
     """
 
     kwargs = _get_kwargs(
@@ -109,7 +115,7 @@ def sync(
     client: Union[AuthenticatedClient, Client],
     body: CopyLeaderCreate,
     idempotency_key: str,
-) -> Optional[Union[CopyLeader, Error]]:
+) -> Optional[Union[BillingPaymentRequiredError, CopyLeader, Error]]:
     """Make one of your accounts, or an external signal source, a leader
 
      An account leads once: a second live leader on the same account is 409 `conflict` with
@@ -127,7 +133,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[CopyLeader, Error]
+        Union[BillingPaymentRequiredError, CopyLeader, Error]
     """
 
     return sync_detailed(
@@ -142,7 +148,7 @@ async def asyncio_detailed(
     client: Union[AuthenticatedClient, Client],
     body: CopyLeaderCreate,
     idempotency_key: str,
-) -> Response[Union[CopyLeader, Error]]:
+) -> Response[Union[BillingPaymentRequiredError, CopyLeader, Error]]:
     """Make one of your accounts, or an external signal source, a leader
 
      An account leads once: a second live leader on the same account is 409 `conflict` with
@@ -160,7 +166,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[CopyLeader, Error]]
+        Response[Union[BillingPaymentRequiredError, CopyLeader, Error]]
     """
 
     kwargs = _get_kwargs(
@@ -178,7 +184,7 @@ async def asyncio(
     client: Union[AuthenticatedClient, Client],
     body: CopyLeaderCreate,
     idempotency_key: str,
-) -> Optional[Union[CopyLeader, Error]]:
+) -> Optional[Union[BillingPaymentRequiredError, CopyLeader, Error]]:
     """Make one of your accounts, or an external signal source, a leader
 
      An account leads once: a second live leader on the same account is 409 `conflict` with
@@ -196,7 +202,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[CopyLeader, Error]
+        Union[BillingPaymentRequiredError, CopyLeader, Error]
     """
 
     return (

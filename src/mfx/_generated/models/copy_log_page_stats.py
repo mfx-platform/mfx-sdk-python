@@ -33,6 +33,9 @@ class CopyLogPageStats:
         mfx_ms_p99 (Union[None, float]):
         signal_to_order_ms_p50 (Union[None, float]):
         broker_ms_p50 (Union[None, float]):
+        mfx_ms_p95 (Union[None, float]): Null when no row has the stages
+        signal_to_order_ms_p95 (Union[None, float]):
+        broker_ms_p95 (Union[None, float]):
     """
 
     copies: int
@@ -44,6 +47,9 @@ class CopyLogPageStats:
     mfx_ms_p99: Union[None, float]
     signal_to_order_ms_p50: Union[None, float]
     broker_ms_p50: Union[None, float]
+    mfx_ms_p95: Union[None, float]
+    signal_to_order_ms_p95: Union[None, float]
+    broker_ms_p95: Union[None, float]
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -69,6 +75,15 @@ class CopyLogPageStats:
         broker_ms_p50: Union[None, float]
         broker_ms_p50 = self.broker_ms_p50
 
+        mfx_ms_p95: Union[None, float]
+        mfx_ms_p95 = self.mfx_ms_p95
+
+        signal_to_order_ms_p95: Union[None, float]
+        signal_to_order_ms_p95 = self.signal_to_order_ms_p95
+
+        broker_ms_p95: Union[None, float]
+        broker_ms_p95 = self.broker_ms_p95
+
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
@@ -82,6 +97,9 @@ class CopyLogPageStats:
                 "mfx_ms_p99": mfx_ms_p99,
                 "signal_to_order_ms_p50": signal_to_order_ms_p50,
                 "broker_ms_p50": broker_ms_p50,
+                "mfx_ms_p95": mfx_ms_p95,
+                "signal_to_order_ms_p95": signal_to_order_ms_p95,
+                "broker_ms_p95": broker_ms_p95,
             }
         )
 
@@ -128,6 +146,27 @@ class CopyLogPageStats:
 
         broker_ms_p50 = _parse_broker_ms_p50(d.pop("broker_ms_p50"))
 
+        def _parse_mfx_ms_p95(data: object) -> Union[None, float]:
+            if data is None:
+                return data
+            return cast(Union[None, float], data)
+
+        mfx_ms_p95 = _parse_mfx_ms_p95(d.pop("mfx_ms_p95"))
+
+        def _parse_signal_to_order_ms_p95(data: object) -> Union[None, float]:
+            if data is None:
+                return data
+            return cast(Union[None, float], data)
+
+        signal_to_order_ms_p95 = _parse_signal_to_order_ms_p95(d.pop("signal_to_order_ms_p95"))
+
+        def _parse_broker_ms_p95(data: object) -> Union[None, float]:
+            if data is None:
+                return data
+            return cast(Union[None, float], data)
+
+        broker_ms_p95 = _parse_broker_ms_p95(d.pop("broker_ms_p95"))
+
         copy_log_page_stats = cls(
             copies=copies,
             filled=filled,
@@ -138,6 +177,9 @@ class CopyLogPageStats:
             mfx_ms_p99=mfx_ms_p99,
             signal_to_order_ms_p50=signal_to_order_ms_p50,
             broker_ms_p50=broker_ms_p50,
+            mfx_ms_p95=mfx_ms_p95,
+            signal_to_order_ms_p95=signal_to_order_ms_p95,
+            broker_ms_p95=broker_ms_p95,
         )
 
         copy_log_page_stats.additional_properties = d

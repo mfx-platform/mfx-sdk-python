@@ -137,7 +137,7 @@ class RiskDailyLossFigure:
 
         reference = _parse_reference(d.pop("reference"))
 
-        basis = RiskDailyLossFigureBasis(d.pop("basis"))
+        basis = RiskDailyLossFigureBasis._read(d.pop("basis"))
 
         def _parse_day_start_at(data: object) -> Union[None, datetime.datetime]:
             if data is None:

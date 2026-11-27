@@ -78,7 +78,7 @@ class CredentialSubmission:
         if isinstance(_cred_type, Unset):
             cred_type = UNSET
         else:
-            cred_type = CredentialSubmissionCredType(_cred_type)
+            cred_type = CredentialSubmissionCredType._read(_cred_type)
 
         credential_submission = cls(
             login=login,

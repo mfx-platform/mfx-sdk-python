@@ -206,9 +206,9 @@ class MdSubscription:
 
         timeframes = cast(list[str], d.pop("timeframes"))
 
-        delivery = MdSubscriptionDelivery(d.pop("delivery"))
+        delivery = MdSubscriptionDelivery._read(d.pop("delivery"))
 
-        state = MdSubscriptionState(d.pop("state"))
+        state = MdSubscriptionState._read(d.pop("state"))
 
         created_at = isoparse(d.pop("created_at"))
 
@@ -228,7 +228,7 @@ class MdSubscription:
             try:
                 if not isinstance(data, str):
                     raise TypeError()
-                degraded_reason_type_1 = MdSubscriptionDegradedReasonType1(data)
+                degraded_reason_type_1 = MdSubscriptionDegradedReasonType1._read(data)
 
                 return degraded_reason_type_1
             except:  # noqa: E722
@@ -236,7 +236,7 @@ class MdSubscription:
             try:
                 if not isinstance(data, str):
                     raise TypeError()
-                degraded_reason_type_2_type_1 = MdSubscriptionDegradedReasonType2Type1(data)
+                degraded_reason_type_2_type_1 = MdSubscriptionDegradedReasonType2Type1._read(data)
 
                 return degraded_reason_type_2_type_1
             except:  # noqa: E722
@@ -244,7 +244,7 @@ class MdSubscription:
             try:
                 if not isinstance(data, str):
                     raise TypeError()
-                degraded_reason_type_3_type_1 = MdSubscriptionDegradedReasonType3Type1(data)
+                degraded_reason_type_3_type_1 = MdSubscriptionDegradedReasonType3Type1._read(data)
 
                 return degraded_reason_type_3_type_1
             except:  # noqa: E722
@@ -295,7 +295,7 @@ class MdSubscription:
             try:
                 if not isinstance(data, str):
                     raise TypeError()
-                degraded_cause_type_1 = MdSubscriptionDegradedCauseType1(data)
+                degraded_cause_type_1 = MdSubscriptionDegradedCauseType1._read(data)
 
                 return degraded_cause_type_1
             except:  # noqa: E722
@@ -303,7 +303,7 @@ class MdSubscription:
             try:
                 if not isinstance(data, str):
                     raise TypeError()
-                degraded_cause_type_2_type_1 = MdSubscriptionDegradedCauseType2Type1(data)
+                degraded_cause_type_2_type_1 = MdSubscriptionDegradedCauseType2Type1._read(data)
 
                 return degraded_cause_type_2_type_1
             except:  # noqa: E722
@@ -311,7 +311,7 @@ class MdSubscription:
             try:
                 if not isinstance(data, str):
                     raise TypeError()
-                degraded_cause_type_3_type_1 = MdSubscriptionDegradedCauseType3Type1(data)
+                degraded_cause_type_3_type_1 = MdSubscriptionDegradedCauseType3Type1._read(data)
 
                 return degraded_cause_type_3_type_1
             except:  # noqa: E722

@@ -5,6 +5,7 @@ import httpx
 
 from ... import errors
 from ...client import AuthenticatedClient, Client
+from ...models.billing_payment_required_error import BillingPaymentRequiredError
 from ...models.bulk_action import BulkAction
 from ...models.bulk_terminal_ask import BulkTerminalAsk
 from ...models.error import Error
@@ -34,11 +35,16 @@ def _get_kwargs(
 
 def _parse_response(
     *, client: Union[AuthenticatedClient, Client], response: httpx.Response
-) -> Union[BulkAction, Error]:
+) -> Union[BillingPaymentRequiredError, BulkAction, Error]:
     if response.status_code == 202:
         response_202 = BulkAction.from_dict(response.json())
 
         return response_202
+
+    if response.status_code == 402:
+        response_402 = BillingPaymentRequiredError.from_dict(response.json())
+
+        return response_402
 
     response_default = Error.from_dict(response.json())
 
@@ -47,7 +53,7 @@ def _parse_response(
 
 def _build_response(
     *, client: Union[AuthenticatedClient, Client], response: httpx.Response
-) -> Response[Union[BulkAction, Error]]:
+) -> Response[Union[BillingPaymentRequiredError, BulkAction, Error]]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -61,7 +67,7 @@ def sync_detailed(
     client: Union[AuthenticatedClient, Client],
     body: BulkTerminalAsk,
     idempotency_key: str,
-) -> Response[Union[BulkAction, Error]]:
+) -> Response[Union[BillingPaymentRequiredError, BulkAction, Error]]:
     """Restart many of your terminals at once - accepted at once, carried out at the pace of their cells
 
      One request for many terminals. Each terminal the filter names is judged by the same rules as `POST
@@ -82,7 +88,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[BulkAction, Error]]
+        Response[Union[BillingPaymentRequiredError, BulkAction, Error]]
     """
 
     kwargs = _get_kwargs(
@@ -102,7 +108,7 @@ def sync(
     client: Union[AuthenticatedClient, Client],
     body: BulkTerminalAsk,
     idempotency_key: str,
-) -> Optional[Union[BulkAction, Error]]:
+) -> Optional[Union[BillingPaymentRequiredError, BulkAction, Error]]:
     """Restart many of your terminals at once - accepted at once, carried out at the pace of their cells
 
      One request for many terminals. Each terminal the filter names is judged by the same rules as `POST
@@ -123,7 +129,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[BulkAction, Error]
+        Union[BillingPaymentRequiredError, BulkAction, Error]
     """
 
     return sync_detailed(
@@ -138,7 +144,7 @@ async def asyncio_detailed(
     client: Union[AuthenticatedClient, Client],
     body: BulkTerminalAsk,
     idempotency_key: str,
-) -> Response[Union[BulkAction, Error]]:
+) -> Response[Union[BillingPaymentRequiredError, BulkAction, Error]]:
     """Restart many of your terminals at once - accepted at once, carried out at the pace of their cells
 
      One request for many terminals. Each terminal the filter names is judged by the same rules as `POST
@@ -159,7 +165,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[BulkAction, Error]]
+        Response[Union[BillingPaymentRequiredError, BulkAction, Error]]
     """
 
     kwargs = _get_kwargs(
@@ -177,7 +183,7 @@ async def asyncio(
     client: Union[AuthenticatedClient, Client],
     body: BulkTerminalAsk,
     idempotency_key: str,
-) -> Optional[Union[BulkAction, Error]]:
+) -> Optional[Union[BillingPaymentRequiredError, BulkAction, Error]]:
     """Restart many of your terminals at once - accepted at once, carried out at the pace of their cells
 
      One request for many terminals. Each terminal the filter names is judged by the same rules as `POST
@@ -198,7 +204,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[BulkAction, Error]
+        Union[BillingPaymentRequiredError, BulkAction, Error]
     """
 
     return (

@@ -13,6 +13,7 @@ from typing import (
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
+from ..models.copy_options_when_risk_unchecked import CopyOptionsWhenRiskUnchecked
 from ..types import UNSET, Unset
 
 T = TypeVar("T", bound="CopyOptions")
@@ -31,6 +32,10 @@ class CopyOptions:
             skipped with skip_pending Default: False.
         close_only (Union[Unset, bool]): Copy closes only, so the follower winds down what it copied Default: False.
         delay_ms (Union[Unset, int]): Wait this long before sending each copy Default: 0.
+        when_risk_unchecked (Union[Unset, CopyOptionsWhenRiskUnchecked]): When the follower account is protected by Risk
+            Management (an active policy or a challenge in progress) and its copy host cannot yet check a copy against it:
+            refuse refuses the copy with risk_rule (reason risk_inputs_stale); copy copies it unchecked. Once the host can
+            check, every copy is checked whatever this says Default: CopyOptionsWhenRiskUnchecked.REFUSE.
     """
 
     reverse: Union[Unset, bool] = False
@@ -40,6 +45,9 @@ class CopyOptions:
     skip_pending: Union[Unset, bool] = False
     close_only: Union[Unset, bool] = False
     delay_ms: Union[Unset, int] = 0
+    when_risk_unchecked: Union[Unset, CopyOptionsWhenRiskUnchecked] = (
+        CopyOptionsWhenRiskUnchecked.REFUSE
+    )
 
     def to_dict(self) -> dict[str, Any]:
         reverse = self.reverse
@@ -55,6 +63,10 @@ class CopyOptions:
         close_only = self.close_only
 
         delay_ms = self.delay_ms
+
+        when_risk_unchecked: Union[Unset, str] = UNSET
+        if not isinstance(self.when_risk_unchecked, Unset):
+            when_risk_unchecked = self.when_risk_unchecked.value
 
         field_dict: dict[str, Any] = {}
 
@@ -73,6 +85,8 @@ class CopyOptions:
             field_dict["close_only"] = close_only
         if delay_ms is not UNSET:
             field_dict["delay_ms"] = delay_ms
+        if when_risk_unchecked is not UNSET:
+            field_dict["when_risk_unchecked"] = when_risk_unchecked
 
         return field_dict
 
@@ -93,6 +107,13 @@ class CopyOptions:
 
         delay_ms = d.pop("delay_ms", UNSET)
 
+        _when_risk_unchecked = d.pop("when_risk_unchecked", UNSET)
+        when_risk_unchecked: Union[Unset, CopyOptionsWhenRiskUnchecked]
+        if isinstance(_when_risk_unchecked, Unset):
+            when_risk_unchecked = UNSET
+        else:
+            when_risk_unchecked = CopyOptionsWhenRiskUnchecked._read(_when_risk_unchecked)
+
         copy_options = cls(
             reverse=reverse,
             copy_sl=copy_sl,
@@ -101,6 +122,7 @@ class CopyOptions:
             skip_pending=skip_pending,
             close_only=close_only,
             delay_ms=delay_ms,
+            when_risk_unchecked=when_risk_unchecked,
         )
 
         return copy_options

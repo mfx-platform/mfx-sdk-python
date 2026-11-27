@@ -111,9 +111,9 @@ class MdSubscriptionRecovered:
 
         symbol = d.pop("symbol")
 
-        reason = MdSubscriptionRecoveredReason(d.pop("reason"))
+        reason = MdSubscriptionRecoveredReason._read(d.pop("reason"))
 
-        cause = MdSubscriptionRecoveredCause(d.pop("cause"))
+        cause = MdSubscriptionRecoveredCause._read(d.pop("cause"))
 
         since = isoparse(d.pop("since"))
 

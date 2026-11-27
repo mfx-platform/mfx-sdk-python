@@ -90,7 +90,7 @@ class CopyDrift:
 
         account_id = UUID(d.pop("account_id"))
 
-        venue = Venue(d.pop("venue"))
+        venue = Venue._read(d.pop("venue"))
 
         drift_pct = d.pop("drift_pct")
 

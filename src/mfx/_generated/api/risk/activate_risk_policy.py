@@ -6,6 +6,7 @@ import httpx
 
 from ... import errors
 from ...client import AuthenticatedClient, Client
+from ...models.billing_payment_required_error import BillingPaymentRequiredError
 from ...models.error import Error
 from ...models.risk_activate import RiskActivate
 from ...models.risk_activation_result import RiskActivationResult
@@ -38,11 +39,16 @@ def _get_kwargs(
 
 def _parse_response(
     *, client: Union[AuthenticatedClient, Client], response: httpx.Response
-) -> Union[Error, RiskActivationResult]:
+) -> Union[BillingPaymentRequiredError, Error, RiskActivationResult]:
     if response.status_code == 200:
         response_200 = RiskActivationResult.from_dict(response.json())
 
         return response_200
+
+    if response.status_code == 402:
+        response_402 = BillingPaymentRequiredError.from_dict(response.json())
+
+        return response_402
 
     response_default = Error.from_dict(response.json())
 
@@ -51,7 +57,7 @@ def _parse_response(
 
 def _build_response(
     *, client: Union[AuthenticatedClient, Client], response: httpx.Response
-) -> Response[Union[Error, RiskActivationResult]]:
+) -> Response[Union[BillingPaymentRequiredError, Error, RiskActivationResult]]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -66,12 +72,16 @@ def sync_detailed(
     client: Union[AuthenticatedClient, Client],
     body: RiskActivate,
     idempotency_key: str,
-) -> Response[Union[Error, RiskActivationResult]]:
+) -> Response[Union[BillingPaymentRequiredError, Error, RiskActivationResult]]:
     """Put a version in force on accounts; each account's outcome is answered separately
 
      An account holds one active policy. Activating a version that relaxes the one in force on an account
     needs `risk:override` and a `reason`, for that account. Takes effect on the next account read.
-    `risk.policy_activated` is sent for each account that changed.
+    `risk.policy_activated` is sent for each account that changed. An account that holds a drawdown peak
+    keeps it when another version or policy is activated on it, so a version whose trailing drawdown
+    measures its peak on the other basis (`equity` or `balance`) is refused for that account with
+    `drawdown_peak_held`: deactivate the account, then activate, to start a fresh peak. With no peak
+    held, it goes through.
 
     Args:
         id (UUID):
@@ -83,7 +93,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[Error, RiskActivationResult]]
+        Response[Union[BillingPaymentRequiredError, Error, RiskActivationResult]]
     """
 
     kwargs = _get_kwargs(
@@ -105,12 +115,16 @@ def sync(
     client: Union[AuthenticatedClient, Client],
     body: RiskActivate,
     idempotency_key: str,
-) -> Optional[Union[Error, RiskActivationResult]]:
+) -> Optional[Union[BillingPaymentRequiredError, Error, RiskActivationResult]]:
     """Put a version in force on accounts; each account's outcome is answered separately
 
      An account holds one active policy. Activating a version that relaxes the one in force on an account
     needs `risk:override` and a `reason`, for that account. Takes effect on the next account read.
-    `risk.policy_activated` is sent for each account that changed.
+    `risk.policy_activated` is sent for each account that changed. An account that holds a drawdown peak
+    keeps it when another version or policy is activated on it, so a version whose trailing drawdown
+    measures its peak on the other basis (`equity` or `balance`) is refused for that account with
+    `drawdown_peak_held`: deactivate the account, then activate, to start a fresh peak. With no peak
+    held, it goes through.
 
     Args:
         id (UUID):
@@ -122,7 +136,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[Error, RiskActivationResult]
+        Union[BillingPaymentRequiredError, Error, RiskActivationResult]
     """
 
     return sync_detailed(
@@ -139,12 +153,16 @@ async def asyncio_detailed(
     client: Union[AuthenticatedClient, Client],
     body: RiskActivate,
     idempotency_key: str,
-) -> Response[Union[Error, RiskActivationResult]]:
+) -> Response[Union[BillingPaymentRequiredError, Error, RiskActivationResult]]:
     """Put a version in force on accounts; each account's outcome is answered separately
 
      An account holds one active policy. Activating a version that relaxes the one in force on an account
     needs `risk:override` and a `reason`, for that account. Takes effect on the next account read.
-    `risk.policy_activated` is sent for each account that changed.
+    `risk.policy_activated` is sent for each account that changed. An account that holds a drawdown peak
+    keeps it when another version or policy is activated on it, so a version whose trailing drawdown
+    measures its peak on the other basis (`equity` or `balance`) is refused for that account with
+    `drawdown_peak_held`: deactivate the account, then activate, to start a fresh peak. With no peak
+    held, it goes through.
 
     Args:
         id (UUID):
@@ -156,7 +174,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[Error, RiskActivationResult]]
+        Response[Union[BillingPaymentRequiredError, Error, RiskActivationResult]]
     """
 
     kwargs = _get_kwargs(
@@ -176,12 +194,16 @@ async def asyncio(
     client: Union[AuthenticatedClient, Client],
     body: RiskActivate,
     idempotency_key: str,
-) -> Optional[Union[Error, RiskActivationResult]]:
+) -> Optional[Union[BillingPaymentRequiredError, Error, RiskActivationResult]]:
     """Put a version in force on accounts; each account's outcome is answered separately
 
      An account holds one active policy. Activating a version that relaxes the one in force on an account
     needs `risk:override` and a `reason`, for that account. Takes effect on the next account read.
-    `risk.policy_activated` is sent for each account that changed.
+    `risk.policy_activated` is sent for each account that changed. An account that holds a drawdown peak
+    keeps it when another version or policy is activated on it, so a version whose trailing drawdown
+    measures its peak on the other basis (`equity` or `balance`) is refused for that account with
+    `drawdown_peak_held`: deactivate the account, then activate, to start a fresh peak. With no peak
+    held, it goes through.
 
     Args:
         id (UUID):
@@ -193,7 +215,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[Error, RiskActivationResult]
+        Union[BillingPaymentRequiredError, Error, RiskActivationResult]
     """
 
     return (

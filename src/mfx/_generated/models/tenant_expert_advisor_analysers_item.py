@@ -73,9 +73,9 @@ class TenantExpertAdvisorAnalysersItem:
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         d = dict(src_dict)
-        analyser = TenantExpertAdvisorAnalysersItemAnalyser(d.pop("analyser"))
+        analyser = TenantExpertAdvisorAnalysersItemAnalyser._read(d.pop("analyser"))
 
-        state = TenantExpertAdvisorAnalysersItemState(d.pop("state"))
+        state = TenantExpertAdvisorAnalysersItemState._read(d.pop("state"))
 
         def _parse_finished_at(data: object) -> Union[None, datetime.datetime]:
             if data is None:

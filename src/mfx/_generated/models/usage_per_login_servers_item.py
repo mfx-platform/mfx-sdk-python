@@ -121,7 +121,9 @@ class UsagePerLoginServersItem:
             try:
                 if not isinstance(data, str):
                     raise TypeError()
-                max_sessions_source_type_1 = UsagePerLoginServersItemMaxSessionsSourceType1(data)
+                max_sessions_source_type_1 = UsagePerLoginServersItemMaxSessionsSourceType1._read(
+                    data
+                )
 
                 return max_sessions_source_type_1
             except:  # noqa: E722
@@ -130,7 +132,7 @@ class UsagePerLoginServersItem:
                 if not isinstance(data, str):
                     raise TypeError()
                 max_sessions_source_type_2_type_1 = (
-                    UsagePerLoginServersItemMaxSessionsSourceType2Type1(data)
+                    UsagePerLoginServersItemMaxSessionsSourceType2Type1._read(data)
                 )
 
                 return max_sessions_source_type_2_type_1
@@ -140,7 +142,7 @@ class UsagePerLoginServersItem:
                 if not isinstance(data, str):
                     raise TypeError()
                 max_sessions_source_type_3_type_1 = (
-                    UsagePerLoginServersItemMaxSessionsSourceType3Type1(data)
+                    UsagePerLoginServersItemMaxSessionsSourceType3Type1._read(data)
                 )
 
                 return max_sessions_source_type_3_type_1

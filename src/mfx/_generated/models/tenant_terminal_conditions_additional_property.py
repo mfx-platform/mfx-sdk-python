@@ -170,7 +170,7 @@ class TenantTerminalConditionsAdditionalProperty:
         if isinstance(_status, Unset):
             status = UNSET
         else:
-            status = TenantTerminalConditionsAdditionalPropertyStatus(_status)
+            status = TenantTerminalConditionsAdditionalPropertyStatus._read(_status)
 
         def _parse_reason(data: object) -> Union[None, Unset, str]:
             if data is None:
@@ -214,8 +214,8 @@ class TenantTerminalConditionsAdditionalProperty:
             try:
                 if not isinstance(data, str):
                     raise TypeError()
-                attributed_to_type_1 = TenantTerminalConditionsAdditionalPropertyAttributedToType1(
-                    data
+                attributed_to_type_1 = (
+                    TenantTerminalConditionsAdditionalPropertyAttributedToType1._read(data)
                 )
 
                 return attributed_to_type_1
@@ -225,7 +225,7 @@ class TenantTerminalConditionsAdditionalProperty:
                 if not isinstance(data, str):
                     raise TypeError()
                 attributed_to_type_2_type_1 = (
-                    TenantTerminalConditionsAdditionalPropertyAttributedToType2Type1(data)
+                    TenantTerminalConditionsAdditionalPropertyAttributedToType2Type1._read(data)
                 )
 
                 return attributed_to_type_2_type_1
@@ -235,7 +235,7 @@ class TenantTerminalConditionsAdditionalProperty:
                 if not isinstance(data, str):
                     raise TypeError()
                 attributed_to_type_3_type_1 = (
-                    TenantTerminalConditionsAdditionalPropertyAttributedToType3Type1(data)
+                    TenantTerminalConditionsAdditionalPropertyAttributedToType3Type1._read(data)
                 )
 
                 return attributed_to_type_3_type_1
@@ -279,8 +279,8 @@ class TenantTerminalConditionsAdditionalProperty:
             try:
                 if not isinstance(data, str):
                     raise TypeError()
-                refusal_kind_type_1 = TenantTerminalConditionsAdditionalPropertyRefusalKindType1(
-                    data
+                refusal_kind_type_1 = (
+                    TenantTerminalConditionsAdditionalPropertyRefusalKindType1._read(data)
                 )
 
                 return refusal_kind_type_1
@@ -290,7 +290,7 @@ class TenantTerminalConditionsAdditionalProperty:
                 if not isinstance(data, str):
                     raise TypeError()
                 refusal_kind_type_2_type_1 = (
-                    TenantTerminalConditionsAdditionalPropertyRefusalKindType2Type1(data)
+                    TenantTerminalConditionsAdditionalPropertyRefusalKindType2Type1._read(data)
                 )
 
                 return refusal_kind_type_2_type_1
@@ -300,7 +300,7 @@ class TenantTerminalConditionsAdditionalProperty:
                 if not isinstance(data, str):
                     raise TypeError()
                 refusal_kind_type_3_type_1 = (
-                    TenantTerminalConditionsAdditionalPropertyRefusalKindType3Type1(data)
+                    TenantTerminalConditionsAdditionalPropertyRefusalKindType3Type1._read(data)
                 )
 
                 return refusal_kind_type_3_type_1

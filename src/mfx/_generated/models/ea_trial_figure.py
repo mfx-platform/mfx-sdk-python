@@ -84,7 +84,7 @@ class EaTrialFigure:
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         d = dict(src_dict)
-        key = EaTrialFigureKey(d.pop("key"))
+        key = EaTrialFigureKey._read(d.pop("key"))
 
         label = d.pop("label")
 
@@ -115,7 +115,7 @@ class EaTrialFigure:
             try:
                 if not isinstance(data, str):
                     raise TypeError()
-                grade_type_1 = EaTrialFigureGradeType1(data)
+                grade_type_1 = EaTrialFigureGradeType1._read(data)
 
                 return grade_type_1
             except:  # noqa: E722
@@ -123,7 +123,7 @@ class EaTrialFigure:
             try:
                 if not isinstance(data, str):
                     raise TypeError()
-                grade_type_2_type_1 = EaTrialFigureGradeType2Type1(data)
+                grade_type_2_type_1 = EaTrialFigureGradeType2Type1._read(data)
 
                 return grade_type_2_type_1
             except:  # noqa: E722
@@ -131,7 +131,7 @@ class EaTrialFigure:
             try:
                 if not isinstance(data, str):
                     raise TypeError()
-                grade_type_3_type_1 = EaTrialFigureGradeType3Type1(data)
+                grade_type_3_type_1 = EaTrialFigureGradeType3Type1._read(data)
 
                 return grade_type_3_type_1
             except:  # noqa: E722

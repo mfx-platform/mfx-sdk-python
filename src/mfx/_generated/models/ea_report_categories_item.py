@@ -49,9 +49,9 @@ class EaReportCategoriesItem:
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         d = dict(src_dict)
-        group = EaRuleGroup(d.pop("group"))
+        group = EaRuleGroup._read(d.pop("group"))
 
-        colour = EaColour(d.pop("colour"))
+        colour = EaColour._read(d.pop("colour"))
 
         findings = d.pop("findings")
 

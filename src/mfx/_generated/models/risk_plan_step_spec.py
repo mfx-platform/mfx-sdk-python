@@ -30,7 +30,7 @@ class RiskPlanStepSpec:
     Attributes:
         trigger (RiskPlanStepSpecTrigger):
         action (RiskPlanStepSpecAction):
-        held_by (RiskPlanStepSpecHeldBy): broker: survives MFX Hub being down. mfx: needs the cell and the terminal
+        held_by (RiskPlanStepSpecHeldBy): broker: survives MFX Hub being down. mfx: needs the platform and the terminal
     """
 
     trigger: "RiskPlanStepSpecTrigger"
@@ -70,7 +70,7 @@ class RiskPlanStepSpec:
 
         action = RiskPlanStepSpecAction.from_dict(d.pop("action"))
 
-        held_by = RiskPlanStepSpecHeldBy(d.pop("held_by"))
+        held_by = RiskPlanStepSpecHeldBy._read(d.pop("held_by"))
 
         risk_plan_step_spec = cls(
             trigger=trigger,

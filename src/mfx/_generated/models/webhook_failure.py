@@ -101,7 +101,7 @@ class WebhookFailure:
 
         event_type = d.pop("event_type")
 
-        state = WebhookFailureState(d.pop("state"))
+        state = WebhookFailureState._read(d.pop("state"))
 
         attempts = []
         _attempts = d.pop("attempts")

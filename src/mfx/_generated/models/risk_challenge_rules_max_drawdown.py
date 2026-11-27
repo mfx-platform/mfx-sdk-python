@@ -61,7 +61,7 @@ class RiskChallengeRulesMaxDrawdown:
         from ..models.risk_amount import RiskAmount
 
         d = dict(src_dict)
-        kind = RiskChallengeRulesMaxDrawdownKind(d.pop("kind"))
+        kind = RiskChallengeRulesMaxDrawdownKind._read(d.pop("kind"))
 
         limit = RiskAmount.from_dict(d.pop("limit"))
 

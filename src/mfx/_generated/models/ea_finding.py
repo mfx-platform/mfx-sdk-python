@@ -24,7 +24,7 @@ T = TypeVar("T", bound="EaFinding")
 
 @_attrs_define
 class EaFinding:
-    """One finding of a report. `evidence` is quoted from the source at the lines named; a finding of the AI review whose
+    """One finding of a report. `evidence` is quoted from the source at the lines named; a finding of the review whose
     evidence is not there is dropped before the report is made. A found secret is masked wherever it appears.
 
         Attributes:
@@ -107,13 +107,13 @@ class EaFinding:
         d = dict(src_dict)
         rule_id = d.pop("rule_id")
 
-        group = EaRuleGroup(d.pop("group"))
+        group = EaRuleGroup._read(d.pop("group"))
 
         name = d.pop("name")
 
-        colour = EaFindingColour(d.pop("colour"))
+        colour = EaFindingColour._read(d.pop("colour"))
 
-        found_by = EaFindingFoundBy(d.pop("found_by"))
+        found_by = EaFindingFoundBy._read(d.pop("found_by"))
 
         def _parse_file(data: object) -> Union[None, str]:
             if data is None:

@@ -96,7 +96,7 @@ class EaTrial:
         from ..models.ea_trial_figure import EaTrialFigure
 
         d = dict(src_dict)
-        state = EaTrialState(d.pop("state"))
+        state = EaTrialState._read(d.pop("state"))
 
         started_at = isoparse(d.pop("started_at"))
 
@@ -123,7 +123,7 @@ class EaTrial:
             try:
                 if not isinstance(data, str):
                     raise TypeError()
-                verdict_type_0 = EaColour(data)
+                verdict_type_0 = EaColour._read(data)
 
                 return verdict_type_0
             except:  # noqa: E722

@@ -51,7 +51,7 @@ class UsageTenantTerminals:
 
         used = d.pop("used")
 
-        source = UsageTenantTerminalsSource(d.pop("source"))
+        source = UsageTenantTerminalsSource._read(d.pop("source"))
 
         usage_tenant_terminals = cls(
             limit=limit,

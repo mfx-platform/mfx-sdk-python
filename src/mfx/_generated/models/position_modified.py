@@ -165,7 +165,7 @@ class PositionModified:
 
         symbol = d.pop("symbol")
 
-        side = PositionModifiedSide(d.pop("side"))
+        side = PositionModifiedSide._read(d.pop("side"))
 
         volume = d.pop("volume")
 

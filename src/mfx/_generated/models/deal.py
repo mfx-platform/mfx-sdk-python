@@ -200,9 +200,9 @@ class Deal:
 
         symbol = d.pop("symbol")
 
-        side = DealSide(d.pop("side"))
+        side = DealSide._read(d.pop("side"))
 
-        entry = DealEntry(d.pop("entry"))
+        entry = DealEntry._read(d.pop("entry"))
 
         volume = d.pop("volume")
 
@@ -230,7 +230,7 @@ class Deal:
             try:
                 if not isinstance(data, str):
                     raise TypeError()
-                close_reason_type_1 = DealCloseReasonType1(data)
+                close_reason_type_1 = DealCloseReasonType1._read(data)
 
                 return close_reason_type_1
             except:  # noqa: E722
@@ -238,7 +238,7 @@ class Deal:
             try:
                 if not isinstance(data, str):
                     raise TypeError()
-                close_reason_type_2_type_1 = DealCloseReasonType2Type1(data)
+                close_reason_type_2_type_1 = DealCloseReasonType2Type1._read(data)
 
                 return close_reason_type_2_type_1
             except:  # noqa: E722
@@ -246,7 +246,7 @@ class Deal:
             try:
                 if not isinstance(data, str):
                     raise TypeError()
-                close_reason_type_3_type_1 = DealCloseReasonType3Type1(data)
+                close_reason_type_3_type_1 = DealCloseReasonType3Type1._read(data)
 
                 return close_reason_type_3_type_1
             except:  # noqa: E722

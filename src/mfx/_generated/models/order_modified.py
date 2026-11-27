@@ -169,9 +169,9 @@ class OrderModified:
 
         symbol = d.pop("symbol")
 
-        side = OrderModifiedSide(d.pop("side"))
+        side = OrderModifiedSide._read(d.pop("side"))
 
-        order_type = OrderModifiedOrderType(d.pop("order_type"))
+        order_type = OrderModifiedOrderType._read(d.pop("order_type"))
 
         volume = d.pop("volume")
 

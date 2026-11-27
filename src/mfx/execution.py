@@ -23,7 +23,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, replace
 from decimal import Decimal, InvalidOperation
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any, Final, Literal
 
 from mfx._generated.api.accounts import (
     cancel_trading_account_order as _acct_cancel_order,
@@ -91,7 +91,7 @@ from mfx._generated.models.position_close_by import PositionCloseBy
 from mfx._generated.models.position_close_partial import PositionClosePartial
 from mfx._generated.models.position_modify import PositionModify
 from mfx._generated.models.trailing_stop_set import TrailingStopSet
-from mfx._generated.types import UNSET
+from mfx._generated.types import UNSET, Unset
 from mfx.errors import (
     MaintenanceError,
     MfxApiError,
@@ -154,6 +154,29 @@ def _decimal(name: str, value: Amount) -> str:
     if not number.is_finite() or number < 0:
         raise ValueError(f"{name} must be a finite, non-negative decimal, not {value!r}")
     return format(number, "f")
+
+
+#: The longest comment the terminal keeps whole (the contract's ``maxLength``), in characters.
+COMMENT_MAX: Final = 31
+
+
+def _comment(comment: str | None) -> str | Unset:
+    """An order's or a close's comment as sent, refused here when it is longer than
+    :data:`COMMENT_MAX`.
+
+    The terminal cuts a longer comment without saying so, and a caller who tells its orders apart by
+    comment would then find one it cannot recognise. Counted in characters (Unicode code points),
+    as the contract's ``maxLength`` counts them. A caller's mistake, raised at the call site like a
+    float volume, rather than an order sent for the platform to refuse.
+    """
+    if comment is None:
+        return UNSET
+    if len(comment) > COMMENT_MAX:
+        raise ValueError(
+            f"comment is at most {COMMENT_MAX} characters; the terminal would cut a longer one "
+            f"({len(comment)} given)"
+        )
+    return comment
 
 
 #: How often wait_for asks, and the longest it will ever sleep between asks. Execution results
@@ -240,8 +263,9 @@ class Execution:
         """Place a market or pending order.
 
         ``symbol`` is the broker's own name (``EURUSD.sd``): MFX never renames an instrument on a
-        tenant's behalf. ``comment`` longer than 31 characters is refused rather than
-        truncated, because MT5 cuts it without saying so.
+        tenant's behalf. ``comment`` longer than 31 characters raises ``ValueError`` here, before
+        anything is sent, rather than being truncated, because the terminal cuts it without saying
+        so.
 
         A ``stop_limit`` order has two prices: ``price`` is the stop
         price, where the order wakes up, and ``stop_limit_price`` is the limit order placed when
@@ -249,7 +273,18 @@ class Execution:
         type; the platform says so, and the refusal comes back as the result.
 
         ``volume``, ``price``, ``stop_limit_price``, ``sl`` and ``tp`` take a ``Decimal``, a
-        string or an int, and **refuse a float** — see :func:`_decimal`.
+        string or an int, and **refuse a float**: a computed float carries binary error, and the
+        platform takes decimals as strings so nothing is lost.
+
+        Args:
+            terminal_id: The terminal to act on. Another tenant's id answers 404, never 403.
+            side: ``"buy"`` or ``"sell"``.
+            idempotency_key: Required on every write and never defaulted. Sending again with the
+                same key answers the original; a fresh key asks for a new action.
+            order_type: ``"market"`` (the default), ``"limit"``, ``"stop"`` or ``"stop_limit"``.
+            deviation_points: The largest slippage you accept on a market order, in points.
+            expires_at: When a pending order expires. Timezone-aware.
+            magic: Your own integer tag on the order, returned on every deal it makes.
         """
         body = OrderPlace(
             symbol=symbol,
@@ -267,7 +302,7 @@ class Execution:
             deviation_points=deviation_points if deviation_points is not None else UNSET,
             expires_at=expires_at if expires_at is not None else UNSET,
             magic=magic if magic is not None else UNSET,
-            comment=comment if comment is not None else UNSET,
+            comment=_comment(comment),
         )
         return await self._command(
             lambda: self._routes.place.asyncio_detailed(
@@ -283,7 +318,14 @@ class Execution:
     async def cancel_order(
         self, terminal_id: Id, ticket: int, *, idempotency_key: str
     ) -> ExecutionResult:
-        """Cancel a pending order. First class, not a modify with a special case."""
+        """Cancel a pending order. First class, not a modify with a special case.
+
+        Args:
+            terminal_id: The terminal to act on. Another tenant's id answers 404, never 403.
+            ticket: The order's or position's ticket number on the broker.
+            idempotency_key: Required on every write and never defaulted. Sending again with the
+                same key answers the original; a fresh key asks for a new action.
+        """
         return await self._command(
             lambda: self._routes.cancel.asyncio_detailed(
                 id=_uuid(terminal_id),
@@ -304,7 +346,16 @@ class Execution:
         sl: Amount | None = None,
         tp: Amount | None = None,
     ) -> ExecutionResult:
-        """Move the stop loss, the take profit, or both. At least one is required."""
+        """Move the stop loss, the take profit, or both. At least one is required.
+
+        Args:
+            terminal_id: The terminal to act on. Another tenant's id answers 404, never 403.
+            ticket: The order's or position's ticket number on the broker.
+            idempotency_key: Required on every write and never defaulted. Sending again with the
+                same key answers the original; a fresh key asks for a new action.
+            sl: Stop loss price, as a ``Decimal``, a string or an int.
+            tp: Take profit price, as a ``Decimal``, a string or an int.
+        """
         if sl is None and tp is None:
             raise ValueError("modify_position needs sl, tp, or both")
         body = PositionModify(
@@ -343,11 +394,17 @@ class Execution:
         out keeps the order's own, ``None`` makes it good-till-cancelled, and a time sets it.
         Volume, side, type and symbol cannot be amended — a tenant cancels and places again.
 
-        ``stop_limit_price`` is a stop-limit order's second price (2.14); on any other order
-        the cell refuses it, and the refusal comes back as the result.
+        ``stop_limit_price`` is a stop-limit order's second price; on any other order the
+        platform refuses it, and the refusal comes back as the result.
 
         ``price``, ``stop_limit_price``, ``sl`` and ``tp`` take a ``Decimal``, a string or an
-        int, and **refuse a float** — see :func:`_decimal`.
+        int, and **refuse a float**, as :meth:`place_order` explains.
+
+        Args:
+            terminal_id: The terminal to act on. Another tenant's id answers 404, never 403.
+            ticket: The order's or position's ticket number on the broker.
+            idempotency_key: Required on every write and never defaulted. Sending again with the
+                same key answers the original; a fresh key asks for a new action.
         """
         nothing_to_change = (
             price is None
@@ -388,14 +445,25 @@ class Execution:
         *,
         idempotency_key: str,
         deviation_points: int | None = None,
+        comment: str | None = None,
     ) -> ExecutionResult:
         """Close a position in full.
 
-        No comment parameter: PositionClose has no such field and forbids extras, so one would be
-        refused by the platform rather than ignored.
+        ``comment`` is written on the closing deal (``Deal.comment``), so a caller can tell its
+        own closes apart; without one the deal takes the position's own comment, and the
+        position keeps its comment either way. Longer than 31 characters raises ``ValueError``
+        here, before anything is sent, as :meth:`place_order` does.
+
+        Args:
+            terminal_id: The terminal to act on. Another tenant's id answers 404, never 403.
+            ticket: The order's or position's ticket number on the broker.
+            idempotency_key: Required on every write and never defaulted. Sending again with the
+                same key answers the original; a fresh key asks for a new action.
+            deviation_points: The largest slippage you accept on a market order, in points.
         """
         body = PositionClose(
-            deviation_points=deviation_points if deviation_points is not None else UNSET
+            deviation_points=deviation_points if deviation_points is not None else UNSET,
+            comment=_comment(comment),
         )
         return await self._command(
             lambda: self._routes.close.asyncio_detailed(
@@ -427,6 +495,11 @@ class Execution:
         Two tickets that are not open positions of the account, in one symbol, on opposite
         sides are refused before the broker is asked - which is also what a netting account
         gets, since there the two cannot both exist. The refusal comes back as the result.
+
+        Args:
+            terminal_id: The terminal to act on. Another tenant's id answers 404, never 403.
+            idempotency_key: Required on every write and never defaulted. Sending again with the
+                same key answers the original; a fresh key asks for a new action.
         """
         body = PositionCloseBy(by_ticket=by_ticket)
         return await self._command(
@@ -449,14 +522,25 @@ class Execution:
         volume: Amount,
         idempotency_key: str,
         deviation_points: int | None = None,
+        comment: str | None = None,
     ) -> ExecutionResult:
         """Close part of a position — the volume to close, inside the symbol's step.
 
-        Takes a ``Decimal``, a string or an int and refuses a float.
+        Takes a ``Decimal``, a string or an int and refuses a float. ``comment`` is written on
+        the closing deal, as for :meth:`close_position`, and the same 31-character limit holds.
+
+        Args:
+            terminal_id: The terminal to act on. Another tenant's id answers 404, never 403.
+            ticket: The order's or position's ticket number on the broker.
+            volume: Lots, as a ``Decimal``, a string or an int. A float is refused.
+            idempotency_key: Required on every write and never defaulted. Sending again with the
+                same key answers the original; a fresh key asks for a new action.
+            deviation_points: The largest slippage you accept on a market order, in points.
         """
         body = PositionClosePartial(
             volume=_decimal("volume", volume),
             deviation_points=deviation_points if deviation_points is not None else UNSET,
+            comment=_comment(comment),
         )
         return await self._command(
             lambda: self._routes.close_partial.asyncio_detailed(
@@ -481,12 +565,18 @@ class Execution:
         """Keep the position's stop loss ``distance`` behind the best price it reaches.
 
         ``distance`` is a price difference above zero - ``Decimal("0.0020")`` on EURUSD is twenty
-        pips - and a ``float`` is refused. The worker on the cell moves the broker's stop,
+        pips - and a ``float`` is refused. The platform moves the broker's stop,
         only ever tighter, at most once a second and by at least a tenth of the distance. Setting
         again replaces the distance and keeps what the stop has reached. A stop loss set by anyone
         else ends it, and the stream says so (``position.trailing_stop_changed``). Refused as a
         result with ``invalid_stops`` when the distance is inside the symbol's stops level, and
         ``invalid_request`` when the ticket is not an open position of the account.
+
+        Args:
+            terminal_id: The terminal to act on. Another tenant's id answers 404, never 403.
+            ticket: The order's or position's ticket number on the broker.
+            idempotency_key: Required on every write and never defaulted. Sending again with the
+                same key answers the original; a fresh key asks for a new action.
         """
         body = TrailingStopSet(distance=_decimal("distance", distance))
         return await self._command(
@@ -504,7 +594,14 @@ class Execution:
     async def clear_trailing_stop(
         self, terminal_id: Id, ticket: int, *, idempotency_key: str
     ) -> ExecutionResult:
-        """Remove the position's trailing stop. The stop loss stays where the trail left it."""
+        """Remove the position's trailing stop. The stop loss stays where the trail left it.
+
+        Args:
+            terminal_id: The terminal to act on. Another tenant's id answers 404, never 403.
+            ticket: The order's or position's ticket number on the broker.
+            idempotency_key: Required on every write and never defaulted. Sending again with the
+                same key answers the original; a fresh key asks for a new action.
+        """
         return await self._command(
             lambda: self._routes.clear_trailing.asyncio_detailed(
                 id=_uuid(terminal_id),
@@ -521,6 +618,9 @@ class Execution:
 
         Reading is on the execution boundary too: a caller checking what happened to an order must
         not have to catch an exception to find out that it cannot tell.
+
+        Args:
+            command_id: The command's id, from an earlier result.
         """
         return await self._command(
             lambda: _get_command.asyncio_detailed(
@@ -539,6 +639,9 @@ class Execution:
         Returns the last answer either way — a command that is still EXECUTING when the time runs
         out is reported as it is, not raised and not guessed at. **A non-final result is never a
         licence to re-send**: an UNKNOWN command may already be a position.
+
+        Args:
+            command_id: The command's id, from an earlier result.
         """
         deadline = self._client.wall() + timeout_s
         wait = _POLL_FROM_S

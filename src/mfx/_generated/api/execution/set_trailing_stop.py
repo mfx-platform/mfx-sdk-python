@@ -6,6 +6,7 @@ import httpx
 
 from ... import errors
 from ...client import AuthenticatedClient, Client
+from ...models.billing_payment_required_error import BillingPaymentRequiredError
 from ...models.command_accepted import CommandAccepted
 from ...models.error import Error
 from ...models.trailing_stop_set import TrailingStopSet
@@ -40,11 +41,16 @@ def _get_kwargs(
 
 def _parse_response(
     *, client: Union[AuthenticatedClient, Client], response: httpx.Response
-) -> Union[CommandAccepted, Error]:
+) -> Union[BillingPaymentRequiredError, CommandAccepted, Error]:
     if response.status_code == 202:
         response_202 = CommandAccepted.from_dict(response.json())
 
         return response_202
+
+    if response.status_code == 402:
+        response_402 = BillingPaymentRequiredError.from_dict(response.json())
+
+        return response_402
 
     response_default = Error.from_dict(response.json())
 
@@ -53,7 +59,7 @@ def _parse_response(
 
 def _build_response(
     *, client: Union[AuthenticatedClient, Client], response: httpx.Response
-) -> Response[Union[CommandAccepted, Error]]:
+) -> Response[Union[BillingPaymentRequiredError, CommandAccepted, Error]]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -69,7 +75,7 @@ def sync_detailed(
     client: Union[AuthenticatedClient, Client],
     body: TrailingStopSet,
     idempotency_key: str,
-) -> Response[Union[CommandAccepted, Error]]:
+) -> Response[Union[BillingPaymentRequiredError, CommandAccepted, Error]]:
     """Set or change a position's trailing stop, kept by the platform
 
      The platform keeps the record first, then a `TRAILING_STOP_SET` command carries it to the cell. If a
@@ -93,7 +99,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[CommandAccepted, Error]]
+        Response[Union[BillingPaymentRequiredError, CommandAccepted, Error]]
     """
 
     kwargs = _get_kwargs(
@@ -117,7 +123,7 @@ def sync(
     client: Union[AuthenticatedClient, Client],
     body: TrailingStopSet,
     idempotency_key: str,
-) -> Optional[Union[CommandAccepted, Error]]:
+) -> Optional[Union[BillingPaymentRequiredError, CommandAccepted, Error]]:
     """Set or change a position's trailing stop, kept by the platform
 
      The platform keeps the record first, then a `TRAILING_STOP_SET` command carries it to the cell. If a
@@ -141,7 +147,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[CommandAccepted, Error]
+        Union[BillingPaymentRequiredError, CommandAccepted, Error]
     """
 
     return sync_detailed(
@@ -160,7 +166,7 @@ async def asyncio_detailed(
     client: Union[AuthenticatedClient, Client],
     body: TrailingStopSet,
     idempotency_key: str,
-) -> Response[Union[CommandAccepted, Error]]:
+) -> Response[Union[BillingPaymentRequiredError, CommandAccepted, Error]]:
     """Set or change a position's trailing stop, kept by the platform
 
      The platform keeps the record first, then a `TRAILING_STOP_SET` command carries it to the cell. If a
@@ -184,7 +190,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[CommandAccepted, Error]]
+        Response[Union[BillingPaymentRequiredError, CommandAccepted, Error]]
     """
 
     kwargs = _get_kwargs(
@@ -206,7 +212,7 @@ async def asyncio(
     client: Union[AuthenticatedClient, Client],
     body: TrailingStopSet,
     idempotency_key: str,
-) -> Optional[Union[CommandAccepted, Error]]:
+) -> Optional[Union[BillingPaymentRequiredError, CommandAccepted, Error]]:
     """Set or change a position's trailing stop, kept by the platform
 
      The platform keeps the record first, then a `TRAILING_STOP_SET` command carries it to the cell. If a
@@ -230,7 +236,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[CommandAccepted, Error]
+        Union[BillingPaymentRequiredError, CommandAccepted, Error]
     """
 
     return (

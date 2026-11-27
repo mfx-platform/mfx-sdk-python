@@ -98,7 +98,7 @@ class SymbolPage:
         if isinstance(_source, Unset):
             source = UNSET
         else:
-            source = SymbolPageSource(_source)
+            source = SymbolPageSource._read(_source)
 
         returned = d.pop("returned", UNSET)
 

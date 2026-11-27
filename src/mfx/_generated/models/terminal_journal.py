@@ -108,7 +108,7 @@ class TerminalJournal:
         d = dict(src_dict)
         terminal_id = UUID(d.pop("terminal_id"))
 
-        from_ = TerminalJournalFrom(d.pop("from"))
+        from_ = TerminalJournalFrom._read(d.pop("from"))
 
         read_at = isoparse(d.pop("read_at"))
 
@@ -135,7 +135,7 @@ class TerminalJournal:
             try:
                 if not isinstance(data, str):
                     raise TypeError()
-                stopped_type_1 = TerminalJournalStoppedType1(data)
+                stopped_type_1 = TerminalJournalStoppedType1._read(data)
 
                 return stopped_type_1
             except:  # noqa: E722
@@ -143,7 +143,7 @@ class TerminalJournal:
             try:
                 if not isinstance(data, str):
                     raise TypeError()
-                stopped_type_2_type_1 = TerminalJournalStoppedType2Type1(data)
+                stopped_type_2_type_1 = TerminalJournalStoppedType2Type1._read(data)
 
                 return stopped_type_2_type_1
             except:  # noqa: E722
@@ -151,7 +151,7 @@ class TerminalJournal:
             try:
                 if not isinstance(data, str):
                     raise TypeError()
-                stopped_type_3_type_1 = TerminalJournalStoppedType3Type1(data)
+                stopped_type_3_type_1 = TerminalJournalStoppedType3Type1._read(data)
 
                 return stopped_type_3_type_1
             except:  # noqa: E722

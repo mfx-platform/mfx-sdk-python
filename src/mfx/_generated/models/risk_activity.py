@@ -164,7 +164,7 @@ class RiskActivity:
 
         account_id = _parse_account_id(d.pop("account_id"))
 
-        kind = RiskActivityKind(d.pop("kind"))
+        kind = RiskActivityKind._read(d.pop("kind"))
 
         def _parse_rule(data: object) -> Union[None, str]:
             if data is None:
@@ -220,7 +220,7 @@ class RiskActivity:
 
         summary = d.pop("summary")
 
-        outcome = RiskOutcome(d.pop("outcome"))
+        outcome = RiskOutcome._read(d.pop("outcome"))
 
         items = []
         _items = d.pop("items")

@@ -83,7 +83,7 @@ class OperationAccepted:
         d = dict(src_dict)
         operation_id = UUID(d.pop("operation_id"))
 
-        state = OperationAcceptedState(d.pop("state"))
+        state = OperationAcceptedState._read(d.pop("state"))
 
         def _parse_queue(data: object) -> Union["OperationQueue", None, Unset]:
             if data is None:

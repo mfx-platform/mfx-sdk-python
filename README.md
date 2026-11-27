@@ -132,8 +132,32 @@ package:
   never refused.
 - **Credentials cannot be logged by accident.** `SigningKey` and `Secret` render as `***` in every
   repr, f-string, log line and traceback, and cannot be pickled.
+- **A word from a newer API reads, it does not fail.** When an answer carries an enum word this
+  version was not built with (a close's `cause`, a terminal's `state`), the field reads as that
+  enum's `UNKNOWN`, whose `.value` is the word as sent; a newer SDK names it. A word you send is
+  still checked against the list.
 - **Lists follow the cursor.** There are no totals and no page numbers; `list()` methods iterate
   every page, `page()` methods return one.
+- **Copy Trading** (`client.copy`, scopes `copy:read` and `copy:write`): leaders, external
+  signals, followers and their preview, stop-outs, groups (their close, rollover and exposure cap),
+  requested closes of copied positions, the leaders' signals and the copy log. Each list answers a
+  `CopyPage`, whose `stats` row counts everything the filters match, not the page; the `copy.*`
+  events (on the `events` channel, heard with `copy:read`) read as typed values with
+  `mfx.event_of`, and a refusal names one of `mfx.REFUSAL_REASONS`, a closed list.
+- **Billing** (`client.billing`, scope `billing:read`): your organisation's standing, each
+  billing profile, its forecast to month end, the prices you pay, the public price list and your
+  invoices (`invoices_page` / `invoices`). Read only, and money stays the API's exact decimal
+  strings. A missing payment refuses a write with `BillingPaymentRequiredError` (402), whose
+  `action.portal_path` is the portal page that clears it; reads keep working, and an execution
+  method returns it as a refused result.
+- **What your organisation must accept** (`client.tenant.service_agreement()`, any key): each
+  plan has its own Service Agreement, and a plan change waits until an owner or admin accepts the
+  new plan's. While a change waits, or a version of an agreement, the Terms or the MetaTrader 5
+  licence is past its grace period unaccepted, additions (a terminal, an expert advisor, an API
+  key, higher limits) are refused with `ServiceAgreementNotAccepted` (409, with `plan_change`,
+  `documents` and `accept_url`) or `TermsNotAccepted` (409, with `documents`). Nothing running is
+  refused. The first answer that says `MFX-Service-Agreement: due` logs one warning on the `mfx`
+  logger, once per client.
 - **The stream** (`client.stream()`) carries market data, candles, order book, account state, results
   and events, with resumable sequence numbers on the channels that need them.
 
@@ -143,45 +167,27 @@ Every tenant operation in the API has a typed method here except these, which yo
 with the same request signing (`mfx.signing`). A test keeps this table equal to the API, so it
 cannot drift.
 
-Risk Management's operations (`/risk/...`) are here until the SDK's risk client is released; the
-platform serves each one as its part is built.
+The contract also keeps `bulkRetireTerminals` (`POST /terminals:retire`), deprecated: the platform
+does not serve it and will not, so it is neither here nor in the SDK. Retire each terminal with
+`client.terminals.retire`.
 
 <!-- rest-only:start -->
 | Operation | Route |
 |---|---|
-| `addCopyGroupFollowers` | `POST /copy/groups/{id}/followers` |
 | `cancelTerminalOperation` | `DELETE /terminals/{id}/operations/{operation_id}` |
-| `createCopyFollower` | `POST /copy/followers` |
-| `createCopyGroup` | `POST /copy/groups` |
-| `createCopyLeader` | `POST /copy/leaders` |
 | `createRedisPushConnector` | `POST /connectors/redis-push` |
-| `getCopyFollower` | `GET /copy/followers/{id}` |
-| `getCopyGroup` | `GET /copy/groups/{id}` |
-| `getCopyLeader` | `GET /copy/leaders/{id}` |
+| `deleteServerSubscription` | `DELETE /md/servers/{id}/subscription` |
+| `getCtraderReturnOrigins` | `GET /accounts/ctrader/return-origins` |
+| `getCustody` | `GET /custody` |
+| `getExpertAdvisorParameterDefinitions` | `GET /expert-advisors/{id}/parameter-definitions` |
 | `getExpertAdvisorParameters` | `GET /terminals/{id}/expert-advisor/parameters` |
-| `listCopyFollowers` | `GET /copy/followers` |
-| `listCopyGroups` | `GET /copy/groups` |
-| `listCopyLeaders` | `GET /copy/leaders` |
-| `listCopyLog` | `GET /copy/log` |
-| `listCopyStopouts` | `GET /copy/followers/{id}/stopouts` |
-| `pauseCopyFollower` | `POST /copy/followers/{id}/pause` |
-| `pauseCopyGroup` | `POST /copy/groups/{id}/pause` |
-| `pauseCopyLeader` | `POST /copy/leaders/{id}/pause` |
-| `previewCopyFollower` | `POST /copy/followers/preview` |
+| `getRiskStops` | `GET /risk/stops` |
+| `getServerSubscription` | `GET /md/servers/{id}/subscription` |
+| `putExpertAdvisorParameterDefinitions` | `PUT /expert-advisors/{id}/parameter-definitions` |
 | `putExpertAdvisorParameters` | `PUT /terminals/{id}/expert-advisor/parameters` |
-| `removeCopyGroupFollowers` | `POST /copy/groups/{id}/followers/remove` |
-| `resetCopyStopouts` | `POST /copy/followers/{id}/stopouts/reset` |
-| `resumeCopyFollower` | `POST /copy/followers/{id}/resume` |
-| `resumeCopyGroup` | `POST /copy/groups/{id}/resume` |
-| `resumeCopyLeader` | `POST /copy/leaders/{id}/resume` |
-| `resyncCopyFollower` | `POST /copy/followers/{id}/resync` |
-| `retireCopyLeader` | `POST /copy/leaders/{id}/retire` |
-| `sendCopySignal` | `POST /copy/leaders/{id}/signals` |
+| `putServerSubscription` | `PUT /md/servers/{id}/subscription` |
+| `setCtraderReturnOrigins` | `PUT /accounts/ctrader/return-origins` |
 | `setTerminalHa` | `POST /terminals/{id}/ha` |
-| `unfollowCopyLeader` | `POST /copy/followers/{id}/unfollow` |
-| `updateCopyFollower` | `PATCH /copy/followers/{id}` |
-| `updateCopyGroup` | `PATCH /copy/groups/{id}` |
-| `updateCopyLeader` | `PATCH /copy/leaders/{id}` |
 | `updateTerminal` | `PATCH /terminals/{id}` |
 <!-- rest-only:end -->
 

@@ -15,6 +15,7 @@ import contextlib
 import json
 import os
 import random
+import threading
 import time
 import types
 from collections.abc import Awaitable, Callable, Mapping
@@ -30,7 +31,9 @@ from mfx._generated.client import Client as GeneratedClient
 from mfx._generated.types import Response as GeneratedResponse
 from mfx._version import USER_AGENT
 from mfx.accounts import Accounts
+from mfx.billing import Billing
 from mfx.catalog import Catalog
+from mfx.copy_trading import Copy
 from mfx.errors import (
     MfxApiError,
     MfxTimeout,
@@ -41,6 +44,7 @@ from mfx.errors import (
 from mfx.execution import Execution
 from mfx.expert_advisors import ExpertAdvisors, Tenant
 from mfx.farms import Farms
+from mfx.logging import get_logger
 from mfx.maintenance import Maintenance
 from mfx.md import MarketData
 from mfx.risk import Risk
@@ -51,7 +55,18 @@ from mfx.trading_accounts import TradingAccounts
 from mfx.usage import UsageReader
 from mfx.webhooks import Webhooks
 
-__all__ = ["Budget", "CallTiming", "MfxClient"]
+__all__ = ["SERVICE_AGREEMENT_WARNING", "Budget", "CallTiming", "MfxClient"]
+
+#: The header every answer carries while the organisation has an agreement to accept.
+SERVICE_AGREEMENT_HEADER: Final = "MFX-Service-Agreement"
+
+#: Logged once per client, at WARNING on the ``mfx`` logger, the first time an answer carries
+#: ``MFX-Service-Agreement: due``. The same words in every MFX SDK.
+SERVICE_AGREEMENT_WARNING: Final = (
+    "Your organisation has an agreement to accept (MFX-Service-Agreement: due): until an owner "
+    "or admin accepts it, new terminals, expert advisors and API keys may be refused. "
+    "tenant.service_agreement() says what is due and where to accept it."
+)
 
 #: A file to append one JSON line a call to: ``{"status": 200, "ms": 12.5}``. Set by the
 #: platform's check runner for each sample it runs, which reads the count, median and slowest
@@ -118,6 +133,18 @@ class MfxClient:
         wall: Callable[[], float] = time.monotonic,
         on_call: Callable[[CallTiming], None] | None = None,
     ) -> None:
+        """Build a client.
+
+        Args:
+            base_url: The API root, version included: ``https://api.mfxhub.com/v1``, or
+                ``https://api.dev.mfxhub.com/v1`` for development.
+            key_id: Your key id, issued with the key.
+            private_key: The private half of your key, shown once at issue: a
+                :class:`~mfx.signing.SigningKey`, a key object, or its text.
+            timeout_s: How long one request may take, in seconds.
+            read_retries: How many times a read is sent again after a 429. Writes never are.
+            on_call: Told about each call as it ends, with its :class:`CallTiming`.
+        """
         self._wall = wall
         #: Told each call as it ends (``CallTiming``); ``MFX_CALL_LOG`` is the same, as a file.
         self._on_call = on_call
@@ -139,21 +166,41 @@ class MfxClient:
         # The generated core builds and parses; this client sends. It is handed our httpx client so
         # every generated call is signed, budgeted and retried by the same rules.
         self._generated = GeneratedClient(base_url=base_url.rstrip("/"))
+        # One warning per client: the flag is set under the lock, so answers arriving together -
+        # concurrent tasks here, a SyncMfxClient's callers on several threads - log it once.
+        self._agreement_warned = False
+        self._agreement_lock = threading.Lock()
         self._generated.set_async_httpx_client(self._http)
+        #: Terminals: provision, inspect, restart, drain, resume and retire.
         self.terminals = Terminals(self)
+        #: Order entry on a terminal. Every method returns a result; none raises.
         self.execution = Execution(self)
+        #: Brokers, servers, symbols and quotes: what a terminal can be pointed at.
         self.catalog = Catalog(self)
+        #: What a terminal sees of its account: the account, positions, orders and deals.
         self.accounts = Accounts(self)
-        #: The trading accounts over every venue: an MT5 account, later a cTrader one.
+        #: The trading accounts over every venue: MetaTrader 5 and cTrader.
         self.trading_accounts = TradingAccounts(self)
+        #: Market data subscriptions, candles and ticks.
         self.md = MarketData(self)
+        #: What this key's tenant has used.
         self.usage = UsageReader(self)
+        #: Webhook endpoints: register, test, rotate and replay.
         self.webhooks = Webhooks(self)
+        #: Expert advisors: upload, review and report.
         self.expert_advisors = ExpertAdvisors(self)
+        #: What the tenant reads about itself: contacts and the service agreement.
         self.tenant = Tenant(self)
+        #: Maintenance windows, and the terminals each one touches.
         self.maintenance = Maintenance(self)
+        #: The farms terminals are placed on.
         self.farms = Farms(self)
+        #: Risk management: policies, accounts, plans and challenges.
         self.risk = Risk(self)
+        #: Copy Trading: leaders, followers, groups, stop-outs and the copy log.
+        self.copy = Copy(self)
+        #: Billing, read only (billing:read): standing, profiles, forecast, prices and invoices.
+        self.billing = Billing(self)
 
     @staticmethod
     async def _default_sleep(seconds: float) -> None:
@@ -172,6 +219,8 @@ class MfxClient:
         slot = _IN_FLIGHT.get(None)
         if slot is not None:
             slot.append(response)
+        if response.headers.get(SERVICE_AGREEMENT_HEADER, "").strip().lower() == "due":
+            self._warn_agreement_due()
         remaining = response.headers.get("X-MFX-Budget-Remaining")
         if remaining is None:
             return
@@ -179,6 +228,18 @@ class MfxClient:
             self._budget = Budget(int(remaining), response.headers.get("X-MFX-Budget-Source", ""))
         except ValueError:  # a header that is not a number tells us nothing; keep the last one
             return
+
+    def _warn_agreement_due(self) -> None:
+        """Log :data:`SERVICE_AGREEMENT_WARNING` the first time this client sees it; never again.
+
+        A warning and not an error: nothing running is refused, and a call that succeeded must
+        not fail for it. The refusal itself arrives as ``ServiceAgreementNotAccepted``.
+        """
+        with self._agreement_lock:
+            if self._agreement_warned:
+                return
+            self._agreement_warned = True
+        get_logger().warning(SERVICE_AGREEMENT_WARNING, key_id=self.key_id)
 
     @property
     def budget(self) -> Budget | None:

@@ -70,9 +70,9 @@ class CopyLeaderDeal:
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         d = dict(src_dict)
-        action = CopyLeaderDealAction(d.pop("action"))
+        action = CopyLeaderDealAction._read(d.pop("action"))
 
-        side = CopyLeaderDealSide(d.pop("side"))
+        side = CopyLeaderDealSide._read(d.pop("side"))
 
         units = d.pop("units")
 

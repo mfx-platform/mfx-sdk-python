@@ -172,7 +172,7 @@ class WebhookEndpoint:
 
         description = _parse_description(d.pop("description"))
 
-        status = WebhookEndpointStatus(d.pop("status"))
+        status = WebhookEndpointStatus._read(d.pop("status"))
 
         def _parse_paused_reason(data: object) -> Union[None, str]:
             if data is None:
@@ -194,7 +194,7 @@ class WebhookEndpoint:
             try:
                 if not isinstance(data, str):
                     raise TypeError()
-                paused_by_type_1 = WebhookEndpointPausedByType1(data)
+                paused_by_type_1 = WebhookEndpointPausedByType1._read(data)
 
                 return paused_by_type_1
             except:  # noqa: E722
@@ -202,7 +202,7 @@ class WebhookEndpoint:
             try:
                 if not isinstance(data, str):
                     raise TypeError()
-                paused_by_type_2_type_1 = WebhookEndpointPausedByType2Type1(data)
+                paused_by_type_2_type_1 = WebhookEndpointPausedByType2Type1._read(data)
 
                 return paused_by_type_2_type_1
             except:  # noqa: E722
@@ -210,7 +210,7 @@ class WebhookEndpoint:
             try:
                 if not isinstance(data, str):
                     raise TypeError()
-                paused_by_type_3_type_1 = WebhookEndpointPausedByType3Type1(data)
+                paused_by_type_3_type_1 = WebhookEndpointPausedByType3Type1._read(data)
 
                 return paused_by_type_3_type_1
             except:  # noqa: E722

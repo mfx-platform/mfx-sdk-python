@@ -145,7 +145,7 @@ class RiskChallengeAccountDetail:
 
         version = d.pop("version")
 
-        state = RiskChallengeAccountDetailState(d.pop("state"))
+        state = RiskChallengeAccountDetailState._read(d.pop("state"))
 
         started_at = isoparse(d.pop("started_at"))
 

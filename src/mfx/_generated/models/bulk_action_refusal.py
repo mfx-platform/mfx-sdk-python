@@ -1,5 +1,15 @@
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any, BinaryIO, Generator, Optional, TextIO, TypeVar
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    BinaryIO,
+    Generator,
+    Optional,
+    TextIO,
+    TypeVar,
+    Union,
+    cast,
+)
 from uuid import UUID
 
 from attrs import define as _attrs_define
@@ -17,16 +27,26 @@ class BulkActionRefusal:
         terminal_id (UUID):
         code (str): The governed-operation rule that refused it, as the single route answers it (e.g. positions_open,
             operation_in_progress, superseded_by_waiting, farm_frozen)
+        account_id (Union[None, UUID, Unset]): The account the terminal runs; null for a terminal no account owns
     """
 
     terminal_id: UUID
     code: str
+    account_id: Union[None, UUID, Unset] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         terminal_id = str(self.terminal_id)
 
         code = self.code
+
+        account_id: Union[None, Unset, str]
+        if isinstance(self.account_id, Unset):
+            account_id = UNSET
+        elif isinstance(self.account_id, UUID):
+            account_id = str(self.account_id)
+        else:
+            account_id = self.account_id
 
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
@@ -36,6 +56,8 @@ class BulkActionRefusal:
                 "code": code,
             }
         )
+        if account_id is not UNSET:
+            field_dict["account_id"] = account_id
 
         return field_dict
 
@@ -46,9 +68,27 @@ class BulkActionRefusal:
 
         code = d.pop("code")
 
+        def _parse_account_id(data: object) -> Union[None, UUID, Unset]:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                account_id_type_0 = UUID(data)
+
+                return account_id_type_0
+            except:  # noqa: E722
+                pass
+            return cast(Union[None, UUID, Unset], data)
+
+        account_id = _parse_account_id(d.pop("account_id", UNSET))
+
         bulk_action_refusal = cls(
             terminal_id=terminal_id,
             code=code,
+            account_id=account_id,
         )
 
         bulk_action_refusal.additional_properties = d

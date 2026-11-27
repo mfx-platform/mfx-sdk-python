@@ -8,6 +8,7 @@ from typing import (
     Optional,
     TextIO,
     TypeVar,
+    Union,
     cast,
 )
 from uuid import UUID
@@ -38,6 +39,7 @@ class RiskChallenge:
         rules (RiskChallengeRules):
         counts (RiskChallengeCounts):
         created_at (datetime.datetime):
+        archived_at (Union[None, Unset, datetime.datetime]): When it was archived; null while active
     """
 
     id: UUID
@@ -47,6 +49,7 @@ class RiskChallenge:
     rules: "RiskChallengeRules"
     counts: "RiskChallengeCounts"
     created_at: datetime.datetime
+    archived_at: Union[None, Unset, datetime.datetime] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -67,6 +70,14 @@ class RiskChallenge:
 
         created_at = self.created_at.isoformat()
 
+        archived_at: Union[None, Unset, str]
+        if isinstance(self.archived_at, Unset):
+            archived_at = UNSET
+        elif isinstance(self.archived_at, datetime.datetime):
+            archived_at = self.archived_at.isoformat()
+        else:
+            archived_at = self.archived_at
+
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
@@ -80,6 +91,8 @@ class RiskChallenge:
                 "created_at": created_at,
             }
         )
+        if archived_at is not UNSET:
+            field_dict["archived_at"] = archived_at
 
         return field_dict
 
@@ -93,7 +106,7 @@ class RiskChallenge:
 
         name = d.pop("name")
 
-        state = RiskChallengeState(d.pop("state"))
+        state = RiskChallengeState._read(d.pop("state"))
 
         version = d.pop("version")
 
@@ -103,6 +116,23 @@ class RiskChallenge:
 
         created_at = isoparse(d.pop("created_at"))
 
+        def _parse_archived_at(data: object) -> Union[None, Unset, datetime.datetime]:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                archived_at_type_0 = isoparse(data)
+
+                return archived_at_type_0
+            except:  # noqa: E722
+                pass
+            return cast(Union[None, Unset, datetime.datetime], data)
+
+        archived_at = _parse_archived_at(d.pop("archived_at", UNSET))
+
         risk_challenge = cls(
             id=id,
             name=name,
@@ -111,6 +141,7 @@ class RiskChallenge:
             rules=rules,
             counts=counts,
             created_at=created_at,
+            archived_at=archived_at,
         )
 
         risk_challenge.additional_properties = d

@@ -100,6 +100,11 @@ class WebhookSignatureError(MfxError):
     ``malformed`` (no ``t`` or no ``v1``), ``stale`` (outside the tolerance) or ``mismatch``."""
 
     def __init__(self, reason: str, message: str) -> None:
+        """Build a client.
+
+        Args:
+            reason: Your own words, recorded with the action.
+        """
         super().__init__(message)
         self.reason = reason
 
@@ -173,7 +178,12 @@ class Webhooks:
         """Register an HTTPS address for these event types (``position.closed``, ``terminal.*``,
         or ``*``). The answer carries the signing ``secret`` - shown here and never again, so keep
         it before doing anything else. An address that resolves to a private, loopback,
-        link-local or metadata address is refused (422)."""
+        link-local or metadata address is refused (422).
+
+        Args:
+            idempotency_key: Required on every write and never defaulted. Sending again with the
+                same key answers the original; a fresh key asks for a new action.
+        """
         body = WebhookEndpointCreate(
             url=url,
             event_types=list(event_types),
@@ -195,7 +205,11 @@ class Webhooks:
         return list(listed.items)
 
     async def get(self, endpoint_id: Id) -> WebhookEndpoint:
-        """One endpoint; another tenant's id is a 404."""
+        """One endpoint; another tenant's id is a 404.
+
+        Args:
+            endpoint_id: The webhook endpoint to act on.
+        """
         endpoint = await self._client.read(
             lambda: _get.asyncio_detailed(id=_uuid(endpoint_id), client=self._client.generated),
             f"GET /webhooks/{endpoint_id}",
@@ -213,7 +227,13 @@ class Webhooks:
         idempotency_key: str,
     ) -> WebhookEndpoint:
         """Change the address or the types, or pause (``paused=True``) and resume it. What is not
-        given is left as it is."""
+        given is left as it is.
+
+        Args:
+            endpoint_id: The webhook endpoint to act on.
+            idempotency_key: Required on every write and never defaulted. Sending again with the
+                same key answers the original; a fresh key asks for a new action.
+        """
         body = WebhookEndpointUpdate(
             url=UNSET if url is None else url,
             event_types=UNSET if event_types is None else list(event_types),
@@ -234,14 +254,24 @@ class Webhooks:
         return endpoint  # type: ignore[no-any-return]
 
     async def delete(self, endpoint_id: Id) -> None:
-        """Remove the endpoint and its secret. Nothing more is sent to it."""
+        """Remove the endpoint and its secret. Nothing more is sent to it.
+
+        Args:
+            endpoint_id: The webhook endpoint to act on.
+        """
         await self._client.write(
             lambda: _delete.asyncio_detailed(id=_uuid(endpoint_id), client=self._client.generated),
             f"DELETE /webhooks/{endpoint_id}",
         )
 
     async def rotate_secret(self, endpoint_id: Id, *, idempotency_key: str) -> WebhookSecretRotated:
-        """A new secret, shown once; the previous one also signs until ``previous_secret_until``."""
+        """A new secret, shown once; the previous one also signs until ``previous_secret_until``.
+
+        Args:
+            endpoint_id: The webhook endpoint to act on.
+            idempotency_key: Required on every write and never defaulted. Sending again with the
+                same key answers the original; a fresh key asks for a new action.
+        """
         rotated = await self._client.write(
             lambda: _rotate.asyncio_detailed(
                 id=_uuid(endpoint_id),
@@ -253,7 +283,11 @@ class Webhooks:
         return rotated  # type: ignore[no-any-return]
 
     async def test(self, endpoint_id: Id) -> WebhookTestAccepted:
-        """Ask for a ``webhook.test`` event at the endpoint, delivered and signed like any other."""
+        """Ask for a ``webhook.test`` event at the endpoint, delivered and signed like any other.
+
+        Args:
+            endpoint_id: The webhook endpoint to act on.
+        """
         accepted = await self._client.write(
             lambda: _test.asyncio_detailed(id=_uuid(endpoint_id), client=self._client.generated),
             f"POST /webhooks/{endpoint_id}/test",
@@ -269,7 +303,12 @@ class Webhooks:
     ) -> AsyncIterator[WebhookFailure]:
         """What did not arrive: each failed event with every attempt on it, following the cursor
         to the end. ``state`` narrows to ``retrying``, ``dead`` (gave up) or ``delivered``, or to a
-        sequence of them, sent as one comma-separated value."""
+        sequence of them, sent as one comma-separated value.
+
+        Args:
+            endpoint_id: The webhook endpoint to act on.
+            limit: How many to return at most, on one page.
+        """
         wanted = states_param(state, ListWebhookFailuresStateItem)
         cursor: str | None = None
 
@@ -301,7 +340,13 @@ class Webhooks:
         idempotency_key: str,
     ) -> WebhookReplayAccepted:
         """Send events again: every one after a stream cursor (``after``, an ``MFX-Event-Id``),
-        or one failure (``failure_id``). A cursor the stream no longer holds is refused."""
+        or one failure (``failure_id``). A cursor the stream no longer holds is refused.
+
+        Args:
+            endpoint_id: The webhook endpoint to act on.
+            idempotency_key: Required on every write and never defaulted. Sending again with the
+                same key answers the original; a fresh key asks for a new action.
+        """
         if (after is None) == (failure_id is None):
             raise ValueError("give exactly one of after= and failure_id=")
         body = WebhookReplay(

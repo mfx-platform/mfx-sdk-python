@@ -71,7 +71,7 @@ class TrailingStop:
         d = dict(src_dict)
         distance = d.pop("distance")
 
-        state = TrailingStopState(d.pop("state"))
+        state = TrailingStopState._read(d.pop("state"))
 
         since = isoparse(d.pop("since"))
 

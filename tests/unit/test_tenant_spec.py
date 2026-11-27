@@ -28,7 +28,12 @@ from generate import (  # noqa: E402 - after the path insert, by necessity
     _module_name,
     dropped_schemas,
 )
-from tenant_spec import ADMIN_PREFIX, tenant_only  # noqa: E402 - after the path insert
+from tenant_spec import (  # noqa: E402 - after the path insert
+    ADMIN_PREFIX,
+    NOT_SERVED,
+    NotServedListStaleError,
+    tenant_only,
+)
 
 #: The Story these cases are Tested By: generated core + ergonomic layer + conformance suite.
 
@@ -56,15 +61,22 @@ def _refs(node: Any) -> set[str]:
 
 def test_the_wheel_carries_every_tenant_path_and_no_operator_one(whole: dict[str, Any]) -> None:
     """Given the vendored spec, which is the public contract / When the tenant half is cut for the
-    generator / Then every path survives, none is an operator's, and the vendored file itself
-    carries no operator route and no internal annotation.
+    generator / Then every path survives but one whose every operation is not served, none is an
+    operator's, and the vendored file itself carries no operator route and no internal annotation.
 
     The SDK vendors the public contract, never the internal one, so the operator
     surface is not in this repository at all; the cut stays as a second net, and on the public file
     it removes nothing."""
     cut = tenant_only(whole)
 
-    expected = [p for p in whole["paths"] if not p.startswith(ADMIN_PREFIX)]
+    def not_served(item: dict[str, Any]) -> bool:
+        ops = [op for op in item.values() if isinstance(op, dict) and "operationId" in op]
+        return bool(ops) and all(op["operationId"] in NOT_SERVED for op in ops)
+
+    expected = [
+        p for p, item in whole["paths"].items()
+        if not p.startswith(ADMIN_PREFIX) and not not_served(item)
+    ]  # fmt: skip
     assert list(cut["paths"]) == expected, "every tenant path, in the same order"
     assert expected, "the fixture would pass vacuously on a spec with no tenant paths"
     assert not [p for p in cut["paths"] if p.startswith(ADMIN_PREFIX)]
@@ -72,6 +84,68 @@ def test_the_wheel_carries_every_tenant_path_and_no_operator_one(whole: dict[str
         "public: no operator route"
     )
     assert "x-mfx-" not in yaml.safe_dump(whole), "public: no internal annotation"
+
+
+def _not_served_spec(*, deprecated: bool = True) -> dict[str, Any]:
+    return {
+        "paths": {
+            "/terminals:restart": {
+                "post": {
+                    "operationId": "bulkRestartTerminals",
+                    "requestBody": {"$ref": "#/components/schemas/BulkAsk"},
+                }
+            },
+            "/terminals:retire": {
+                "parameters": [],
+                "post": {
+                    "operationId": "bulkRetireTerminals",
+                    "deprecated": deprecated,
+                    "requestBody": {"$ref": "#/components/schemas/BulkAsk"},
+                    "responses": {"202": {"$ref": "#/components/schemas/RetireOnly"}},
+                },
+            },
+        },
+        "components": {
+            "schemas": {"BulkAsk": {"type": "object"}, "RetireOnly": {"type": "object"}}
+        },
+    }
+
+
+def test_an_operation_the_platform_does_not_serve_is_not_generated(whole: dict[str, Any]) -> None:
+    """Given the contract keeping the tenant bulk retire, deprecated, because v1 changes are
+    additive, though the platform answers it 404 and never will serve it / When the
+    tenant half is cut for the generator / Then that operation and its now empty path are gone,
+    a schema only it reached goes with it, and bulk restart and the schema it shares stay; in the
+    real vendored spec, every listed operation is there, deprecated, and none survives the cut."""
+    cut = tenant_only(_not_served_spec())
+    listed = {
+        op["operationId"]: op.get("deprecated")
+        for item in whole["paths"].values()
+        for op in item.values()
+        if isinstance(op, dict) and op.get("operationId") in NOT_SERVED
+    }
+
+    assert list(cut["paths"]) == ["/terminals:restart"]
+    assert set(cut["components"]["schemas"]) == {"BulkAsk"}
+    shipped = {
+        op.get("operationId")
+        for item in tenant_only(whole)["paths"].values()
+        for op in item.values()
+        if isinstance(op, dict)
+    }
+    assert listed == dict.fromkeys(NOT_SERVED, True), "each entry still in the contract, deprecated"
+    assert NOT_SERVED.isdisjoint(shipped)
+    assert "bulkRestartTerminals" in shipped
+
+
+def test_a_not_served_entry_the_contract_serves_again_stops_the_cut() -> None:
+    """Given an entry of the not-served list whose operation the contract no longer marks
+    deprecated / When the tenant half is cut / Then the cut refuses with NotServedListStaleError
+    naming it, so the list can never hide a route the platform serves."""
+    spec = _not_served_spec(deprecated=False)
+
+    with pytest.raises(NotServedListStaleError, match="bulkRetireTerminals"):
+        tenant_only(spec)
 
 
 def test_nothing_the_generator_would_choke_on_survives_the_cut(whole: dict[str, Any]) -> None:
@@ -211,6 +285,23 @@ def test_a_named_enum_or_object_without_its_model_is_still_reported(tmp_path: Pa
     }
 
     assert dropped_schemas(spec, _generated(tmp_path)) == ["CopyExternalOpen", "TerminalStateName"]
+
+
+def test_a_schema_typed_as_a_list_is_checked_not_a_crash(tmp_path: Path) -> None:
+    """Given `BillingAction` typed `[object, "null"]`, which the generator drops, and a nullable
+    string alias typed `[string, "null"]` / When the output is checked / Then the object is named
+    as dropped and the alias is not, where a list-valued type used to stop the check with a
+    TypeError that named nothing."""
+    spec = {
+        "components": {
+            "schemas": {
+                "BillingAction": {"type": ["object", "null"], "properties": {}},
+                "MaybeText": {"type": ["string", "null"]},
+            }
+        }
+    }
+
+    assert dropped_schemas(spec, _generated(tmp_path)) == ["BillingAction"]
 
 
 def test_a_bare_union_of_refs_the_generator_inlines_is_not_reported(tmp_path: Path) -> None:

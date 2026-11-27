@@ -6,6 +6,7 @@ import httpx
 
 from ... import errors
 from ...client import AuthenticatedClient, Client
+from ...models.billing_payment_required_error import BillingPaymentRequiredError
 from ...models.copy_external_close import CopyExternalClose
 from ...models.copy_external_open import CopyExternalOpen
 from ...models.copy_signal_accepted import CopySignalAccepted
@@ -43,11 +44,16 @@ def _get_kwargs(
 
 def _parse_response(
     *, client: Union[AuthenticatedClient, Client], response: httpx.Response
-) -> Union[CopySignalAccepted, Error]:
+) -> Union[BillingPaymentRequiredError, CopySignalAccepted, Error]:
     if response.status_code == 202:
         response_202 = CopySignalAccepted.from_dict(response.json())
 
         return response_202
+
+    if response.status_code == 402:
+        response_402 = BillingPaymentRequiredError.from_dict(response.json())
+
+        return response_402
 
     if response.status_code == 409:
         response_409 = Error.from_dict(response.json())
@@ -66,7 +72,7 @@ def _parse_response(
 
 def _build_response(
     *, client: Union[AuthenticatedClient, Client], response: httpx.Response
-) -> Response[Union[CopySignalAccepted, Error]]:
+) -> Response[Union[BillingPaymentRequiredError, CopySignalAccepted, Error]]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -81,7 +87,7 @@ def sync_detailed(
     client: Union[AuthenticatedClient, Client],
     body: Union["CopyExternalClose", "CopyExternalOpen"],
     idempotency_key: str,
-) -> Response[Union[CopySignalAccepted, Error]]:
+) -> Response[Union[BillingPaymentRequiredError, CopySignalAccepted, Error]]:
     """An external leader's signal - an open, or the close of an earlier open - copied to its followers
 
      Only for a leader whose source is `external`; any other is 409 `state_error` with `details.reason =
@@ -118,7 +124,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[CopySignalAccepted, Error]]
+        Response[Union[BillingPaymentRequiredError, CopySignalAccepted, Error]]
     """
 
     kwargs = _get_kwargs(
@@ -140,7 +146,7 @@ def sync(
     client: Union[AuthenticatedClient, Client],
     body: Union["CopyExternalClose", "CopyExternalOpen"],
     idempotency_key: str,
-) -> Optional[Union[CopySignalAccepted, Error]]:
+) -> Optional[Union[BillingPaymentRequiredError, CopySignalAccepted, Error]]:
     """An external leader's signal - an open, or the close of an earlier open - copied to its followers
 
      Only for a leader whose source is `external`; any other is 409 `state_error` with `details.reason =
@@ -177,7 +183,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[CopySignalAccepted, Error]
+        Union[BillingPaymentRequiredError, CopySignalAccepted, Error]
     """
 
     return sync_detailed(
@@ -194,7 +200,7 @@ async def asyncio_detailed(
     client: Union[AuthenticatedClient, Client],
     body: Union["CopyExternalClose", "CopyExternalOpen"],
     idempotency_key: str,
-) -> Response[Union[CopySignalAccepted, Error]]:
+) -> Response[Union[BillingPaymentRequiredError, CopySignalAccepted, Error]]:
     """An external leader's signal - an open, or the close of an earlier open - copied to its followers
 
      Only for a leader whose source is `external`; any other is 409 `state_error` with `details.reason =
@@ -231,7 +237,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[CopySignalAccepted, Error]]
+        Response[Union[BillingPaymentRequiredError, CopySignalAccepted, Error]]
     """
 
     kwargs = _get_kwargs(
@@ -251,7 +257,7 @@ async def asyncio(
     client: Union[AuthenticatedClient, Client],
     body: Union["CopyExternalClose", "CopyExternalOpen"],
     idempotency_key: str,
-) -> Optional[Union[CopySignalAccepted, Error]]:
+) -> Optional[Union[BillingPaymentRequiredError, CopySignalAccepted, Error]]:
     """An external leader's signal - an open, or the close of an earlier open - copied to its followers
 
      Only for a leader whose source is `external`; any other is 409 `state_error` with `details.reason =
@@ -288,7 +294,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[CopySignalAccepted, Error]
+        Union[BillingPaymentRequiredError, CopySignalAccepted, Error]
     """
 
     return (

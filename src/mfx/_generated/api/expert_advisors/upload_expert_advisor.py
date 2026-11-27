@@ -5,6 +5,7 @@ import httpx
 
 from ... import errors
 from ...client import AuthenticatedClient, Client
+from ...models.billing_payment_required_error import BillingPaymentRequiredError
 from ...models.error import Error
 from ...models.expert_advisor_upload import ExpertAdvisorUpload
 from ...models.tenant_expert_advisor import TenantExpertAdvisor
@@ -34,7 +35,7 @@ def _get_kwargs(
 
 def _parse_response(
     *, client: Union[AuthenticatedClient, Client], response: httpx.Response
-) -> Union[Error, TenantExpertAdvisor]:
+) -> Union[BillingPaymentRequiredError, Error, TenantExpertAdvisor]:
     if response.status_code == 200:
         response_200 = TenantExpertAdvisor.from_dict(response.json())
 
@@ -44,6 +45,11 @@ def _parse_response(
         response_202 = TenantExpertAdvisor.from_dict(response.json())
 
         return response_202
+
+    if response.status_code == 402:
+        response_402 = BillingPaymentRequiredError.from_dict(response.json())
+
+        return response_402
 
     if response.status_code == 409:
         response_409 = Error.from_dict(response.json())
@@ -62,7 +68,7 @@ def _parse_response(
 
 def _build_response(
     *, client: Union[AuthenticatedClient, Client], response: httpx.Response
-) -> Response[Union[Error, TenantExpertAdvisor]]:
+) -> Response[Union[BillingPaymentRequiredError, Error, TenantExpertAdvisor]]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -76,7 +82,7 @@ def sync_detailed(
     client: Union[AuthenticatedClient, Client],
     body: ExpertAdvisorUpload,
     idempotency_key: str,
-) -> Response[Union[Error, TenantExpertAdvisor]]:
+) -> Response[Union[BillingPaymentRequiredError, Error, TenantExpertAdvisor]]:
     """Upload an expert advisor's source to be checked
 
      Stores the bundle where no cell can reach it and starts the checks; the answer is the new version in
@@ -102,7 +108,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[Error, TenantExpertAdvisor]]
+        Response[Union[BillingPaymentRequiredError, Error, TenantExpertAdvisor]]
     """
 
     kwargs = _get_kwargs(
@@ -122,7 +128,7 @@ def sync(
     client: Union[AuthenticatedClient, Client],
     body: ExpertAdvisorUpload,
     idempotency_key: str,
-) -> Optional[Union[Error, TenantExpertAdvisor]]:
+) -> Optional[Union[BillingPaymentRequiredError, Error, TenantExpertAdvisor]]:
     """Upload an expert advisor's source to be checked
 
      Stores the bundle where no cell can reach it and starts the checks; the answer is the new version in
@@ -148,7 +154,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[Error, TenantExpertAdvisor]
+        Union[BillingPaymentRequiredError, Error, TenantExpertAdvisor]
     """
 
     return sync_detailed(
@@ -163,7 +169,7 @@ async def asyncio_detailed(
     client: Union[AuthenticatedClient, Client],
     body: ExpertAdvisorUpload,
     idempotency_key: str,
-) -> Response[Union[Error, TenantExpertAdvisor]]:
+) -> Response[Union[BillingPaymentRequiredError, Error, TenantExpertAdvisor]]:
     """Upload an expert advisor's source to be checked
 
      Stores the bundle where no cell can reach it and starts the checks; the answer is the new version in
@@ -189,7 +195,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[Error, TenantExpertAdvisor]]
+        Response[Union[BillingPaymentRequiredError, Error, TenantExpertAdvisor]]
     """
 
     kwargs = _get_kwargs(
@@ -207,7 +213,7 @@ async def asyncio(
     client: Union[AuthenticatedClient, Client],
     body: ExpertAdvisorUpload,
     idempotency_key: str,
-) -> Optional[Union[Error, TenantExpertAdvisor]]:
+) -> Optional[Union[BillingPaymentRequiredError, Error, TenantExpertAdvisor]]:
     """Upload an expert advisor's source to be checked
 
      Stores the bundle where no cell can reach it and starts the checks; the answer is the new version in
@@ -233,7 +239,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[Error, TenantExpertAdvisor]
+        Union[BillingPaymentRequiredError, Error, TenantExpertAdvisor]
     """
 
     return (

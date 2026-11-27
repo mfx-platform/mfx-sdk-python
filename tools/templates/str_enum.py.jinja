@@ -1,0 +1,26 @@
+{#- Overrides openapi-python-client's str_enum template: the class gains _read, which
+    reads a word this SDK was not generated with as an UNKNOWN pseudo-member keeping the word,
+    instead of failing the call. Calling the class itself stays strict. -#}
+from enum import Enum
+
+class {{ enum.class_info.name }}(str, Enum):
+    {% for key, value in enum.values|dictsort(true) %}
+    {{ key }} = "{{ value }}"
+    {% endfor %}
+
+    def __str__(self) -> str:
+        return str(self.value)
+
+    @classmethod
+    def _read(cls, value: str) -> "{{ enum.class_info.name }}":
+        """A word from a response: its member, or, for a word a later version of the API added,
+        an UNKNOWN pseudo-member whose value is the word as sent."""
+        try:
+            return cls(value)
+        except ValueError:
+            if not isinstance(value, str):
+                raise
+        unknown = str.__new__(cls, value)
+        unknown._name_ = "UNKNOWN"
+        unknown._value_ = value
+        return unknown

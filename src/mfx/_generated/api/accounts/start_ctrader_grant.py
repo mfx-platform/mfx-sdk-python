@@ -5,6 +5,7 @@ import httpx
 
 from ... import errors
 from ...client import AuthenticatedClient, Client
+from ...models.billing_payment_required_error import BillingPaymentRequiredError
 from ...models.ctrader_grant_create import CtraderGrantCreate
 from ...models.ctrader_grant_started import CtraderGrantStarted
 from ...models.error import Error
@@ -34,11 +35,16 @@ def _get_kwargs(
 
 def _parse_response(
     *, client: Union[AuthenticatedClient, Client], response: httpx.Response
-) -> Union[CtraderGrantStarted, Error]:
+) -> Union[BillingPaymentRequiredError, CtraderGrantStarted, Error]:
     if response.status_code == 201:
         response_201 = CtraderGrantStarted.from_dict(response.json())
 
         return response_201
+
+    if response.status_code == 402:
+        response_402 = BillingPaymentRequiredError.from_dict(response.json())
+
+        return response_402
 
     if response.status_code == 403:
         response_403 = Error.from_dict(response.json())
@@ -52,7 +58,7 @@ def _parse_response(
 
 def _build_response(
     *, client: Union[AuthenticatedClient, Client], response: httpx.Response
-) -> Response[Union[CtraderGrantStarted, Error]]:
+) -> Response[Union[BillingPaymentRequiredError, CtraderGrantStarted, Error]]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -66,7 +72,7 @@ def sync_detailed(
     client: Union[AuthenticatedClient, Client],
     body: CtraderGrantCreate,
     idempotency_key: str,
-) -> Response[Union[CtraderGrantStarted, Error]]:
+) -> Response[Union[BillingPaymentRequiredError, CtraderGrantStarted, Error]]:
     """Start connecting a trader's cTrader accounts; answers the consent URL to send them to
 
      The trader signs in at cTrader with their cTrader ID and chooses which of their accounts to share.
@@ -80,14 +86,14 @@ def sync_detailed(
         idempotency_key (str):
         body (CtraderGrantCreate): Start connecting a trader's cTrader accounts. Send the trader
             to `consent_url`: they sign in at cTrader, choose the accounts to share, and come back to
-            `return_url`.
+            `return_url`, or to MFX Hub's own result page when you send none.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[CtraderGrantStarted, Error]]
+        Response[Union[BillingPaymentRequiredError, CtraderGrantStarted, Error]]
     """
 
     kwargs = _get_kwargs(
@@ -107,7 +113,7 @@ def sync(
     client: Union[AuthenticatedClient, Client],
     body: CtraderGrantCreate,
     idempotency_key: str,
-) -> Optional[Union[CtraderGrantStarted, Error]]:
+) -> Optional[Union[BillingPaymentRequiredError, CtraderGrantStarted, Error]]:
     """Start connecting a trader's cTrader accounts; answers the consent URL to send them to
 
      The trader signs in at cTrader with their cTrader ID and chooses which of their accounts to share.
@@ -121,14 +127,14 @@ def sync(
         idempotency_key (str):
         body (CtraderGrantCreate): Start connecting a trader's cTrader accounts. Send the trader
             to `consent_url`: they sign in at cTrader, choose the accounts to share, and come back to
-            `return_url`.
+            `return_url`, or to MFX Hub's own result page when you send none.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[CtraderGrantStarted, Error]
+        Union[BillingPaymentRequiredError, CtraderGrantStarted, Error]
     """
 
     return sync_detailed(
@@ -143,7 +149,7 @@ async def asyncio_detailed(
     client: Union[AuthenticatedClient, Client],
     body: CtraderGrantCreate,
     idempotency_key: str,
-) -> Response[Union[CtraderGrantStarted, Error]]:
+) -> Response[Union[BillingPaymentRequiredError, CtraderGrantStarted, Error]]:
     """Start connecting a trader's cTrader accounts; answers the consent URL to send them to
 
      The trader signs in at cTrader with their cTrader ID and chooses which of their accounts to share.
@@ -157,14 +163,14 @@ async def asyncio_detailed(
         idempotency_key (str):
         body (CtraderGrantCreate): Start connecting a trader's cTrader accounts. Send the trader
             to `consent_url`: they sign in at cTrader, choose the accounts to share, and come back to
-            `return_url`.
+            `return_url`, or to MFX Hub's own result page when you send none.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[CtraderGrantStarted, Error]]
+        Response[Union[BillingPaymentRequiredError, CtraderGrantStarted, Error]]
     """
 
     kwargs = _get_kwargs(
@@ -182,7 +188,7 @@ async def asyncio(
     client: Union[AuthenticatedClient, Client],
     body: CtraderGrantCreate,
     idempotency_key: str,
-) -> Optional[Union[CtraderGrantStarted, Error]]:
+) -> Optional[Union[BillingPaymentRequiredError, CtraderGrantStarted, Error]]:
     """Start connecting a trader's cTrader accounts; answers the consent URL to send them to
 
      The trader signs in at cTrader with their cTrader ID and chooses which of their accounts to share.
@@ -196,14 +202,14 @@ async def asyncio(
         idempotency_key (str):
         body (CtraderGrantCreate): Start connecting a trader's cTrader accounts. Send the trader
             to `consent_url`: they sign in at cTrader, choose the accounts to share, and come back to
-            `return_url`.
+            `return_url`, or to MFX Hub's own result page when you send none.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[CtraderGrantStarted, Error]
+        Union[BillingPaymentRequiredError, CtraderGrantStarted, Error]
     """
 
     return (

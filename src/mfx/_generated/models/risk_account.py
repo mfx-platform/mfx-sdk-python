@@ -170,7 +170,7 @@ class RiskAccount:
 
         policy = _parse_policy(d.pop("policy"))
 
-        activation_state = RiskAccountActivationState(d.pop("activation_state"))
+        activation_state = RiskAccountActivationState._read(d.pop("activation_state"))
 
         def _parse_daily_loss(data: object) -> Union["RiskDailyLossFigure", None]:
             if data is None:

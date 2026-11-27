@@ -121,7 +121,7 @@ class RiskDrawdownFigure:
 
         act_at = _parse_act_at(d.pop("act_at"))
 
-        kind = RiskDrawdownFigureKind(d.pop("kind"))
+        kind = RiskDrawdownFigureKind._read(d.pop("kind"))
 
         def _parse_peak(data: object) -> Union[None, str]:
             if data is None:

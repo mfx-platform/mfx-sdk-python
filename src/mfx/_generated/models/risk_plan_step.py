@@ -33,7 +33,7 @@ class RiskPlanStep:
     Attributes:
         trigger (RiskPlanStepTrigger):
         action (RiskPlanStepAction):
-        held_by (RiskPlanStepHeldBy): broker: survives MFX Hub being down. mfx: needs the cell and the terminal
+        held_by (RiskPlanStepHeldBy): broker: survives MFX Hub being down. mfx: needs the platform and the terminal
         n (int):
         state (RiskPlanStepState):
         outcome (Union[None, str]): What happened, in words, with the broker's reason where there is one
@@ -98,11 +98,11 @@ class RiskPlanStep:
 
         action = RiskPlanStepAction.from_dict(d.pop("action"))
 
-        held_by = RiskPlanStepHeldBy(d.pop("held_by"))
+        held_by = RiskPlanStepHeldBy._read(d.pop("held_by"))
 
         n = d.pop("n")
 
-        state = RiskPlanStepState(d.pop("state"))
+        state = RiskPlanStepState._read(d.pop("state"))
 
         def _parse_outcome(data: object) -> Union[None, str]:
             if data is None:

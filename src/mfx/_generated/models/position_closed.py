@@ -208,7 +208,7 @@ class PositionClosed:
 
         symbol = d.pop("symbol")
 
-        side = PositionClosedSide(d.pop("side"))
+        side = PositionClosedSide._read(d.pop("side"))
 
         volume = d.pop("volume")
 
@@ -220,7 +220,7 @@ class PositionClosed:
 
         comment = d.pop("comment")
 
-        close_reason = PositionClosedCloseReason(d.pop("close_reason"))
+        close_reason = PositionClosedCloseReason._read(d.pop("close_reason"))
 
         ts = isoparse(d.pop("ts"))
 

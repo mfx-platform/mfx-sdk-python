@@ -79,6 +79,10 @@ class Maintenance:
 
         ``completed`` lists the last 30 days. A scheduled window is listed once it has been
         announced to you.
+
+        Args:
+            cursor: Where to continue from: the previous page's ``next_cursor``.
+            limit: How many to return at most, on one page.
         """
         wanted = states_param(state, ListMaintenanceStateItem)  # before the call: a bad one is ours
         parsed = await self._client.read(
@@ -95,7 +99,11 @@ class Maintenance:
     async def list(
         self, *, state: WindowState | Sequence[WindowState] | None = None, limit: int | None = None
     ) -> AsyncIterator[TenantMaintenance]:
-        """Every window, following the cursor."""
+        """Every window, following the cursor.
+
+        Args:
+            limit: How many to return at most, on one page.
+        """
         cursor: str | None = None
         while True:
             page = await self.page(state=state, cursor=cursor, limit=limit)
@@ -111,6 +119,10 @@ class Maintenance:
         """One page of your terminals in one window, each with its state and expected time back.
 
         A window you are not in, or another tenant's, is 404.
+
+        Args:
+            cursor: Where to continue from: the previous page's ``next_cursor``.
+            limit: How many to return at most, on one page.
         """
         parsed = await self._client.read(
             lambda: _list_maintenance_terminals.asyncio_detailed(
@@ -126,7 +138,11 @@ class Maintenance:
     async def terminals(
         self, window_id: Id, *, limit: int | None = None
     ) -> AsyncIterator[TenantMaintenanceTerminal]:
-        """Every one of your terminals in the window, following the cursor."""
+        """Every one of your terminals in the window, following the cursor.
+
+        Args:
+            limit: How many to return at most, on one page.
+        """
         cursor: str | None = None
         while True:
             page = await self.terminals_page(window_id, cursor=cursor, limit=limit)

@@ -129,7 +129,7 @@ class TerminalQueue:
             try:
                 if not isinstance(data, str):
                     raise TypeError()
-                reason_type_1 = TerminalQueueReasonType1(data)
+                reason_type_1 = TerminalQueueReasonType1._read(data)
 
                 return reason_type_1
             except:  # noqa: E722
@@ -137,7 +137,7 @@ class TerminalQueue:
             try:
                 if not isinstance(data, str):
                     raise TypeError()
-                reason_type_2_type_1 = TerminalQueueReasonType2Type1(data)
+                reason_type_2_type_1 = TerminalQueueReasonType2Type1._read(data)
 
                 return reason_type_2_type_1
             except:  # noqa: E722
@@ -145,7 +145,7 @@ class TerminalQueue:
             try:
                 if not isinstance(data, str):
                     raise TypeError()
-                reason_type_3_type_1 = TerminalQueueReasonType3Type1(data)
+                reason_type_3_type_1 = TerminalQueueReasonType3Type1._read(data)
 
                 return reason_type_3_type_1
             except:  # noqa: E722

@@ -121,7 +121,7 @@ class TenantExpertAdvisorLastTrialType0:
         d = dict(src_dict)
         terminal_id = UUID(d.pop("terminal_id"))
 
-        state = TenantExpertAdvisorLastTrialType0State(d.pop("state"))
+        state = TenantExpertAdvisorLastTrialType0State._read(d.pop("state"))
 
         symbol = d.pop("symbol")
 
@@ -155,7 +155,7 @@ class TenantExpertAdvisorLastTrialType0:
             try:
                 if not isinstance(data, str):
                     raise TypeError()
-                ended_reason_type_1 = TenantExpertAdvisorLastTrialType0EndedReasonType1(data)
+                ended_reason_type_1 = TenantExpertAdvisorLastTrialType0EndedReasonType1._read(data)
 
                 return ended_reason_type_1
             except:  # noqa: E722
@@ -163,8 +163,8 @@ class TenantExpertAdvisorLastTrialType0:
             try:
                 if not isinstance(data, str):
                     raise TypeError()
-                ended_reason_type_2_type_1 = TenantExpertAdvisorLastTrialType0EndedReasonType2Type1(
-                    data
+                ended_reason_type_2_type_1 = (
+                    TenantExpertAdvisorLastTrialType0EndedReasonType2Type1._read(data)
                 )
 
                 return ended_reason_type_2_type_1
@@ -173,8 +173,8 @@ class TenantExpertAdvisorLastTrialType0:
             try:
                 if not isinstance(data, str):
                     raise TypeError()
-                ended_reason_type_3_type_1 = TenantExpertAdvisorLastTrialType0EndedReasonType3Type1(
-                    data
+                ended_reason_type_3_type_1 = (
+                    TenantExpertAdvisorLastTrialType0EndedReasonType3Type1._read(data)
                 )
 
                 return ended_reason_type_3_type_1

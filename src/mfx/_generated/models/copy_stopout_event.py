@@ -117,9 +117,9 @@ class CopyStopoutEvent:
 
         account_id = UUID(d.pop("account_id"))
 
-        venue = Venue(d.pop("venue"))
+        venue = Venue._read(d.pop("venue"))
 
-        limit = CopyLimitKind(d.pop("limit"))
+        limit = CopyLimitKind._read(d.pop("limit"))
 
         used = d.pop("used")
 

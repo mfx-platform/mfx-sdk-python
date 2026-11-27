@@ -84,7 +84,7 @@ class UsageLimit:
         d = dict(src_dict)
         limit = d.pop("limit")
 
-        source = UsageLimitSource(d.pop("source"))
+        source = UsageLimitSource._read(d.pop("source"))
 
         enforced = d.pop("enforced")
 

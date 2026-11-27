@@ -68,7 +68,7 @@ class WebhookEndpointResumed:
 
         endpoint_id = UUID(d.pop("endpoint_id"))
 
-        by = WebhookEndpointResumedBy(d.pop("by"))
+        by = WebhookEndpointResumedBy._read(d.pop("by"))
 
         at = isoparse(d.pop("at"))
 

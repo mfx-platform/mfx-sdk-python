@@ -6,6 +6,7 @@ import httpx
 
 from ... import errors
 from ...client import AuthenticatedClient, Client
+from ...models.billing_payment_required_error import BillingPaymentRequiredError
 from ...models.copy_group import CopyGroup
 from ...models.error import Error
 from ...types import UNSET, Response
@@ -32,11 +33,16 @@ def _get_kwargs(
 
 def _parse_response(
     *, client: Union[AuthenticatedClient, Client], response: httpx.Response
-) -> Union[CopyGroup, Error]:
+) -> Union[BillingPaymentRequiredError, CopyGroup, Error]:
     if response.status_code == 200:
         response_200 = CopyGroup.from_dict(response.json())
 
         return response_200
+
+    if response.status_code == 402:
+        response_402 = BillingPaymentRequiredError.from_dict(response.json())
+
+        return response_402
 
     response_default = Error.from_dict(response.json())
 
@@ -45,7 +51,7 @@ def _parse_response(
 
 def _build_response(
     *, client: Union[AuthenticatedClient, Client], response: httpx.Response
-) -> Response[Union[CopyGroup, Error]]:
+) -> Response[Union[BillingPaymentRequiredError, CopyGroup, Error]]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -59,7 +65,7 @@ def sync_detailed(
     *,
     client: Union[AuthenticatedClient, Client],
     idempotency_key: str,
-) -> Response[Union[CopyGroup, Error]]:
+) -> Response[Union[BillingPaymentRequiredError, CopyGroup, Error]]:
     """Copy to the group's followers again, from the leader's next deal
 
      Each follower returns to what its own state allows; deals made while the group was paused are not
@@ -74,7 +80,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[CopyGroup, Error]]
+        Response[Union[BillingPaymentRequiredError, CopyGroup, Error]]
     """
 
     kwargs = _get_kwargs(
@@ -94,7 +100,7 @@ def sync(
     *,
     client: Union[AuthenticatedClient, Client],
     idempotency_key: str,
-) -> Optional[Union[CopyGroup, Error]]:
+) -> Optional[Union[BillingPaymentRequiredError, CopyGroup, Error]]:
     """Copy to the group's followers again, from the leader's next deal
 
      Each follower returns to what its own state allows; deals made while the group was paused are not
@@ -109,7 +115,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[CopyGroup, Error]
+        Union[BillingPaymentRequiredError, CopyGroup, Error]
     """
 
     return sync_detailed(
@@ -124,7 +130,7 @@ async def asyncio_detailed(
     *,
     client: Union[AuthenticatedClient, Client],
     idempotency_key: str,
-) -> Response[Union[CopyGroup, Error]]:
+) -> Response[Union[BillingPaymentRequiredError, CopyGroup, Error]]:
     """Copy to the group's followers again, from the leader's next deal
 
      Each follower returns to what its own state allows; deals made while the group was paused are not
@@ -139,7 +145,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[CopyGroup, Error]]
+        Response[Union[BillingPaymentRequiredError, CopyGroup, Error]]
     """
 
     kwargs = _get_kwargs(
@@ -157,7 +163,7 @@ async def asyncio(
     *,
     client: Union[AuthenticatedClient, Client],
     idempotency_key: str,
-) -> Optional[Union[CopyGroup, Error]]:
+) -> Optional[Union[BillingPaymentRequiredError, CopyGroup, Error]]:
     """Copy to the group's followers again, from the leader's next deal
 
      Each follower returns to what its own state allows; deals made while the group was paused are not
@@ -172,7 +178,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[CopyGroup, Error]
+        Union[BillingPaymentRequiredError, CopyGroup, Error]
     """
 
     return (

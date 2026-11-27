@@ -63,7 +63,7 @@ class RiskCoverageKind:
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         d = dict(src_dict)
-        state = RiskCoverageKindState(d.pop("state"))
+        state = RiskCoverageKindState._read(d.pop("state"))
 
         def _parse_reason(data: object) -> Union[None, str]:
             if data is None:

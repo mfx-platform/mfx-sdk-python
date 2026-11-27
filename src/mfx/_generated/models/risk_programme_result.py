@@ -89,7 +89,7 @@ class RiskProgrammeResult:
 
         account_id = UUID(d.pop("account_id"))
 
-        result = RiskProgrammeResultResult(d.pop("result"))
+        result = RiskProgrammeResultResult._read(d.pop("result"))
 
         def _parse_rule(data: object) -> Union[None, str]:
             if data is None:

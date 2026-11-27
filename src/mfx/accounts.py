@@ -54,7 +54,11 @@ class Accounts:
 
     async def account(self, terminal_id: Id) -> Account:
         """Balance, equity and margin, plus the slow profile facts. Each half with its own ``ts``;
-        a half never observed is null, not zero."""
+        a half never observed is null, not zero.
+
+        Args:
+            terminal_id: The terminal to act on. Another tenant's id answers 404, never 403.
+        """
         parsed = await self._client.read(
             lambda: _get_account.asyncio_detailed(
                 id=_uuid(terminal_id), client=self._client.generated
@@ -64,7 +68,11 @@ class Accounts:
         return parsed  # type: ignore[no-any-return]
 
     async def positions(self, terminal_id: Id) -> PositionList:
-        """Every open position, as one snapshot with its ``as_of``."""
+        """Every open position, as one snapshot with its ``as_of``.
+
+        Args:
+            terminal_id: The terminal to act on. Another tenant's id answers 404, never 403.
+        """
         parsed = await self._client.read(
             lambda: _list_positions.asyncio_detailed(
                 id=_uuid(terminal_id), client=self._client.generated
@@ -74,7 +82,11 @@ class Accounts:
         return parsed  # type: ignore[no-any-return]
 
     async def pending_orders(self, terminal_id: Id) -> PendingOrderList:
-        """Every pending order, as one snapshot with its ``as_of``."""
+        """Every pending order, as one snapshot with its ``as_of``.
+
+        Args:
+            terminal_id: The terminal to act on. Another tenant's id answers 404, never 403.
+        """
         parsed = await self._client.read(
             lambda: _list_pending_orders.asyncio_detailed(
                 id=_uuid(terminal_id), client=self._client.generated
@@ -97,6 +109,11 @@ class Accounts:
         The window is required, by the API and so by this: an unbounded history request over a
         partitioned table is the query that takes a database down. Paged, because history does not
         change under you the way a live list does.
+
+        Args:
+            terminal_id: The terminal to act on. Another tenant's id answers 404, never 403.
+            cursor: Where to continue from: the previous page's ``next_cursor``.
+            limit: How many to return at most, on one page.
         """
         parsed = await self._client.read(
             lambda: _list_deals.asyncio_detailed(
@@ -116,6 +133,9 @@ class Accounts:
 
         A pool cannot answer this: the spread a user trades against is the one their broker gives
         *their* account, so it is read from their terminal.
+
+        Args:
+            terminal_id: The terminal to act on. Another tenant's id answers 404, never 403.
         """
         parsed = await self._client.read(
             lambda: _get_spread.asyncio_detailed(

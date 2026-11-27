@@ -136,14 +136,14 @@ class AccountProfileType0:
         if isinstance(_account_type, Unset):
             account_type = UNSET
         else:
-            account_type = AccountProfileType0AccountType(_account_type)
+            account_type = AccountProfileType0AccountType._read(_account_type)
 
         _margin_mode = d.pop("margin_mode", UNSET)
         margin_mode: Union[Unset, AccountProfileType0MarginMode]
         if isinstance(_margin_mode, Unset):
             margin_mode = UNSET
         else:
-            margin_mode = AccountProfileType0MarginMode(_margin_mode)
+            margin_mode = AccountProfileType0MarginMode._read(_margin_mode)
 
         trade_allowed = d.pop("trade_allowed", UNSET)
 

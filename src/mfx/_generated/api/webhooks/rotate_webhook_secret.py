@@ -6,6 +6,7 @@ import httpx
 
 from ... import errors
 from ...client import AuthenticatedClient, Client
+from ...models.billing_payment_required_error import BillingPaymentRequiredError
 from ...models.error import Error
 from ...models.webhook_secret_rotated import WebhookSecretRotated
 from ...types import UNSET, Response
@@ -32,11 +33,21 @@ def _get_kwargs(
 
 def _parse_response(
     *, client: Union[AuthenticatedClient, Client], response: httpx.Response
-) -> Union[Error, WebhookSecretRotated]:
+) -> Union[BillingPaymentRequiredError, Error, WebhookSecretRotated]:
     if response.status_code == 200:
         response_200 = WebhookSecretRotated.from_dict(response.json())
 
         return response_200
+
+    if response.status_code == 402:
+        response_402 = BillingPaymentRequiredError.from_dict(response.json())
+
+        return response_402
+
+    if response.status_code == 409:
+        response_409 = Error.from_dict(response.json())
+
+        return response_409
 
     response_default = Error.from_dict(response.json())
 
@@ -45,7 +56,7 @@ def _parse_response(
 
 def _build_response(
     *, client: Union[AuthenticatedClient, Client], response: httpx.Response
-) -> Response[Union[Error, WebhookSecretRotated]]:
+) -> Response[Union[BillingPaymentRequiredError, Error, WebhookSecretRotated]]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -59,7 +70,7 @@ def sync_detailed(
     *,
     client: Union[AuthenticatedClient, Client],
     idempotency_key: str,
-) -> Response[Union[Error, WebhookSecretRotated]]:
+) -> Response[Union[BillingPaymentRequiredError, Error, WebhookSecretRotated]]:
     """A new signing secret; the previous one signs beside it for a day
 
     Args:
@@ -71,7 +82,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[Error, WebhookSecretRotated]]
+        Response[Union[BillingPaymentRequiredError, Error, WebhookSecretRotated]]
     """
 
     kwargs = _get_kwargs(
@@ -91,7 +102,7 @@ def sync(
     *,
     client: Union[AuthenticatedClient, Client],
     idempotency_key: str,
-) -> Optional[Union[Error, WebhookSecretRotated]]:
+) -> Optional[Union[BillingPaymentRequiredError, Error, WebhookSecretRotated]]:
     """A new signing secret; the previous one signs beside it for a day
 
     Args:
@@ -103,7 +114,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[Error, WebhookSecretRotated]
+        Union[BillingPaymentRequiredError, Error, WebhookSecretRotated]
     """
 
     return sync_detailed(
@@ -118,7 +129,7 @@ async def asyncio_detailed(
     *,
     client: Union[AuthenticatedClient, Client],
     idempotency_key: str,
-) -> Response[Union[Error, WebhookSecretRotated]]:
+) -> Response[Union[BillingPaymentRequiredError, Error, WebhookSecretRotated]]:
     """A new signing secret; the previous one signs beside it for a day
 
     Args:
@@ -130,7 +141,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[Error, WebhookSecretRotated]]
+        Response[Union[BillingPaymentRequiredError, Error, WebhookSecretRotated]]
     """
 
     kwargs = _get_kwargs(
@@ -148,7 +159,7 @@ async def asyncio(
     *,
     client: Union[AuthenticatedClient, Client],
     idempotency_key: str,
-) -> Optional[Union[Error, WebhookSecretRotated]]:
+) -> Optional[Union[BillingPaymentRequiredError, Error, WebhookSecretRotated]]:
     """A new signing secret; the previous one signs beside it for a day
 
     Args:
@@ -160,7 +171,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[Error, WebhookSecretRotated]
+        Union[BillingPaymentRequiredError, Error, WebhookSecretRotated]
     """
 
     return (

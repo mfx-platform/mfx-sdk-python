@@ -141,7 +141,7 @@ class CopyLeader:
         d = dict(src_dict)
         id = UUID(d.pop("id"))
 
-        source = CopyLeaderSource(d.pop("source"))
+        source = CopyLeaderSource._read(d.pop("source"))
 
         def _parse_account_id(data: object) -> Union[None, UUID]:
             if data is None:
@@ -164,7 +164,7 @@ class CopyLeader:
             try:
                 if not isinstance(data, str):
                     raise TypeError()
-                venue_type_0 = Venue(data)
+                venue_type_0 = Venue._read(data)
 
                 return venue_type_0
             except:  # noqa: E722
@@ -183,7 +183,7 @@ class CopyLeader:
 
         who_may_join = CopyWhoMayJoin.from_dict(d.pop("who_may_join"))
 
-        state = CopyLeaderState(d.pop("state"))
+        state = CopyLeaderState._read(d.pop("state"))
 
         followers_live = d.pop("followers_live")
 

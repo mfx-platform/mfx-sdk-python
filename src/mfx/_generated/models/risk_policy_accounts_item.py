@@ -51,7 +51,7 @@ class RiskPolicyAccountsItem:
 
         version = d.pop("version")
 
-        state = RiskPolicyAccountsItemState(d.pop("state"))
+        state = RiskPolicyAccountsItemState._read(d.pop("state"))
 
         risk_policy_accounts_item = cls(
             account_id=account_id,

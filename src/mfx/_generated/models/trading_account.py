@@ -148,7 +148,7 @@ class TradingAccount:
         d = dict(src_dict)
         id = UUID(d.pop("id"))
 
-        venue = TradingAccountVenue(d.pop("venue"))
+        venue = TradingAccountVenue._read(d.pop("venue"))
 
         def _parse_environment(
             data: object,
@@ -163,7 +163,7 @@ class TradingAccount:
             try:
                 if not isinstance(data, str):
                     raise TypeError()
-                environment_type_1 = TradingAccountEnvironmentType1(data)
+                environment_type_1 = TradingAccountEnvironmentType1._read(data)
 
                 return environment_type_1
             except:  # noqa: E722
@@ -171,7 +171,7 @@ class TradingAccount:
             try:
                 if not isinstance(data, str):
                     raise TypeError()
-                environment_type_2_type_1 = TradingAccountEnvironmentType2Type1(data)
+                environment_type_2_type_1 = TradingAccountEnvironmentType2Type1._read(data)
 
                 return environment_type_2_type_1
             except:  # noqa: E722
@@ -179,7 +179,7 @@ class TradingAccount:
             try:
                 if not isinstance(data, str):
                     raise TypeError()
-                environment_type_3_type_1 = TradingAccountEnvironmentType3Type1(data)
+                environment_type_3_type_1 = TradingAccountEnvironmentType3Type1._read(data)
 
                 return environment_type_3_type_1
             except:  # noqa: E722
@@ -203,7 +203,7 @@ class TradingAccount:
 
         label = _parse_label(d.pop("label"))
 
-        state = TradingAccountState(d.pop("state"))
+        state = TradingAccountState._read(d.pop("state"))
 
         broker = TradingAccountBroker.from_dict(d.pop("broker"))
 
@@ -228,7 +228,7 @@ class TradingAccount:
         if isinstance(_venue_state, Unset):
             venue_state = UNSET
         else:
-            venue_state = TradingAccountVenueState(_venue_state)
+            venue_state = TradingAccountVenueState._read(_venue_state)
 
         trading_account = cls(
             id=id,

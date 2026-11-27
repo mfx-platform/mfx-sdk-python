@@ -122,7 +122,7 @@ class RiskPlanStepAction:
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         d = dict(src_dict)
-        kind = RiskPlanStepActionKind(d.pop("kind"))
+        kind = RiskPlanStepActionKind._read(d.pop("kind"))
 
         def _parse_sl(data: object) -> Union[None, Unset, str]:
             if data is None:
@@ -169,7 +169,7 @@ class RiskPlanStepAction:
             try:
                 if not isinstance(data, str):
                     raise TypeError()
-                pct_of_type_1 = RiskPlanStepActionPctOfType1(data)
+                pct_of_type_1 = RiskPlanStepActionPctOfType1._read(data)
 
                 return pct_of_type_1
             except:  # noqa: E722
@@ -177,7 +177,7 @@ class RiskPlanStepAction:
             try:
                 if not isinstance(data, str):
                     raise TypeError()
-                pct_of_type_2_type_1 = RiskPlanStepActionPctOfType2Type1(data)
+                pct_of_type_2_type_1 = RiskPlanStepActionPctOfType2Type1._read(data)
 
                 return pct_of_type_2_type_1
             except:  # noqa: E722
@@ -185,7 +185,7 @@ class RiskPlanStepAction:
             try:
                 if not isinstance(data, str):
                     raise TypeError()
-                pct_of_type_3_type_1 = RiskPlanStepActionPctOfType3Type1(data)
+                pct_of_type_3_type_1 = RiskPlanStepActionPctOfType3Type1._read(data)
 
                 return pct_of_type_3_type_1
             except:  # noqa: E722

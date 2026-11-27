@@ -106,7 +106,7 @@ class SymbolStatus:
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         d = dict(src_dict)
-        state = SymbolState(d.pop("state"))
+        state = SymbolState._read(d.pop("state"))
 
         def _parse_reason(
             data: object,
@@ -121,7 +121,7 @@ class SymbolStatus:
             try:
                 if not isinstance(data, str):
                     raise TypeError()
-                reason_type_1 = SymbolStatusReasonType1(data)
+                reason_type_1 = SymbolStatusReasonType1._read(data)
 
                 return reason_type_1
             except:  # noqa: E722
@@ -129,7 +129,7 @@ class SymbolStatus:
             try:
                 if not isinstance(data, str):
                     raise TypeError()
-                reason_type_2_type_1 = SymbolStatusReasonType2Type1(data)
+                reason_type_2_type_1 = SymbolStatusReasonType2Type1._read(data)
 
                 return reason_type_2_type_1
             except:  # noqa: E722
@@ -137,7 +137,7 @@ class SymbolStatus:
             try:
                 if not isinstance(data, str):
                     raise TypeError()
-                reason_type_3_type_1 = SymbolStatusReasonType3Type1(data)
+                reason_type_3_type_1 = SymbolStatusReasonType3Type1._read(data)
 
                 return reason_type_3_type_1
             except:  # noqa: E722

@@ -62,7 +62,7 @@ class CopyGroupMembersResultResultsItem:
         d = dict(src_dict)
         follower_id = UUID(d.pop("follower_id"))
 
-        outcome = CopyGroupMembersResultResultsItemOutcome(d.pop("outcome"))
+        outcome = CopyGroupMembersResultResultsItemOutcome._read(d.pop("outcome"))
 
         def _parse_reason(data: object) -> Union[None, str]:
             if data is None:

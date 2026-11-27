@@ -109,7 +109,7 @@ class ExpertAdvisorStateChanged:
 
         version = d.pop("version")
 
-        state = ExpertAdvisorStateChangedState(d.pop("state"))
+        state = ExpertAdvisorStateChangedState._read(d.pop("state"))
 
         changed_at = isoparse(d.pop("changed_at"))
 
@@ -118,14 +118,14 @@ class ExpertAdvisorStateChanged:
         if isinstance(_verdict, Unset):
             verdict = UNSET
         else:
-            verdict = EaColour(_verdict)
+            verdict = EaColour._read(_verdict)
 
         _uploaded_by_operator = d.pop("uploaded_by_operator", UNSET)
         uploaded_by_operator: Union[Unset, ExpertAdvisorStateChangedUploadedByOperator]
         if isinstance(_uploaded_by_operator, Unset):
             uploaded_by_operator = UNSET
         else:
-            uploaded_by_operator = ExpertAdvisorStateChangedUploadedByOperator(
+            uploaded_by_operator = ExpertAdvisorStateChangedUploadedByOperator._read(
                 _uploaded_by_operator
             )
 

@@ -91,7 +91,7 @@ class MdStatusMessage:
         d = dict(src_dict)
         schema_version = d.pop("schema_version")
 
-        status = MdStatusMessageStatus(d.pop("status"))
+        status = MdStatusMessageStatus._read(d.pop("status"))
 
         def _parse_window_id(data: object) -> Union[None, UUID]:
             if data is None:

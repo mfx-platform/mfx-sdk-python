@@ -132,9 +132,9 @@ class AccountProfileChanged:
 
         terminal_id = UUID(d.pop("terminal_id"))
 
-        trade_allowed = AccountProfileChangedTradeAllowed(d.pop("trade_allowed"))
+        trade_allowed = AccountProfileChangedTradeAllowed._read(d.pop("trade_allowed"))
 
-        expert_allowed = AccountProfileChangedExpertAllowed(d.pop("expert_allowed"))
+        expert_allowed = AccountProfileChangedExpertAllowed._read(d.pop("expert_allowed"))
 
         changed = d.pop("changed")
 
@@ -151,14 +151,14 @@ class AccountProfileChanged:
         if isinstance(_account_type, Unset):
             account_type = UNSET
         else:
-            account_type = AccountProfileChangedAccountType(_account_type)
+            account_type = AccountProfileChangedAccountType._read(_account_type)
 
         _margin_mode = d.pop("margin_mode", UNSET)
         margin_mode: Union[Unset, AccountProfileChangedMarginMode]
         if isinstance(_margin_mode, Unset):
             margin_mode = UNSET
         else:
-            margin_mode = AccountProfileChangedMarginMode(_margin_mode)
+            margin_mode = AccountProfileChangedMarginMode._read(_margin_mode)
 
         account_profile_changed = cls(
             schema_version=schema_version,

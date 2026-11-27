@@ -125,9 +125,9 @@ class PendingOrder:
 
         symbol = d.pop("symbol")
 
-        side = PendingOrderSide(d.pop("side"))
+        side = PendingOrderSide._read(d.pop("side"))
 
-        order_type = PendingOrderOrderType(d.pop("order_type"))
+        order_type = PendingOrderOrderType._read(d.pop("order_type"))
 
         volume = d.pop("volume")
 

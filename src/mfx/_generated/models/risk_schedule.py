@@ -66,7 +66,7 @@ class RiskSchedule:
         from ..models.risk_schedule_windows_item import RiskScheduleWindowsItem
 
         d = dict(src_dict)
-        mode = RiskScheduleMode(d.pop("mode"))
+        mode = RiskScheduleMode._read(d.pop("mode"))
 
         zone = d.pop("zone")
 

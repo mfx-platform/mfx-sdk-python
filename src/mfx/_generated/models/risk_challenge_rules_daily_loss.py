@@ -63,7 +63,7 @@ class RiskChallengeRulesDailyLoss:
         d = dict(src_dict)
         limit = RiskAmount.from_dict(d.pop("limit"))
 
-        basis = RiskChallengeRulesDailyLossBasis(d.pop("basis"))
+        basis = RiskChallengeRulesDailyLossBasis._read(d.pop("basis"))
 
         risk_challenge_rules_daily_loss = cls(
             limit=limit,

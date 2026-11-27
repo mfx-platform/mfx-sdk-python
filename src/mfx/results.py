@@ -89,7 +89,8 @@ _FINAL: Final = frozenset(
 
 @dataclass(frozen=True, slots=True)
 class Tickets:
-    """MT5 relates one order, one deal and one position per fill; null where MT5 has none yet."""
+    """The terminal relates one order, one deal and one position per fill; null where it has
+    none yet."""
 
     order: int | None = None
     deal: int | None = None
@@ -215,13 +216,13 @@ class ExecutionResult:
     #: The venue that answered (``mt5`` or ``ctrader``); None until there is a result.
     venue: str | None = None
     #: The venue's own code for a refusal, verbatim, beside ``reason`` (cTrader: such as
-    #: ``NOT_ENOUGH_MONEY``). None on MT5, whose code is ``mt5_retcode``.
+    #: ``NOT_ENOUGH_MONEY``). None on MetaTrader 5, whose code is ``mt5_retcode``.
     venue_code: str | None = None
-    #: Every deal the command made, in order (cTrader). Empty on MT5, where ``tickets.deal`` is
-    #: the one deal of the fill.
+    #: Every deal the command made, in order (cTrader). Empty on MetaTrader 5, where
+    #: ``tickets.deal`` is the one deal of the fill.
     deals: tuple[VenueDeal, ...] = ()
     #: The volume filled in units of the instrument, the sum of ``deals``; ``exec_volume`` stays
-    #: in lots. None on MT5 and when nothing filled.
+    #: in lots. None on MetaTrader 5 and when nothing filled.
     volume_units: Decimal | None = None
     #: A close-by the venue has no equivalent for, done as two closes (cTrader).
     close_by_emulated: bool = False

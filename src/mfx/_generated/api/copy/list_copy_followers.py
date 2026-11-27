@@ -9,6 +9,7 @@ from ...client import AuthenticatedClient, Client
 from ...models.copy_follower_page import CopyFollowerPage
 from ...models.copy_follower_state import CopyFollowerState
 from ...models.error import Error
+from ...models.list_copy_followers_sort import ListCopyFollowersSort
 from ...types import UNSET, Response, Unset
 
 
@@ -20,6 +21,8 @@ def _get_kwargs(
     leader_id: Union[Unset, UUID] = UNSET,
     account_id: Union[Unset, UUID] = UNSET,
     group_id: Union[Unset, UUID] = UNSET,
+    sort: Union[Unset, ListCopyFollowersSort] = ListCopyFollowersSort.NEWEST,
+    out_of_step: Union[Unset, bool] = UNSET,
 ) -> dict[str, Any]:
     params: dict[str, Any] = {}
 
@@ -50,6 +53,14 @@ def _get_kwargs(
     if not isinstance(group_id, Unset):
         json_group_id = str(group_id)
     params["group_id"] = json_group_id
+
+    json_sort: Union[Unset, str] = UNSET
+    if not isinstance(sort, Unset):
+        json_sort = sort.value
+
+    params["sort"] = json_sort
+
+    params["out_of_step"] = out_of_step
 
     params = {k: v for k, v in params.items() if v is not UNSET and v is not None}
 
@@ -95,11 +106,16 @@ def sync_detailed(
     leader_id: Union[Unset, UUID] = UNSET,
     account_id: Union[Unset, UUID] = UNSET,
     group_id: Union[Unset, UUID] = UNSET,
+    sort: Union[Unset, ListCopyFollowersSort] = ListCopyFollowersSort.NEWEST,
+    out_of_step: Union[Unset, bool] = UNSET,
 ) -> Response[Union[CopyFollowerPage, Error]]:
     """Your followers, newest first, with a count of each state
 
-     `state`, `leader_id`, `account_id` and `group_id` narrow the list in the query, before the page is
-    cut. The stats row counts the followers the filters match, on every page.
+     `state`, `leader_id`, `account_id`, `group_id` and `out_of_step` narrow the list in the query,
+    before the page is cut. The stats row counts the followers the filters match, on every page. Newest
+    first unless `sort` is `oldest`; a cursor continues the sort it was cut for, and one cut for the
+    other sort is 400 `validation_error`. There is no sort by today's copies, latency or drift:
+    `out_of_step` finds the followers that are wrong.
 
     Args:
         cursor (Union[Unset, str]):
@@ -108,6 +124,8 @@ def sync_detailed(
         leader_id (Union[Unset, UUID]):
         account_id (Union[Unset, UUID]):
         group_id (Union[Unset, UUID]):
+        sort (Union[Unset, ListCopyFollowersSort]):  Default: ListCopyFollowersSort.NEWEST.
+        out_of_step (Union[Unset, bool]):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -124,6 +142,8 @@ def sync_detailed(
         leader_id=leader_id,
         account_id=account_id,
         group_id=group_id,
+        sort=sort,
+        out_of_step=out_of_step,
     )
 
     response = client.get_httpx_client().request(
@@ -142,11 +162,16 @@ def sync(
     leader_id: Union[Unset, UUID] = UNSET,
     account_id: Union[Unset, UUID] = UNSET,
     group_id: Union[Unset, UUID] = UNSET,
+    sort: Union[Unset, ListCopyFollowersSort] = ListCopyFollowersSort.NEWEST,
+    out_of_step: Union[Unset, bool] = UNSET,
 ) -> Optional[Union[CopyFollowerPage, Error]]:
     """Your followers, newest first, with a count of each state
 
-     `state`, `leader_id`, `account_id` and `group_id` narrow the list in the query, before the page is
-    cut. The stats row counts the followers the filters match, on every page.
+     `state`, `leader_id`, `account_id`, `group_id` and `out_of_step` narrow the list in the query,
+    before the page is cut. The stats row counts the followers the filters match, on every page. Newest
+    first unless `sort` is `oldest`; a cursor continues the sort it was cut for, and one cut for the
+    other sort is 400 `validation_error`. There is no sort by today's copies, latency or drift:
+    `out_of_step` finds the followers that are wrong.
 
     Args:
         cursor (Union[Unset, str]):
@@ -155,6 +180,8 @@ def sync(
         leader_id (Union[Unset, UUID]):
         account_id (Union[Unset, UUID]):
         group_id (Union[Unset, UUID]):
+        sort (Union[Unset, ListCopyFollowersSort]):  Default: ListCopyFollowersSort.NEWEST.
+        out_of_step (Union[Unset, bool]):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -172,6 +199,8 @@ def sync(
         leader_id=leader_id,
         account_id=account_id,
         group_id=group_id,
+        sort=sort,
+        out_of_step=out_of_step,
     ).parsed
 
 
@@ -184,11 +213,16 @@ async def asyncio_detailed(
     leader_id: Union[Unset, UUID] = UNSET,
     account_id: Union[Unset, UUID] = UNSET,
     group_id: Union[Unset, UUID] = UNSET,
+    sort: Union[Unset, ListCopyFollowersSort] = ListCopyFollowersSort.NEWEST,
+    out_of_step: Union[Unset, bool] = UNSET,
 ) -> Response[Union[CopyFollowerPage, Error]]:
     """Your followers, newest first, with a count of each state
 
-     `state`, `leader_id`, `account_id` and `group_id` narrow the list in the query, before the page is
-    cut. The stats row counts the followers the filters match, on every page.
+     `state`, `leader_id`, `account_id`, `group_id` and `out_of_step` narrow the list in the query,
+    before the page is cut. The stats row counts the followers the filters match, on every page. Newest
+    first unless `sort` is `oldest`; a cursor continues the sort it was cut for, and one cut for the
+    other sort is 400 `validation_error`. There is no sort by today's copies, latency or drift:
+    `out_of_step` finds the followers that are wrong.
 
     Args:
         cursor (Union[Unset, str]):
@@ -197,6 +231,8 @@ async def asyncio_detailed(
         leader_id (Union[Unset, UUID]):
         account_id (Union[Unset, UUID]):
         group_id (Union[Unset, UUID]):
+        sort (Union[Unset, ListCopyFollowersSort]):  Default: ListCopyFollowersSort.NEWEST.
+        out_of_step (Union[Unset, bool]):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -213,6 +249,8 @@ async def asyncio_detailed(
         leader_id=leader_id,
         account_id=account_id,
         group_id=group_id,
+        sort=sort,
+        out_of_step=out_of_step,
     )
 
     response = await client.get_async_httpx_client().request(**kwargs)
@@ -229,11 +267,16 @@ async def asyncio(
     leader_id: Union[Unset, UUID] = UNSET,
     account_id: Union[Unset, UUID] = UNSET,
     group_id: Union[Unset, UUID] = UNSET,
+    sort: Union[Unset, ListCopyFollowersSort] = ListCopyFollowersSort.NEWEST,
+    out_of_step: Union[Unset, bool] = UNSET,
 ) -> Optional[Union[CopyFollowerPage, Error]]:
     """Your followers, newest first, with a count of each state
 
-     `state`, `leader_id`, `account_id` and `group_id` narrow the list in the query, before the page is
-    cut. The stats row counts the followers the filters match, on every page.
+     `state`, `leader_id`, `account_id`, `group_id` and `out_of_step` narrow the list in the query,
+    before the page is cut. The stats row counts the followers the filters match, on every page. Newest
+    first unless `sort` is `oldest`; a cursor continues the sort it was cut for, and one cut for the
+    other sort is 400 `validation_error`. There is no sort by today's copies, latency or drift:
+    `out_of_step` finds the followers that are wrong.
 
     Args:
         cursor (Union[Unset, str]):
@@ -242,6 +285,8 @@ async def asyncio(
         leader_id (Union[Unset, UUID]):
         account_id (Union[Unset, UUID]):
         group_id (Union[Unset, UUID]):
+        sort (Union[Unset, ListCopyFollowersSort]):  Default: ListCopyFollowersSort.NEWEST.
+        out_of_step (Union[Unset, bool]):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -260,5 +305,7 @@ async def asyncio(
             leader_id=leader_id,
             account_id=account_id,
             group_id=group_id,
+            sort=sort,
+            out_of_step=out_of_step,
         )
     ).parsed

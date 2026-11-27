@@ -93,7 +93,7 @@ class PositionTrailingStopChanged:
 
         distance = d.pop("distance")
 
-        state = PositionTrailingStopChangedState(d.pop("state"))
+        state = PositionTrailingStopChangedState._read(d.pop("state"))
 
         def _parse_reason(data: object) -> Union[None, str]:
             if data is None:

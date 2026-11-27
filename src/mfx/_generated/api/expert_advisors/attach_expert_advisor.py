@@ -6,6 +6,7 @@ import httpx
 
 from ... import errors
 from ...client import AuthenticatedClient, Client
+from ...models.billing_payment_required_error import BillingPaymentRequiredError
 from ...models.error import Error
 from ...models.expert_advisor_attach import ExpertAdvisorAttach
 from ...models.operation_accepted import OperationAccepted
@@ -38,11 +39,16 @@ def _get_kwargs(
 
 def _parse_response(
     *, client: Union[AuthenticatedClient, Client], response: httpx.Response
-) -> Union[Error, OperationAccepted]:
+) -> Union[BillingPaymentRequiredError, Error, OperationAccepted]:
     if response.status_code == 202:
         response_202 = OperationAccepted.from_dict(response.json())
 
         return response_202
+
+    if response.status_code == 402:
+        response_402 = BillingPaymentRequiredError.from_dict(response.json())
+
+        return response_402
 
     response_default = Error.from_dict(response.json())
 
@@ -51,7 +57,7 @@ def _parse_response(
 
 def _build_response(
     *, client: Union[AuthenticatedClient, Client], response: httpx.Response
-) -> Response[Union[Error, OperationAccepted]]:
+) -> Response[Union[BillingPaymentRequiredError, Error, OperationAccepted]]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -66,7 +72,7 @@ def sync_detailed(
     client: Union[AuthenticatedClient, Client],
     body: ExpertAdvisorAttach,
     idempotency_key: str,
-) -> Response[Union[Error, OperationAccepted]]:
+) -> Response[Union[BillingPaymentRequiredError, Error, OperationAccepted]]:
     """Attach an approved version of your EA to a terminal - governed, followed as an operation; a trial
     with trading off comes first
 
@@ -77,10 +83,13 @@ def sync_detailed(
     `running` (attach again once it is done), or `failed` with `failure` in plain words (the version is
     not attachable on that build; the same bundle uploaded again tries once more); 409 `ea_attached`
     when the terminal already carries one (detach it first); 404 for another tenant's version, or a
-    symbol the terminal's server does not list. Then the seven rules of a governed operation, as on
-    restartTerminal. The operation succeeds when the terminal produces again with the build loaded and
-    trading by experts off: the trial has started. A green trial goes live by itself on a demo account;
-    on a real-money account it waits for confirmExpertAdvisor.
+    symbol the terminal's server does not list; 409 `terms_not_accepted` while a version of the Terms of
+    Service or the MetaTrader 5 licence that the organisation must accept is past its grace period
+    unaccepted (a detach, and an expert advisor already attached, are never held); 409
+    `service_agreement_not_accepted` likewise while a Service Agreement is due. Then the seven rules of
+    a governed operation, as on restartTerminal. The operation succeeds when the terminal produces again
+    with the build loaded and trading by experts off: the trial has started. A green trial goes live by
+    itself on a demo account; on a real-money account it waits for confirmExpertAdvisor.
 
     Args:
         id (UUID):
@@ -95,7 +104,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[Error, OperationAccepted]]
+        Response[Union[BillingPaymentRequiredError, Error, OperationAccepted]]
     """
 
     kwargs = _get_kwargs(
@@ -117,7 +126,7 @@ def sync(
     client: Union[AuthenticatedClient, Client],
     body: ExpertAdvisorAttach,
     idempotency_key: str,
-) -> Optional[Union[Error, OperationAccepted]]:
+) -> Optional[Union[BillingPaymentRequiredError, Error, OperationAccepted]]:
     """Attach an approved version of your EA to a terminal - governed, followed as an operation; a trial
     with trading off comes first
 
@@ -128,10 +137,13 @@ def sync(
     `running` (attach again once it is done), or `failed` with `failure` in plain words (the version is
     not attachable on that build; the same bundle uploaded again tries once more); 409 `ea_attached`
     when the terminal already carries one (detach it first); 404 for another tenant's version, or a
-    symbol the terminal's server does not list. Then the seven rules of a governed operation, as on
-    restartTerminal. The operation succeeds when the terminal produces again with the build loaded and
-    trading by experts off: the trial has started. A green trial goes live by itself on a demo account;
-    on a real-money account it waits for confirmExpertAdvisor.
+    symbol the terminal's server does not list; 409 `terms_not_accepted` while a version of the Terms of
+    Service or the MetaTrader 5 licence that the organisation must accept is past its grace period
+    unaccepted (a detach, and an expert advisor already attached, are never held); 409
+    `service_agreement_not_accepted` likewise while a Service Agreement is due. Then the seven rules of
+    a governed operation, as on restartTerminal. The operation succeeds when the terminal produces again
+    with the build loaded and trading by experts off: the trial has started. A green trial goes live by
+    itself on a demo account; on a real-money account it waits for confirmExpertAdvisor.
 
     Args:
         id (UUID):
@@ -146,7 +158,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[Error, OperationAccepted]
+        Union[BillingPaymentRequiredError, Error, OperationAccepted]
     """
 
     return sync_detailed(
@@ -163,7 +175,7 @@ async def asyncio_detailed(
     client: Union[AuthenticatedClient, Client],
     body: ExpertAdvisorAttach,
     idempotency_key: str,
-) -> Response[Union[Error, OperationAccepted]]:
+) -> Response[Union[BillingPaymentRequiredError, Error, OperationAccepted]]:
     """Attach an approved version of your EA to a terminal - governed, followed as an operation; a trial
     with trading off comes first
 
@@ -174,10 +186,13 @@ async def asyncio_detailed(
     `running` (attach again once it is done), or `failed` with `failure` in plain words (the version is
     not attachable on that build; the same bundle uploaded again tries once more); 409 `ea_attached`
     when the terminal already carries one (detach it first); 404 for another tenant's version, or a
-    symbol the terminal's server does not list. Then the seven rules of a governed operation, as on
-    restartTerminal. The operation succeeds when the terminal produces again with the build loaded and
-    trading by experts off: the trial has started. A green trial goes live by itself on a demo account;
-    on a real-money account it waits for confirmExpertAdvisor.
+    symbol the terminal's server does not list; 409 `terms_not_accepted` while a version of the Terms of
+    Service or the MetaTrader 5 licence that the organisation must accept is past its grace period
+    unaccepted (a detach, and an expert advisor already attached, are never held); 409
+    `service_agreement_not_accepted` likewise while a Service Agreement is due. Then the seven rules of
+    a governed operation, as on restartTerminal. The operation succeeds when the terminal produces again
+    with the build loaded and trading by experts off: the trial has started. A green trial goes live by
+    itself on a demo account; on a real-money account it waits for confirmExpertAdvisor.
 
     Args:
         id (UUID):
@@ -192,7 +207,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[Error, OperationAccepted]]
+        Response[Union[BillingPaymentRequiredError, Error, OperationAccepted]]
     """
 
     kwargs = _get_kwargs(
@@ -212,7 +227,7 @@ async def asyncio(
     client: Union[AuthenticatedClient, Client],
     body: ExpertAdvisorAttach,
     idempotency_key: str,
-) -> Optional[Union[Error, OperationAccepted]]:
+) -> Optional[Union[BillingPaymentRequiredError, Error, OperationAccepted]]:
     """Attach an approved version of your EA to a terminal - governed, followed as an operation; a trial
     with trading off comes first
 
@@ -223,10 +238,13 @@ async def asyncio(
     `running` (attach again once it is done), or `failed` with `failure` in plain words (the version is
     not attachable on that build; the same bundle uploaded again tries once more); 409 `ea_attached`
     when the terminal already carries one (detach it first); 404 for another tenant's version, or a
-    symbol the terminal's server does not list. Then the seven rules of a governed operation, as on
-    restartTerminal. The operation succeeds when the terminal produces again with the build loaded and
-    trading by experts off: the trial has started. A green trial goes live by itself on a demo account;
-    on a real-money account it waits for confirmExpertAdvisor.
+    symbol the terminal's server does not list; 409 `terms_not_accepted` while a version of the Terms of
+    Service or the MetaTrader 5 licence that the organisation must accept is past its grace period
+    unaccepted (a detach, and an expert advisor already attached, are never held); 409
+    `service_agreement_not_accepted` likewise while a Service Agreement is due. Then the seven rules of
+    a governed operation, as on restartTerminal. The operation succeeds when the terminal produces again
+    with the build loaded and trading by experts off: the trial has started. A green trial goes live by
+    itself on a demo account; on a real-money account it waits for confirmExpertAdvisor.
 
     Args:
         id (UUID):
@@ -241,7 +259,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[Error, OperationAccepted]
+        Union[BillingPaymentRequiredError, Error, OperationAccepted]
     """
 
     return (

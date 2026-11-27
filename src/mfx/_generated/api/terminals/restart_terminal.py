@@ -6,6 +6,7 @@ import httpx
 
 from ... import errors
 from ...client import AuthenticatedClient, Client
+from ...models.billing_payment_required_error import BillingPaymentRequiredError
 from ...models.error import Error
 from ...models.operation_accepted import OperationAccepted
 from ...models.terminal_restart import TerminalRestart
@@ -38,11 +39,16 @@ def _get_kwargs(
 
 def _parse_response(
     *, client: Union[AuthenticatedClient, Client], response: httpx.Response
-) -> Union[Error, OperationAccepted]:
+) -> Union[BillingPaymentRequiredError, Error, OperationAccepted]:
     if response.status_code == 202:
         response_202 = OperationAccepted.from_dict(response.json())
 
         return response_202
+
+    if response.status_code == 402:
+        response_402 = BillingPaymentRequiredError.from_dict(response.json())
+
+        return response_402
 
     response_default = Error.from_dict(response.json())
 
@@ -51,7 +57,7 @@ def _parse_response(
 
 def _build_response(
     *, client: Union[AuthenticatedClient, Client], response: httpx.Response
-) -> Response[Union[Error, OperationAccepted]]:
+) -> Response[Union[BillingPaymentRequiredError, Error, OperationAccepted]]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -66,7 +72,7 @@ def sync_detailed(
     client: Union[AuthenticatedClient, Client],
     body: TerminalRestart,
     idempotency_key: str,
-) -> Response[Union[Error, OperationAccepted]]:
+) -> Response[Union[BillingPaymentRequiredError, Error, OperationAccepted]]:
     """Restart a stuck terminal — governed, followed as an operation
 
      Close the terminal gracefully (60 s), stop it by force only if it will not close, relaunch it, and
@@ -95,7 +101,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[Error, OperationAccepted]]
+        Response[Union[BillingPaymentRequiredError, Error, OperationAccepted]]
     """
 
     kwargs = _get_kwargs(
@@ -117,7 +123,7 @@ def sync(
     client: Union[AuthenticatedClient, Client],
     body: TerminalRestart,
     idempotency_key: str,
-) -> Optional[Union[Error, OperationAccepted]]:
+) -> Optional[Union[BillingPaymentRequiredError, Error, OperationAccepted]]:
     """Restart a stuck terminal — governed, followed as an operation
 
      Close the terminal gracefully (60 s), stop it by force only if it will not close, relaunch it, and
@@ -146,7 +152,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[Error, OperationAccepted]
+        Union[BillingPaymentRequiredError, Error, OperationAccepted]
     """
 
     return sync_detailed(
@@ -163,7 +169,7 @@ async def asyncio_detailed(
     client: Union[AuthenticatedClient, Client],
     body: TerminalRestart,
     idempotency_key: str,
-) -> Response[Union[Error, OperationAccepted]]:
+) -> Response[Union[BillingPaymentRequiredError, Error, OperationAccepted]]:
     """Restart a stuck terminal — governed, followed as an operation
 
      Close the terminal gracefully (60 s), stop it by force only if it will not close, relaunch it, and
@@ -192,7 +198,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[Error, OperationAccepted]]
+        Response[Union[BillingPaymentRequiredError, Error, OperationAccepted]]
     """
 
     kwargs = _get_kwargs(
@@ -212,7 +218,7 @@ async def asyncio(
     client: Union[AuthenticatedClient, Client],
     body: TerminalRestart,
     idempotency_key: str,
-) -> Optional[Union[Error, OperationAccepted]]:
+) -> Optional[Union[BillingPaymentRequiredError, Error, OperationAccepted]]:
     """Restart a stuck terminal — governed, followed as an operation
 
      Close the terminal gracefully (60 s), stop it by force only if it will not close, relaunch it, and
@@ -241,7 +247,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[Error, OperationAccepted]
+        Union[BillingPaymentRequiredError, Error, OperationAccepted]
     """
 
     return (

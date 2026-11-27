@@ -183,11 +183,11 @@ class TerminalOperation:
         d = dict(src_dict)
         operation_id = UUID(d.pop("operation_id"))
 
-        kind = TerminalOperationKind(d.pop("kind"))
+        kind = TerminalOperationKind._read(d.pop("kind"))
 
         terminal_id = UUID(d.pop("terminal_id"))
 
-        state = TerminalOperationState(d.pop("state"))
+        state = TerminalOperationState._read(d.pop("state"))
 
         requested_by = d.pop("requested_by")
 

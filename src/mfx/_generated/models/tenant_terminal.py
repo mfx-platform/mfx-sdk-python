@@ -358,7 +358,7 @@ class TenantTerminal:
 
         execution = d.pop("execution")
 
-        state = TenantTerminalState(d.pop("state"))
+        state = TenantTerminalState._read(d.pop("state"))
 
         instruments = cast(list[str], d.pop("instruments"))
 
@@ -389,7 +389,7 @@ class TenantTerminal:
             try:
                 if not isinstance(data, str):
                     raise TypeError()
-                server_kind_type_1 = TenantTerminalServerKindType1(data)
+                server_kind_type_1 = TenantTerminalServerKindType1._read(data)
 
                 return server_kind_type_1
             except:  # noqa: E722
@@ -397,7 +397,7 @@ class TenantTerminal:
             try:
                 if not isinstance(data, str):
                     raise TypeError()
-                server_kind_type_2_type_1 = TenantTerminalServerKindType2Type1(data)
+                server_kind_type_2_type_1 = TenantTerminalServerKindType2Type1._read(data)
 
                 return server_kind_type_2_type_1
             except:  # noqa: E722
@@ -405,7 +405,7 @@ class TenantTerminal:
             try:
                 if not isinstance(data, str):
                     raise TypeError()
-                server_kind_type_3_type_1 = TenantTerminalServerKindType3Type1(data)
+                server_kind_type_3_type_1 = TenantTerminalServerKindType3Type1._read(data)
 
                 return server_kind_type_3_type_1
             except:  # noqa: E722
@@ -448,7 +448,7 @@ class TenantTerminal:
             try:
                 if not isinstance(data, str):
                     raise TypeError()
-                offline_reason_type_1 = TenantTerminalOfflineReasonType1(data)
+                offline_reason_type_1 = TenantTerminalOfflineReasonType1._read(data)
 
                 return offline_reason_type_1
             except:  # noqa: E722
@@ -456,7 +456,7 @@ class TenantTerminal:
             try:
                 if not isinstance(data, str):
                     raise TypeError()
-                offline_reason_type_2_type_1 = TenantTerminalOfflineReasonType2Type1(data)
+                offline_reason_type_2_type_1 = TenantTerminalOfflineReasonType2Type1._read(data)
 
                 return offline_reason_type_2_type_1
             except:  # noqa: E722
@@ -464,7 +464,7 @@ class TenantTerminal:
             try:
                 if not isinstance(data, str):
                     raise TypeError()
-                offline_reason_type_3_type_1 = TenantTerminalOfflineReasonType3Type1(data)
+                offline_reason_type_3_type_1 = TenantTerminalOfflineReasonType3Type1._read(data)
 
                 return offline_reason_type_3_type_1
             except:  # noqa: E722
@@ -546,7 +546,7 @@ class TenantTerminal:
         if isinstance(_redundancy, Unset):
             redundancy = UNSET
         else:
-            redundancy = TenantTerminalRedundancy(_redundancy)
+            redundancy = TenantTerminalRedundancy._read(_redundancy)
 
         def _parse_replica_role(
             data: object,
@@ -564,7 +564,7 @@ class TenantTerminal:
             try:
                 if not isinstance(data, str):
                     raise TypeError()
-                replica_role_type_1 = TenantTerminalReplicaRoleType1(data)
+                replica_role_type_1 = TenantTerminalReplicaRoleType1._read(data)
 
                 return replica_role_type_1
             except:  # noqa: E722
@@ -572,7 +572,7 @@ class TenantTerminal:
             try:
                 if not isinstance(data, str):
                     raise TypeError()
-                replica_role_type_2_type_1 = TenantTerminalReplicaRoleType2Type1(data)
+                replica_role_type_2_type_1 = TenantTerminalReplicaRoleType2Type1._read(data)
 
                 return replica_role_type_2_type_1
             except:  # noqa: E722
@@ -580,7 +580,7 @@ class TenantTerminal:
             try:
                 if not isinstance(data, str):
                     raise TypeError()
-                replica_role_type_3_type_1 = TenantTerminalReplicaRoleType3Type1(data)
+                replica_role_type_3_type_1 = TenantTerminalReplicaRoleType3Type1._read(data)
 
                 return replica_role_type_3_type_1
             except:  # noqa: E722
@@ -636,7 +636,7 @@ class TenantTerminal:
         if isinstance(_refresh_ms, Unset):
             refresh_ms = UNSET
         else:
-            refresh_ms = TenantTerminalRefreshMs(_refresh_ms)
+            refresh_ms = TenantTerminalRefreshMs._read(_refresh_ms)
 
         tenant_terminal = cls(
             id=id,

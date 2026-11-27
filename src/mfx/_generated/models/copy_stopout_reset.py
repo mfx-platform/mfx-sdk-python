@@ -59,7 +59,7 @@ class CopyStopoutReset:
         if isinstance(_limit, Unset):
             limit = UNSET
         else:
-            limit = CopyLimitKind(_limit)
+            limit = CopyLimitKind._read(_limit)
 
         copy_stopout_reset = cls(
             reason=reason,

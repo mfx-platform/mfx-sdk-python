@@ -47,7 +47,7 @@ class TradeSession:
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         d = dict(src_dict)
-        day = TradeSessionDay(d.pop("day"))
+        day = TradeSessionDay._read(d.pop("day"))
 
         from_ = d.pop("from")
 

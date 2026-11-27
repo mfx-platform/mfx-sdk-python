@@ -13,3 +13,17 @@ class TerminalCreateRefreshMs(IntEnum):
 
     def __str__(self) -> str:
         return str(self.value)
+
+    @classmethod
+    def _read(cls, value: int) -> "TerminalCreateRefreshMs":
+        """A number from a response: its member, or, for a number a later version of the API
+        added, an UNKNOWN pseudo-member whose value is the number as sent."""
+        try:
+            return cls(value)
+        except ValueError:
+            if not isinstance(value, int) or isinstance(value, bool):
+                raise
+        unknown = int.__new__(cls, value)
+        unknown._name_ = "UNKNOWN"
+        unknown._value_ = value
+        return unknown

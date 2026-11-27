@@ -143,7 +143,7 @@ class OperationQueue:
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         d = dict(src_dict)
-        held_by = OperationQueueHeldBy(d.pop("held_by"))
+        held_by = OperationQueueHeldBy._read(d.pop("held_by"))
 
         def _parse_expected_start_at(data: object) -> Union[None, datetime.datetime]:
             if data is None:
@@ -173,7 +173,7 @@ class OperationQueue:
             try:
                 if not isinstance(data, str):
                     raise TypeError()
-                reason_type_1 = OperationQueueReasonType1(data)
+                reason_type_1 = OperationQueueReasonType1._read(data)
 
                 return reason_type_1
             except:  # noqa: E722
@@ -181,7 +181,7 @@ class OperationQueue:
             try:
                 if not isinstance(data, str):
                     raise TypeError()
-                reason_type_2_type_1 = OperationQueueReasonType2Type1(data)
+                reason_type_2_type_1 = OperationQueueReasonType2Type1._read(data)
 
                 return reason_type_2_type_1
             except:  # noqa: E722
@@ -189,7 +189,7 @@ class OperationQueue:
             try:
                 if not isinstance(data, str):
                     raise TypeError()
-                reason_type_3_type_1 = OperationQueueReasonType3Type1(data)
+                reason_type_3_type_1 = OperationQueueReasonType3Type1._read(data)
 
                 return reason_type_3_type_1
             except:  # noqa: E722
@@ -206,7 +206,7 @@ class OperationQueue:
 
         reason = _parse_reason(d.pop("reason"))
 
-        class_ = OperationQueueClass(d.pop("class"))
+        class_ = OperationQueueClass._read(d.pop("class"))
 
         def _parse_position(data: object) -> Union[None, int]:
             if data is None:

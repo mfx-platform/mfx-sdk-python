@@ -80,7 +80,7 @@ class ExpertAdvisorAttach:
 
         symbol = d.pop("symbol")
 
-        timeframe = ExpertAdvisorAttachTimeframe(d.pop("timeframe"))
+        timeframe = ExpertAdvisorAttachTimeframe._read(d.pop("timeframe"))
 
         reason = d.pop("reason")
 

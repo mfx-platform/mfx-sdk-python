@@ -79,7 +79,7 @@ class RiskCloseScopePositionsItem:
 
         symbol = d.pop("symbol")
 
-        side = RiskCloseScopePositionsItemSide(d.pop("side"))
+        side = RiskCloseScopePositionsItemSide._read(d.pop("side"))
 
         def _parse_volume(data: object) -> Union[None, str]:
             if data is None:

@@ -10,6 +10,7 @@ from typing import (
     Union,
     cast,
 )
+from uuid import UUID
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -30,6 +31,11 @@ class RiskRuleCheck:
         would_be (Union[None, str]):
         limit (Union[None, str]):
         reason (Union[None, str]): The refusal reason the pre-trade check would answer
+        challenge_id (Union[None, UUID, Unset]): The challenge whose rule this row checks; absent or null on a policy's
+            row
+        input_ (Union[None, Unset, str]): On the row named inputs: the first input that is missing or too old, in the
+            order of x-known-values. The list is not closed: a client must show a value it does not know as it is, and never
+            fail on it. Absent or null on every other row
     """
 
     rule: str
@@ -38,6 +44,8 @@ class RiskRuleCheck:
     would_be: Union[None, str]
     limit: Union[None, str]
     reason: Union[None, str]
+    challenge_id: Union[None, UUID, Unset] = UNSET
+    input_: Union[None, Unset, str] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -57,6 +65,20 @@ class RiskRuleCheck:
         reason: Union[None, str]
         reason = self.reason
 
+        challenge_id: Union[None, Unset, str]
+        if isinstance(self.challenge_id, Unset):
+            challenge_id = UNSET
+        elif isinstance(self.challenge_id, UUID):
+            challenge_id = str(self.challenge_id)
+        else:
+            challenge_id = self.challenge_id
+
+        input_: Union[None, Unset, str]
+        if isinstance(self.input_, Unset):
+            input_ = UNSET
+        else:
+            input_ = self.input_
+
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
@@ -69,6 +91,10 @@ class RiskRuleCheck:
                 "reason": reason,
             }
         )
+        if challenge_id is not UNSET:
+            field_dict["challenge_id"] = challenge_id
+        if input_ is not UNSET:
+            field_dict["input"] = input_
 
         return field_dict
 
@@ -77,7 +103,7 @@ class RiskRuleCheck:
         d = dict(src_dict)
         rule = d.pop("rule")
 
-        verdict = RiskRuleCheckVerdict(d.pop("verdict"))
+        verdict = RiskRuleCheckVerdict._read(d.pop("verdict"))
 
         def _parse_used(data: object) -> Union[None, str]:
             if data is None:
@@ -107,6 +133,32 @@ class RiskRuleCheck:
 
         reason = _parse_reason(d.pop("reason"))
 
+        def _parse_challenge_id(data: object) -> Union[None, UUID, Unset]:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                challenge_id_type_0 = UUID(data)
+
+                return challenge_id_type_0
+            except:  # noqa: E722
+                pass
+            return cast(Union[None, UUID, Unset], data)
+
+        challenge_id = _parse_challenge_id(d.pop("challenge_id", UNSET))
+
+        def _parse_input_(data: object) -> Union[None, Unset, str]:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(Union[None, Unset, str], data)
+
+        input_ = _parse_input_(d.pop("input", UNSET))
+
         risk_rule_check = cls(
             rule=rule,
             verdict=verdict,
@@ -114,6 +166,8 @@ class RiskRuleCheck:
             would_be=would_be,
             limit=limit,
             reason=reason,
+            challenge_id=challenge_id,
+            input_=input_,
         )
 
         risk_rule_check.additional_properties = d

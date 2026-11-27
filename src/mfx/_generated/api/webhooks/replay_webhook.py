@@ -6,6 +6,7 @@ import httpx
 
 from ... import errors
 from ...client import AuthenticatedClient, Client
+from ...models.billing_payment_required_error import BillingPaymentRequiredError
 from ...models.error import Error
 from ...models.webhook_replay import WebhookReplay
 from ...models.webhook_replay_accepted import WebhookReplayAccepted
@@ -38,16 +39,26 @@ def _get_kwargs(
 
 def _parse_response(
     *, client: Union[AuthenticatedClient, Client], response: httpx.Response
-) -> Union[Error, WebhookReplayAccepted]:
+) -> Union[BillingPaymentRequiredError, Error, WebhookReplayAccepted]:
     if response.status_code == 202:
         response_202 = WebhookReplayAccepted.from_dict(response.json())
 
         return response_202
 
+    if response.status_code == 402:
+        response_402 = BillingPaymentRequiredError.from_dict(response.json())
+
+        return response_402
+
     if response.status_code == 409:
         response_409 = Error.from_dict(response.json())
 
         return response_409
+
+    if response.status_code == 429:
+        response_429 = Error.from_dict(response.json())
+
+        return response_429
 
     response_default = Error.from_dict(response.json())
 
@@ -56,7 +67,7 @@ def _parse_response(
 
 def _build_response(
     *, client: Union[AuthenticatedClient, Client], response: httpx.Response
-) -> Response[Union[Error, WebhookReplayAccepted]]:
+) -> Response[Union[BillingPaymentRequiredError, Error, WebhookReplayAccepted]]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -71,7 +82,7 @@ def sync_detailed(
     client: Union[AuthenticatedClient, Client],
     body: WebhookReplay,
     idempotency_key: str,
-) -> Response[Union[Error, WebhookReplayAccepted]]:
+) -> Response[Union[BillingPaymentRequiredError, Error, WebhookReplayAccepted]]:
     """Send again the events after a cursor of the stream, or one dead letter
 
     Args:
@@ -85,7 +96,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[Error, WebhookReplayAccepted]]
+        Response[Union[BillingPaymentRequiredError, Error, WebhookReplayAccepted]]
     """
 
     kwargs = _get_kwargs(
@@ -107,7 +118,7 @@ def sync(
     client: Union[AuthenticatedClient, Client],
     body: WebhookReplay,
     idempotency_key: str,
-) -> Optional[Union[Error, WebhookReplayAccepted]]:
+) -> Optional[Union[BillingPaymentRequiredError, Error, WebhookReplayAccepted]]:
     """Send again the events after a cursor of the stream, or one dead letter
 
     Args:
@@ -121,7 +132,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[Error, WebhookReplayAccepted]
+        Union[BillingPaymentRequiredError, Error, WebhookReplayAccepted]
     """
 
     return sync_detailed(
@@ -138,7 +149,7 @@ async def asyncio_detailed(
     client: Union[AuthenticatedClient, Client],
     body: WebhookReplay,
     idempotency_key: str,
-) -> Response[Union[Error, WebhookReplayAccepted]]:
+) -> Response[Union[BillingPaymentRequiredError, Error, WebhookReplayAccepted]]:
     """Send again the events after a cursor of the stream, or one dead letter
 
     Args:
@@ -152,7 +163,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[Error, WebhookReplayAccepted]]
+        Response[Union[BillingPaymentRequiredError, Error, WebhookReplayAccepted]]
     """
 
     kwargs = _get_kwargs(
@@ -172,7 +183,7 @@ async def asyncio(
     client: Union[AuthenticatedClient, Client],
     body: WebhookReplay,
     idempotency_key: str,
-) -> Optional[Union[Error, WebhookReplayAccepted]]:
+) -> Optional[Union[BillingPaymentRequiredError, Error, WebhookReplayAccepted]]:
     """Send again the events after a cursor of the stream, or one dead letter
 
     Args:
@@ -186,7 +197,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[Error, WebhookReplayAccepted]
+        Union[BillingPaymentRequiredError, Error, WebhookReplayAccepted]
     """
 
     return (

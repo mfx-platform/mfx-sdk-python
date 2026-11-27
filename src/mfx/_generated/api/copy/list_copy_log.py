@@ -31,6 +31,7 @@ def _get_kwargs(
     from_: Union[Unset, datetime.datetime] = UNSET,
     to: Union[Unset, datetime.datetime] = UNSET,
     sort: Union[Unset, ListCopyLogSort] = ListCopyLogSort.CREATED_AT,
+    group_id: Union[Unset, UUID] = UNSET,
 ) -> dict[str, Any]:
     params: dict[str, Any] = {}
 
@@ -101,6 +102,11 @@ def _get_kwargs(
 
     params["sort"] = json_sort
 
+    json_group_id: Union[Unset, str] = UNSET
+    if not isinstance(group_id, Unset):
+        json_group_id = str(group_id)
+    params["group_id"] = json_group_id
+
     params = {k: v for k, v in params.items() if v is not UNSET and v is not None}
 
     _kwargs: dict[str, Any] = {
@@ -151,6 +157,7 @@ def sync_detailed(
     from_: Union[Unset, datetime.datetime] = UNSET,
     to: Union[Unset, datetime.datetime] = UNSET,
     sort: Union[Unset, ListCopyLogSort] = ListCopyLogSort.CREATED_AT,
+    group_id: Union[Unset, UUID] = UNSET,
 ) -> Response[Union[CopyLogPage, Error]]:
     """What became of each copy - one row a follower a signal, with its outcome, reason and stage timings
 
@@ -173,6 +180,7 @@ def sync_detailed(
         from_ (Union[Unset, datetime.datetime]):
         to (Union[Unset, datetime.datetime]):
         sort (Union[Unset, ListCopyLogSort]):  Default: ListCopyLogSort.CREATED_AT.
+        group_id (Union[Unset, UUID]):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -195,6 +203,7 @@ def sync_detailed(
         from_=from_,
         to=to,
         sort=sort,
+        group_id=group_id,
     )
 
     response = client.get_httpx_client().request(
@@ -219,6 +228,7 @@ def sync(
     from_: Union[Unset, datetime.datetime] = UNSET,
     to: Union[Unset, datetime.datetime] = UNSET,
     sort: Union[Unset, ListCopyLogSort] = ListCopyLogSort.CREATED_AT,
+    group_id: Union[Unset, UUID] = UNSET,
 ) -> Optional[Union[CopyLogPage, Error]]:
     """What became of each copy - one row a follower a signal, with its outcome, reason and stage timings
 
@@ -241,6 +251,7 @@ def sync(
         from_ (Union[Unset, datetime.datetime]):
         to (Union[Unset, datetime.datetime]):
         sort (Union[Unset, ListCopyLogSort]):  Default: ListCopyLogSort.CREATED_AT.
+        group_id (Union[Unset, UUID]):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -264,6 +275,7 @@ def sync(
         from_=from_,
         to=to,
         sort=sort,
+        group_id=group_id,
     ).parsed
 
 
@@ -282,6 +294,7 @@ async def asyncio_detailed(
     from_: Union[Unset, datetime.datetime] = UNSET,
     to: Union[Unset, datetime.datetime] = UNSET,
     sort: Union[Unset, ListCopyLogSort] = ListCopyLogSort.CREATED_AT,
+    group_id: Union[Unset, UUID] = UNSET,
 ) -> Response[Union[CopyLogPage, Error]]:
     """What became of each copy - one row a follower a signal, with its outcome, reason and stage timings
 
@@ -304,6 +317,7 @@ async def asyncio_detailed(
         from_ (Union[Unset, datetime.datetime]):
         to (Union[Unset, datetime.datetime]):
         sort (Union[Unset, ListCopyLogSort]):  Default: ListCopyLogSort.CREATED_AT.
+        group_id (Union[Unset, UUID]):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -326,6 +340,7 @@ async def asyncio_detailed(
         from_=from_,
         to=to,
         sort=sort,
+        group_id=group_id,
     )
 
     response = await client.get_async_httpx_client().request(**kwargs)
@@ -348,6 +363,7 @@ async def asyncio(
     from_: Union[Unset, datetime.datetime] = UNSET,
     to: Union[Unset, datetime.datetime] = UNSET,
     sort: Union[Unset, ListCopyLogSort] = ListCopyLogSort.CREATED_AT,
+    group_id: Union[Unset, UUID] = UNSET,
 ) -> Optional[Union[CopyLogPage, Error]]:
     """What became of each copy - one row a follower a signal, with its outcome, reason and stage timings
 
@@ -370,6 +386,7 @@ async def asyncio(
         from_ (Union[Unset, datetime.datetime]):
         to (Union[Unset, datetime.datetime]):
         sort (Union[Unset, ListCopyLogSort]):  Default: ListCopyLogSort.CREATED_AT.
+        group_id (Union[Unset, UUID]):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -394,5 +411,6 @@ async def asyncio(
             from_=from_,
             to=to,
             sort=sort,
+            group_id=group_id,
         )
     ).parsed

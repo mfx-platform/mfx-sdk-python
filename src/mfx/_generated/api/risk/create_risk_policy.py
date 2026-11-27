@@ -5,6 +5,7 @@ import httpx
 
 from ... import errors
 from ...client import AuthenticatedClient, Client
+from ...models.billing_payment_required_error import BillingPaymentRequiredError
 from ...models.error import Error
 from ...models.risk_policy import RiskPolicy
 from ...models.risk_policy_create import RiskPolicyCreate
@@ -34,11 +35,16 @@ def _get_kwargs(
 
 def _parse_response(
     *, client: Union[AuthenticatedClient, Client], response: httpx.Response
-) -> Union[Error, RiskPolicy]:
+) -> Union[BillingPaymentRequiredError, Error, RiskPolicy]:
     if response.status_code == 201:
         response_201 = RiskPolicy.from_dict(response.json())
 
         return response_201
+
+    if response.status_code == 402:
+        response_402 = BillingPaymentRequiredError.from_dict(response.json())
+
+        return response_402
 
     response_default = Error.from_dict(response.json())
 
@@ -47,7 +53,7 @@ def _parse_response(
 
 def _build_response(
     *, client: Union[AuthenticatedClient, Client], response: httpx.Response
-) -> Response[Union[Error, RiskPolicy]]:
+) -> Response[Union[BillingPaymentRequiredError, Error, RiskPolicy]]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -61,7 +67,7 @@ def sync_detailed(
     client: Union[AuthenticatedClient, Client],
     body: RiskPolicyCreate,
     idempotency_key: str,
-) -> Response[Union[Error, RiskPolicy]]:
+) -> Response[Union[BillingPaymentRequiredError, Error, RiskPolicy]]:
     """Create a policy; its first version holds the rules. Nothing is in force until it is activated on
     accounts
 
@@ -74,7 +80,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[Error, RiskPolicy]]
+        Response[Union[BillingPaymentRequiredError, Error, RiskPolicy]]
     """
 
     kwargs = _get_kwargs(
@@ -94,7 +100,7 @@ def sync(
     client: Union[AuthenticatedClient, Client],
     body: RiskPolicyCreate,
     idempotency_key: str,
-) -> Optional[Union[Error, RiskPolicy]]:
+) -> Optional[Union[BillingPaymentRequiredError, Error, RiskPolicy]]:
     """Create a policy; its first version holds the rules. Nothing is in force until it is activated on
     accounts
 
@@ -107,7 +113,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[Error, RiskPolicy]
+        Union[BillingPaymentRequiredError, Error, RiskPolicy]
     """
 
     return sync_detailed(
@@ -122,7 +128,7 @@ async def asyncio_detailed(
     client: Union[AuthenticatedClient, Client],
     body: RiskPolicyCreate,
     idempotency_key: str,
-) -> Response[Union[Error, RiskPolicy]]:
+) -> Response[Union[BillingPaymentRequiredError, Error, RiskPolicy]]:
     """Create a policy; its first version holds the rules. Nothing is in force until it is activated on
     accounts
 
@@ -135,7 +141,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[Error, RiskPolicy]]
+        Response[Union[BillingPaymentRequiredError, Error, RiskPolicy]]
     """
 
     kwargs = _get_kwargs(
@@ -153,7 +159,7 @@ async def asyncio(
     client: Union[AuthenticatedClient, Client],
     body: RiskPolicyCreate,
     idempotency_key: str,
-) -> Optional[Union[Error, RiskPolicy]]:
+) -> Optional[Union[BillingPaymentRequiredError, Error, RiskPolicy]]:
     """Create a policy; its first version holds the rules. Nothing is in force until it is activated on
     accounts
 
@@ -166,7 +172,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[Error, RiskPolicy]
+        Union[BillingPaymentRequiredError, Error, RiskPolicy]
     """
 
     return (

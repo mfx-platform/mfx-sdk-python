@@ -34,7 +34,12 @@ class Farms:
     async def page(
         self, *, cursor: str | None = None, limit: int | None = None
     ) -> Page[TenantFarm]:
-        """One page of farms."""
+        """One page of farms.
+
+        Args:
+            cursor: Where to continue from: the previous page's ``next_cursor``.
+            limit: How many to return at most, on one page.
+        """
         parsed = await self._client.read(
             lambda: _list_farms.asyncio_detailed(
                 client=self._client.generated,
@@ -46,7 +51,11 @@ class Farms:
         return page_of(parsed)
 
     async def list(self, *, limit: int | None = None) -> AsyncIterator[TenantFarm]:
-        """Every farm, following the cursor."""
+        """Every farm, following the cursor.
+
+        Args:
+            limit: How many to return at most, on one page.
+        """
         cursor: str | None = None
         while True:
             page = await self.page(cursor=cursor, limit=limit)

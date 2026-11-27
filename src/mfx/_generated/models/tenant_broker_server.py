@@ -74,7 +74,7 @@ class TenantBrokerServer:
 
         server_name = d.pop("server_name")
 
-        kind = TenantBrokerServerKind(d.pop("kind"))
+        kind = TenantBrokerServerKind._read(d.pop("kind"))
 
         enabled = d.pop("enabled")
 

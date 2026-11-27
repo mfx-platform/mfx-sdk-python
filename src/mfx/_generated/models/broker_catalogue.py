@@ -78,7 +78,7 @@ class BrokerCatalogue:
 
         account_type = d.pop("account_type")
 
-        source = BrokerCatalogueSource(d.pop("source"))
+        source = BrokerCatalogueSource._read(d.pop("source"))
 
         catalogue_hash = d.pop("catalogue_hash")
 

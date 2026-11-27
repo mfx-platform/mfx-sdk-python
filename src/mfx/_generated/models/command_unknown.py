@@ -144,7 +144,7 @@ class CommandUnknown:
 
         terminal_id = UUID(d.pop("terminal_id"))
 
-        state = CommandState(d.pop("state"))
+        state = CommandState._read(d.pop("state"))
 
         retcode = d.pop("retcode")
 

@@ -15,6 +15,15 @@ from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
 from ..models.copy_match import CopyMatch
+from ..models.copy_preview_rows_item_follower_volume_unit_type_1 import (
+    CopyPreviewRowsItemFollowerVolumeUnitType1,
+)
+from ..models.copy_preview_rows_item_follower_volume_unit_type_2_type_1 import (
+    CopyPreviewRowsItemFollowerVolumeUnitType2Type1,
+)
+from ..models.copy_preview_rows_item_follower_volume_unit_type_3_type_1 import (
+    CopyPreviewRowsItemFollowerVolumeUnitType3Type1,
+)
 from ..models.copy_reason import CopyReason
 from ..types import UNSET, Unset
 
@@ -32,6 +41,13 @@ class CopyPreviewRowsItem:
         matched_by (Union[CopyMatch, None]):
         follower_volume (Union[None, str]): In the follower venue's unit; null when refused
         reason (Union[CopyReason, None]): Why this row would be refused; null when it would be copied
+        leader_contract_size (Union[None, str]): The leader symbol's contract as the row was worked from it: a lot's
+            size for a symbol in lots, 1 for one counted in units; null when the leader's symbol was not found
+        follower_contract_size (Union[None, str]): The follower symbol's contract, as leader_contract_size; null when no
+            symbol matched
+        follower_volume_unit (Union[CopyPreviewRowsItemFollowerVolumeUnitType1,
+            CopyPreviewRowsItemFollowerVolumeUnitType2Type1, CopyPreviewRowsItemFollowerVolumeUnitType3Type1, None]): The
+            unit follower_volume is in; null when no symbol matched
     """
 
     leader_symbol: str
@@ -41,6 +57,14 @@ class CopyPreviewRowsItem:
     matched_by: Union[CopyMatch, None]
     follower_volume: Union[None, str]
     reason: Union[CopyReason, None]
+    leader_contract_size: Union[None, str]
+    follower_contract_size: Union[None, str]
+    follower_volume_unit: Union[
+        CopyPreviewRowsItemFollowerVolumeUnitType1,
+        CopyPreviewRowsItemFollowerVolumeUnitType2Type1,
+        CopyPreviewRowsItemFollowerVolumeUnitType3Type1,
+        None,
+    ]
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -69,6 +93,22 @@ class CopyPreviewRowsItem:
         else:
             reason = self.reason
 
+        leader_contract_size: Union[None, str]
+        leader_contract_size = self.leader_contract_size
+
+        follower_contract_size: Union[None, str]
+        follower_contract_size = self.follower_contract_size
+
+        follower_volume_unit: Union[None, str]
+        if isinstance(self.follower_volume_unit, CopyPreviewRowsItemFollowerVolumeUnitType1):
+            follower_volume_unit = self.follower_volume_unit.value
+        elif isinstance(self.follower_volume_unit, CopyPreviewRowsItemFollowerVolumeUnitType2Type1):
+            follower_volume_unit = self.follower_volume_unit.value
+        elif isinstance(self.follower_volume_unit, CopyPreviewRowsItemFollowerVolumeUnitType3Type1):
+            follower_volume_unit = self.follower_volume_unit.value
+        else:
+            follower_volume_unit = self.follower_volume_unit
+
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
@@ -80,6 +120,9 @@ class CopyPreviewRowsItem:
                 "matched_by": matched_by,
                 "follower_volume": follower_volume,
                 "reason": reason,
+                "leader_contract_size": leader_contract_size,
+                "follower_contract_size": follower_contract_size,
+                "follower_volume_unit": follower_volume_unit,
             }
         )
 
@@ -112,7 +155,7 @@ class CopyPreviewRowsItem:
             try:
                 if not isinstance(data, str):
                     raise TypeError()
-                matched_by_type_0 = CopyMatch(data)
+                matched_by_type_0 = CopyMatch._read(data)
 
                 return matched_by_type_0
             except:  # noqa: E722
@@ -134,7 +177,7 @@ class CopyPreviewRowsItem:
             try:
                 if not isinstance(data, str):
                     raise TypeError()
-                reason_type_0 = CopyReason(data)
+                reason_type_0 = CopyReason._read(data)
 
                 return reason_type_0
             except:  # noqa: E722
@@ -142,6 +185,70 @@ class CopyPreviewRowsItem:
             return cast(Union[CopyReason, None], data)
 
         reason = _parse_reason(d.pop("reason"))
+
+        def _parse_leader_contract_size(data: object) -> Union[None, str]:
+            if data is None:
+                return data
+            return cast(Union[None, str], data)
+
+        leader_contract_size = _parse_leader_contract_size(d.pop("leader_contract_size"))
+
+        def _parse_follower_contract_size(data: object) -> Union[None, str]:
+            if data is None:
+                return data
+            return cast(Union[None, str], data)
+
+        follower_contract_size = _parse_follower_contract_size(d.pop("follower_contract_size"))
+
+        def _parse_follower_volume_unit(
+            data: object,
+        ) -> Union[
+            CopyPreviewRowsItemFollowerVolumeUnitType1,
+            CopyPreviewRowsItemFollowerVolumeUnitType2Type1,
+            CopyPreviewRowsItemFollowerVolumeUnitType3Type1,
+            None,
+        ]:
+            if data is None:
+                return data
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                follower_volume_unit_type_1 = CopyPreviewRowsItemFollowerVolumeUnitType1._read(data)
+
+                return follower_volume_unit_type_1
+            except:  # noqa: E722
+                pass
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                follower_volume_unit_type_2_type_1 = (
+                    CopyPreviewRowsItemFollowerVolumeUnitType2Type1._read(data)
+                )
+
+                return follower_volume_unit_type_2_type_1
+            except:  # noqa: E722
+                pass
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                follower_volume_unit_type_3_type_1 = (
+                    CopyPreviewRowsItemFollowerVolumeUnitType3Type1._read(data)
+                )
+
+                return follower_volume_unit_type_3_type_1
+            except:  # noqa: E722
+                pass
+            return cast(
+                Union[
+                    CopyPreviewRowsItemFollowerVolumeUnitType1,
+                    CopyPreviewRowsItemFollowerVolumeUnitType2Type1,
+                    CopyPreviewRowsItemFollowerVolumeUnitType3Type1,
+                    None,
+                ],
+                data,
+            )
+
+        follower_volume_unit = _parse_follower_volume_unit(d.pop("follower_volume_unit"))
 
         copy_preview_rows_item = cls(
             leader_symbol=leader_symbol,
@@ -151,6 +258,9 @@ class CopyPreviewRowsItem:
             matched_by=matched_by,
             follower_volume=follower_volume,
             reason=reason,
+            leader_contract_size=leader_contract_size,
+            follower_contract_size=follower_contract_size,
+            follower_volume_unit=follower_volume_unit,
         )
 
         copy_preview_rows_item.additional_properties = d

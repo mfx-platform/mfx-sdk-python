@@ -17,6 +17,7 @@ def _get_kwargs(
     *,
     server_id: Union[Unset, UUID] = UNSET,
     account_type: Union[Unset, str] = UNSET,
+    terminal_id: Union[Unset, UUID] = UNSET,
 ) -> dict[str, Any]:
     params: dict[str, Any] = {}
 
@@ -26,6 +27,11 @@ def _get_kwargs(
     params["server_id"] = json_server_id
 
     params["account_type"] = account_type
+
+    json_terminal_id: Union[Unset, str] = UNSET
+    if not isinstance(terminal_id, Unset):
+        json_terminal_id = str(terminal_id)
+    params["terminal_id"] = json_terminal_id
 
     params = {k: v for k, v in params.items() if v is not UNSET and v is not None}
 
@@ -87,19 +93,27 @@ def sync_detailed(
     client: Union[AuthenticatedClient, Client],
     server_id: Union[Unset, UUID] = UNSET,
     account_type: Union[Unset, str] = UNSET,
+    terminal_id: Union[Unset, UUID] = UNSET,
 ) -> Response[Union[Error, SymbolQuote]]:
     """The last price with its age — a snapshot from the tenant's own terminal, never a stream
 
      A symbol the terminal already watches answers from its latest tick. Any other symbol is read on
     demand through the terminal's command path (read-only, allowed on every usage) with a 5 s bound; no
     tick in time is 503 (`upstream_error`, details.reason `terminal_timeout`). A price is never returned
-    without `age_s`. Continuous prices are `POST /md/subscriptions` on a `quote_streaming` farm.
+    without `age_s`. Continuous prices are `POST /md/subscriptions` on a `quote_streaming` farm. With
+    `terminal_id` the read is made by that terminal and by no other, so two of a tenant's accounts on
+    one server can be compared (two account groups can be quoted different spreads under one symbol
+    name); every answer a terminal read names that terminal in `source_terminal_id`. A read by a named
+    terminal is one command on that terminal and one request against the key's request budget (`X-MFX-
+    Budget-Remaining`), as every call is; while one such read of a symbol is in flight on a terminal,
+    another ask for the same symbol on it is given that read's answer and sends no second command.
 
     Args:
         id (str):
         symbol (str):
         server_id (Union[Unset, UUID]):
         account_type (Union[Unset, str]):
+        terminal_id (Union[Unset, UUID]):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -114,6 +128,7 @@ def sync_detailed(
         symbol=symbol,
         server_id=server_id,
         account_type=account_type,
+        terminal_id=terminal_id,
     )
 
     response = client.get_httpx_client().request(
@@ -130,19 +145,27 @@ def sync(
     client: Union[AuthenticatedClient, Client],
     server_id: Union[Unset, UUID] = UNSET,
     account_type: Union[Unset, str] = UNSET,
+    terminal_id: Union[Unset, UUID] = UNSET,
 ) -> Optional[Union[Error, SymbolQuote]]:
     """The last price with its age — a snapshot from the tenant's own terminal, never a stream
 
      A symbol the terminal already watches answers from its latest tick. Any other symbol is read on
     demand through the terminal's command path (read-only, allowed on every usage) with a 5 s bound; no
     tick in time is 503 (`upstream_error`, details.reason `terminal_timeout`). A price is never returned
-    without `age_s`. Continuous prices are `POST /md/subscriptions` on a `quote_streaming` farm.
+    without `age_s`. Continuous prices are `POST /md/subscriptions` on a `quote_streaming` farm. With
+    `terminal_id` the read is made by that terminal and by no other, so two of a tenant's accounts on
+    one server can be compared (two account groups can be quoted different spreads under one symbol
+    name); every answer a terminal read names that terminal in `source_terminal_id`. A read by a named
+    terminal is one command on that terminal and one request against the key's request budget (`X-MFX-
+    Budget-Remaining`), as every call is; while one such read of a symbol is in flight on a terminal,
+    another ask for the same symbol on it is given that read's answer and sends no second command.
 
     Args:
         id (str):
         symbol (str):
         server_id (Union[Unset, UUID]):
         account_type (Union[Unset, str]):
+        terminal_id (Union[Unset, UUID]):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -158,6 +181,7 @@ def sync(
         client=client,
         server_id=server_id,
         account_type=account_type,
+        terminal_id=terminal_id,
     ).parsed
 
 
@@ -168,19 +192,27 @@ async def asyncio_detailed(
     client: Union[AuthenticatedClient, Client],
     server_id: Union[Unset, UUID] = UNSET,
     account_type: Union[Unset, str] = UNSET,
+    terminal_id: Union[Unset, UUID] = UNSET,
 ) -> Response[Union[Error, SymbolQuote]]:
     """The last price with its age — a snapshot from the tenant's own terminal, never a stream
 
      A symbol the terminal already watches answers from its latest tick. Any other symbol is read on
     demand through the terminal's command path (read-only, allowed on every usage) with a 5 s bound; no
     tick in time is 503 (`upstream_error`, details.reason `terminal_timeout`). A price is never returned
-    without `age_s`. Continuous prices are `POST /md/subscriptions` on a `quote_streaming` farm.
+    without `age_s`. Continuous prices are `POST /md/subscriptions` on a `quote_streaming` farm. With
+    `terminal_id` the read is made by that terminal and by no other, so two of a tenant's accounts on
+    one server can be compared (two account groups can be quoted different spreads under one symbol
+    name); every answer a terminal read names that terminal in `source_terminal_id`. A read by a named
+    terminal is one command on that terminal and one request against the key's request budget (`X-MFX-
+    Budget-Remaining`), as every call is; while one such read of a symbol is in flight on a terminal,
+    another ask for the same symbol on it is given that read's answer and sends no second command.
 
     Args:
         id (str):
         symbol (str):
         server_id (Union[Unset, UUID]):
         account_type (Union[Unset, str]):
+        terminal_id (Union[Unset, UUID]):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -195,6 +227,7 @@ async def asyncio_detailed(
         symbol=symbol,
         server_id=server_id,
         account_type=account_type,
+        terminal_id=terminal_id,
     )
 
     response = await client.get_async_httpx_client().request(**kwargs)
@@ -209,19 +242,27 @@ async def asyncio(
     client: Union[AuthenticatedClient, Client],
     server_id: Union[Unset, UUID] = UNSET,
     account_type: Union[Unset, str] = UNSET,
+    terminal_id: Union[Unset, UUID] = UNSET,
 ) -> Optional[Union[Error, SymbolQuote]]:
     """The last price with its age — a snapshot from the tenant's own terminal, never a stream
 
      A symbol the terminal already watches answers from its latest tick. Any other symbol is read on
     demand through the terminal's command path (read-only, allowed on every usage) with a 5 s bound; no
     tick in time is 503 (`upstream_error`, details.reason `terminal_timeout`). A price is never returned
-    without `age_s`. Continuous prices are `POST /md/subscriptions` on a `quote_streaming` farm.
+    without `age_s`. Continuous prices are `POST /md/subscriptions` on a `quote_streaming` farm. With
+    `terminal_id` the read is made by that terminal and by no other, so two of a tenant's accounts on
+    one server can be compared (two account groups can be quoted different spreads under one symbol
+    name); every answer a terminal read names that terminal in `source_terminal_id`. A read by a named
+    terminal is one command on that terminal and one request against the key's request budget (`X-MFX-
+    Budget-Remaining`), as every call is; while one such read of a symbol is in flight on a terminal,
+    another ask for the same symbol on it is given that read's answer and sends no second command.
 
     Args:
         id (str):
         symbol (str):
         server_id (Union[Unset, UUID]):
         account_type (Union[Unset, str]):
+        terminal_id (Union[Unset, UUID]):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -238,5 +279,6 @@ async def asyncio(
             client=client,
             server_id=server_id,
             account_type=account_type,
+            terminal_id=terminal_id,
         )
     ).parsed

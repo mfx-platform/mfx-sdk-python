@@ -41,7 +41,7 @@ class RiskClear:
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         d = dict(src_dict)
-        rule = RiskClearRule(d.pop("rule"))
+        rule = RiskClearRule._read(d.pop("rule"))
 
         reason = d.pop("reason")
 

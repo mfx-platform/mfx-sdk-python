@@ -94,7 +94,7 @@ class TenantExpertAdvisorTerminalsItem:
         d = dict(src_dict)
         terminal_id = UUID(d.pop("terminal_id"))
 
-        state = TenantExpertAdvisorTerminalsItemState(d.pop("state"))
+        state = TenantExpertAdvisorTerminalsItemState._read(d.pop("state"))
 
         since = isoparse(d.pop("since"))
 

@@ -66,7 +66,7 @@ class RiskPlanStepSpecTrigger:
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         d = dict(src_dict)
-        kind = RiskPlanStepSpecTriggerKind(d.pop("kind"))
+        kind = RiskPlanStepSpecTriggerKind._read(d.pop("kind"))
 
         def _parse_value(data: object) -> Union[None, Unset, str]:
             if data is None:

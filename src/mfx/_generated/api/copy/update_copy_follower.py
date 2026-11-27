@@ -6,6 +6,7 @@ import httpx
 
 from ... import errors
 from ...client import AuthenticatedClient, Client
+from ...models.billing_payment_required_error import BillingPaymentRequiredError
 from ...models.copy_follower import CopyFollower
 from ...models.copy_follower_update import CopyFollowerUpdate
 from ...models.error import Error
@@ -38,11 +39,21 @@ def _get_kwargs(
 
 def _parse_response(
     *, client: Union[AuthenticatedClient, Client], response: httpx.Response
-) -> Union[CopyFollower, Error]:
+) -> Union[BillingPaymentRequiredError, CopyFollower, Error]:
     if response.status_code == 200:
         response_200 = CopyFollower.from_dict(response.json())
 
         return response_200
+
+    if response.status_code == 402:
+        response_402 = BillingPaymentRequiredError.from_dict(response.json())
+
+        return response_402
+
+    if response.status_code == 403:
+        response_403 = Error.from_dict(response.json())
+
+        return response_403
 
     if response.status_code == 422:
         response_422 = Error.from_dict(response.json())
@@ -56,7 +67,7 @@ def _parse_response(
 
 def _build_response(
     *, client: Union[AuthenticatedClient, Client], response: httpx.Response
-) -> Response[Union[CopyFollower, Error]]:
+) -> Response[Union[BillingPaymentRequiredError, CopyFollower, Error]]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -71,7 +82,7 @@ def sync_detailed(
     client: Union[AuthenticatedClient, Client],
     body: CopyFollowerUpdate,
     idempotency_key: str,
-) -> Response[Union[CopyFollower, Error]]:
+) -> Response[Union[BillingPaymentRequiredError, CopyFollower, Error]]:
     """Change a follower's scaling, bounds, symbol map, options, limits or close on stop-out; each change
     is a new mandate version
 
@@ -91,7 +102,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[CopyFollower, Error]]
+        Response[Union[BillingPaymentRequiredError, CopyFollower, Error]]
     """
 
     kwargs = _get_kwargs(
@@ -113,7 +124,7 @@ def sync(
     client: Union[AuthenticatedClient, Client],
     body: CopyFollowerUpdate,
     idempotency_key: str,
-) -> Optional[Union[CopyFollower, Error]]:
+) -> Optional[Union[BillingPaymentRequiredError, CopyFollower, Error]]:
     """Change a follower's scaling, bounds, symbol map, options, limits or close on stop-out; each change
     is a new mandate version
 
@@ -133,7 +144,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[CopyFollower, Error]
+        Union[BillingPaymentRequiredError, CopyFollower, Error]
     """
 
     return sync_detailed(
@@ -150,7 +161,7 @@ async def asyncio_detailed(
     client: Union[AuthenticatedClient, Client],
     body: CopyFollowerUpdate,
     idempotency_key: str,
-) -> Response[Union[CopyFollower, Error]]:
+) -> Response[Union[BillingPaymentRequiredError, CopyFollower, Error]]:
     """Change a follower's scaling, bounds, symbol map, options, limits or close on stop-out; each change
     is a new mandate version
 
@@ -170,7 +181,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[CopyFollower, Error]]
+        Response[Union[BillingPaymentRequiredError, CopyFollower, Error]]
     """
 
     kwargs = _get_kwargs(
@@ -190,7 +201,7 @@ async def asyncio(
     client: Union[AuthenticatedClient, Client],
     body: CopyFollowerUpdate,
     idempotency_key: str,
-) -> Optional[Union[CopyFollower, Error]]:
+) -> Optional[Union[BillingPaymentRequiredError, CopyFollower, Error]]:
     """Change a follower's scaling, bounds, symbol map, options, limits or close on stop-out; each change
     is a new mandate version
 
@@ -210,7 +221,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[CopyFollower, Error]
+        Union[BillingPaymentRequiredError, CopyFollower, Error]
     """
 
     return (

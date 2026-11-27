@@ -87,11 +87,11 @@ class RiskCoverageChanged:
 
         account_id = UUID(d.pop("account_id"))
 
-        kind = RiskCoverageChangedKind(d.pop("kind"))
+        kind = RiskCoverageChangedKind._read(d.pop("kind"))
 
-        from_ = RiskCoverageChangedFrom(d.pop("from"))
+        from_ = RiskCoverageChangedFrom._read(d.pop("from"))
 
-        to = RiskCoverageChangedTo(d.pop("to"))
+        to = RiskCoverageChangedTo._read(d.pop("to"))
 
         def _parse_reason(data: object) -> Union[None, str]:
             if data is None:

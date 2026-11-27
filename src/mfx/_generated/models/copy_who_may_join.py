@@ -64,7 +64,7 @@ class CopyWhoMayJoin:
         if isinstance(_accounts, Unset):
             accounts = UNSET
         else:
-            accounts = CopyWhoMayJoinAccounts(_accounts)
+            accounts = CopyWhoMayJoinAccounts._read(_accounts)
 
         account_ids = []
         _account_ids = d.pop("account_ids", UNSET)

@@ -5,6 +5,7 @@ import httpx
 
 from ... import errors
 from ...client import AuthenticatedClient, Client
+from ...models.billing_payment_required_error import BillingPaymentRequiredError
 from ...models.error import Error
 from ...types import UNSET, Response
 
@@ -27,10 +28,15 @@ def _get_kwargs(
 
 def _parse_response(
     *, client: Union[AuthenticatedClient, Client], response: httpx.Response
-) -> Union[Any, Error]:
+) -> Union[Any, BillingPaymentRequiredError, Error]:
     if response.status_code == 202:
         response_202 = cast(Any, None)
         return response_202
+
+    if response.status_code == 402:
+        response_402 = BillingPaymentRequiredError.from_dict(response.json())
+
+        return response_402
 
     if response.status_code == 501:
         response_501 = Error.from_dict(response.json())
@@ -44,7 +50,7 @@ def _parse_response(
 
 def _build_response(
     *, client: Union[AuthenticatedClient, Client], response: httpx.Response
-) -> Response[Union[Any, Error]]:
+) -> Response[Union[Any, BillingPaymentRequiredError, Error]]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -57,7 +63,7 @@ def sync_detailed(
     *,
     client: Union[AuthenticatedClient, Client],
     idempotency_key: str,
-) -> Response[Union[Any, Error]]:
+) -> Response[Union[Any, BillingPaymentRequiredError, Error]]:
     """Tenant-owned Redis delivery configuration (endpoint credentials are stored securely and returned by
     reference)
 
@@ -69,7 +75,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[Any, Error]]
+        Response[Union[Any, BillingPaymentRequiredError, Error]]
     """
 
     kwargs = _get_kwargs(
@@ -87,7 +93,7 @@ def sync(
     *,
     client: Union[AuthenticatedClient, Client],
     idempotency_key: str,
-) -> Optional[Union[Any, Error]]:
+) -> Optional[Union[Any, BillingPaymentRequiredError, Error]]:
     """Tenant-owned Redis delivery configuration (endpoint credentials are stored securely and returned by
     reference)
 
@@ -99,7 +105,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[Any, Error]
+        Union[Any, BillingPaymentRequiredError, Error]
     """
 
     return sync_detailed(
@@ -112,7 +118,7 @@ async def asyncio_detailed(
     *,
     client: Union[AuthenticatedClient, Client],
     idempotency_key: str,
-) -> Response[Union[Any, Error]]:
+) -> Response[Union[Any, BillingPaymentRequiredError, Error]]:
     """Tenant-owned Redis delivery configuration (endpoint credentials are stored securely and returned by
     reference)
 
@@ -124,7 +130,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[Any, Error]]
+        Response[Union[Any, BillingPaymentRequiredError, Error]]
     """
 
     kwargs = _get_kwargs(
@@ -140,7 +146,7 @@ async def asyncio(
     *,
     client: Union[AuthenticatedClient, Client],
     idempotency_key: str,
-) -> Optional[Union[Any, Error]]:
+) -> Optional[Union[Any, BillingPaymentRequiredError, Error]]:
     """Tenant-owned Redis delivery configuration (endpoint credentials are stored securely and returned by
     reference)
 
@@ -152,7 +158,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[Any, Error]
+        Union[Any, BillingPaymentRequiredError, Error]
     """
 
     return (

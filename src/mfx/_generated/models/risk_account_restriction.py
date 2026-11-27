@@ -63,7 +63,7 @@ class RiskAccountRestriction:
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         d = dict(src_dict)
-        state = RiskAccountRestrictionState(d.pop("state"))
+        state = RiskAccountRestrictionState._read(d.pop("state"))
 
         def _parse_rule(data: object) -> Union[None, str]:
             if data is None:

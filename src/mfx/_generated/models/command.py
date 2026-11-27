@@ -142,9 +142,9 @@ class Command:
 
         terminal_id = UUID(d.pop("terminal_id"))
 
-        kind = CommandKind(d.pop("kind"))
+        kind = CommandKind._read(d.pop("kind"))
 
-        state = CommandState(d.pop("state"))
+        state = CommandState._read(d.pop("state"))
 
         final = d.pop("final")
 

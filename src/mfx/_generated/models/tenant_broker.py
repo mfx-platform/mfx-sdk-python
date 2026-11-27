@@ -74,7 +74,7 @@ class TenantBroker:
 
         display_name = d.pop("display_name")
 
-        status = TenantBrokerStatus(d.pop("status"))
+        status = TenantBrokerStatus._read(d.pop("status"))
 
         symbol_suffix = d.pop("symbol_suffix", UNSET)
 

@@ -516,8 +516,9 @@ async def test_a_parked_terminal_reads_and_is_not_usable_and_an_unknown_state_is
     resumed still has its terminals PARKED until the login queue reaches each
     When the SDK reads it, alone and in a list beside an ACTIVE one
     Then it reads as PARKED, the list is read whole, and `is_usable` is false for it.
-    And when the platform answers a state this SDK has never heard of, the caller gets an MFX
-    error that names the call and the value, never a ValueError from inside a generated module.
+    And when the platform answers a state this SDK has never heard of, the terminal still reads:
+    its state is UNKNOWN keeping the word as sent, and it is not usable, never a
+    ValueError from inside a generated module.
 
     The generated enum once lacked PARKED, so `terminals.list()` raised in exactly the
     minutes after Resume, when a tenant is most likely to be looking.
@@ -538,6 +539,6 @@ async def test_a_parked_terminal_reads_and_is_not_usable_and_an_unknown_state_is
     assert [is_usable(t) for t in listed] == [True, False]
 
     mfx.responses.append(httpx.Response(200, json=terminal_body("HIBERNATING")))
-    with pytest.raises(MfxApiError, match="HIBERNATING") as raised:
-        await client.terminals.get(TERMINAL_ID)
-    assert raised.value.code == "contract_breach"
+    later = await client.terminals.get(TERMINAL_ID)
+    assert (later.state.name, later.state.value) == ("UNKNOWN", "HIBERNATING")
+    assert is_usable(later) is False

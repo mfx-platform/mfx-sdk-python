@@ -5,6 +5,7 @@ import httpx
 
 from ... import errors
 from ...client import AuthenticatedClient, Client
+from ...models.billing_payment_required_error import BillingPaymentRequiredError
 from ...models.error import Error
 from ...models.tenant_terminal import TenantTerminal
 from ...models.terminal_create import TerminalCreate
@@ -34,11 +35,16 @@ def _get_kwargs(
 
 def _parse_response(
     *, client: Union[AuthenticatedClient, Client], response: httpx.Response
-) -> Union[Error, TenantTerminal]:
+) -> Union[BillingPaymentRequiredError, Error, TenantTerminal]:
     if response.status_code == 202:
         response_202 = TenantTerminal.from_dict(response.json())
 
         return response_202
+
+    if response.status_code == 402:
+        response_402 = BillingPaymentRequiredError.from_dict(response.json())
+
+        return response_402
 
     if response.status_code == 409:
         response_409 = Error.from_dict(response.json())
@@ -57,7 +63,7 @@ def _parse_response(
 
 def _build_response(
     *, client: Union[AuthenticatedClient, Client], response: httpx.Response
-) -> Response[Union[Error, TenantTerminal]]:
+) -> Response[Union[BillingPaymentRequiredError, Error, TenantTerminal]]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -71,7 +77,7 @@ def sync_detailed(
     client: Union[AuthenticatedClient, Client],
     body: TerminalCreate,
     idempotency_key: str,
-) -> Response[Union[Error, TenantTerminal]]:
+) -> Response[Union[BillingPaymentRequiredError, Error, TenantTerminal]]:
     """Provision a terminal — answered at once in state REQUESTED; the move to a cell is asynchronous
 
      A broker whose permission is `unknown` is accepted in the development environment with the response
@@ -91,7 +97,12 @@ def sync_detailed(
     farm: enterprise and system tenants' terminals go to their own farms, standard tenants' to the
     shared farms. A named farm outside the plan is 409 `farm_not_in_plan`; with no farm named a standard
     tenant is given a shared farm. A tenant already at its terminal quota is 409 `quota_exceeded` with
-    `details {quota, in_use}`.
+    `details {quota, in_use}`. While a version of the Terms of Service or the MetaTrader 5 licence that
+    the organisation must accept is past its grace period unaccepted, a new terminal is 409
+    `terms_not_accepted` (`details.documents`); the terminals it has keep running. While a plan change
+    awaits acceptance of the new plan's Service Agreement, or a Service Agreement version is past its
+    grace period unaccepted, a new terminal is 409 `service_agreement_not_accepted`
+    (`details.plan_change`, `details.documents`, `details.accept_url`).
 
     Args:
         idempotency_key (str):
@@ -102,7 +113,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[Error, TenantTerminal]]
+        Response[Union[BillingPaymentRequiredError, Error, TenantTerminal]]
     """
 
     kwargs = _get_kwargs(
@@ -122,7 +133,7 @@ def sync(
     client: Union[AuthenticatedClient, Client],
     body: TerminalCreate,
     idempotency_key: str,
-) -> Optional[Union[Error, TenantTerminal]]:
+) -> Optional[Union[BillingPaymentRequiredError, Error, TenantTerminal]]:
     """Provision a terminal — answered at once in state REQUESTED; the move to a cell is asynchronous
 
      A broker whose permission is `unknown` is accepted in the development environment with the response
@@ -142,7 +153,12 @@ def sync(
     farm: enterprise and system tenants' terminals go to their own farms, standard tenants' to the
     shared farms. A named farm outside the plan is 409 `farm_not_in_plan`; with no farm named a standard
     tenant is given a shared farm. A tenant already at its terminal quota is 409 `quota_exceeded` with
-    `details {quota, in_use}`.
+    `details {quota, in_use}`. While a version of the Terms of Service or the MetaTrader 5 licence that
+    the organisation must accept is past its grace period unaccepted, a new terminal is 409
+    `terms_not_accepted` (`details.documents`); the terminals it has keep running. While a plan change
+    awaits acceptance of the new plan's Service Agreement, or a Service Agreement version is past its
+    grace period unaccepted, a new terminal is 409 `service_agreement_not_accepted`
+    (`details.plan_change`, `details.documents`, `details.accept_url`).
 
     Args:
         idempotency_key (str):
@@ -153,7 +169,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[Error, TenantTerminal]
+        Union[BillingPaymentRequiredError, Error, TenantTerminal]
     """
 
     return sync_detailed(
@@ -168,7 +184,7 @@ async def asyncio_detailed(
     client: Union[AuthenticatedClient, Client],
     body: TerminalCreate,
     idempotency_key: str,
-) -> Response[Union[Error, TenantTerminal]]:
+) -> Response[Union[BillingPaymentRequiredError, Error, TenantTerminal]]:
     """Provision a terminal — answered at once in state REQUESTED; the move to a cell is asynchronous
 
      A broker whose permission is `unknown` is accepted in the development environment with the response
@@ -188,7 +204,12 @@ async def asyncio_detailed(
     farm: enterprise and system tenants' terminals go to their own farms, standard tenants' to the
     shared farms. A named farm outside the plan is 409 `farm_not_in_plan`; with no farm named a standard
     tenant is given a shared farm. A tenant already at its terminal quota is 409 `quota_exceeded` with
-    `details {quota, in_use}`.
+    `details {quota, in_use}`. While a version of the Terms of Service or the MetaTrader 5 licence that
+    the organisation must accept is past its grace period unaccepted, a new terminal is 409
+    `terms_not_accepted` (`details.documents`); the terminals it has keep running. While a plan change
+    awaits acceptance of the new plan's Service Agreement, or a Service Agreement version is past its
+    grace period unaccepted, a new terminal is 409 `service_agreement_not_accepted`
+    (`details.plan_change`, `details.documents`, `details.accept_url`).
 
     Args:
         idempotency_key (str):
@@ -199,7 +220,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[Error, TenantTerminal]]
+        Response[Union[BillingPaymentRequiredError, Error, TenantTerminal]]
     """
 
     kwargs = _get_kwargs(
@@ -217,7 +238,7 @@ async def asyncio(
     client: Union[AuthenticatedClient, Client],
     body: TerminalCreate,
     idempotency_key: str,
-) -> Optional[Union[Error, TenantTerminal]]:
+) -> Optional[Union[BillingPaymentRequiredError, Error, TenantTerminal]]:
     """Provision a terminal — answered at once in state REQUESTED; the move to a cell is asynchronous
 
      A broker whose permission is `unknown` is accepted in the development environment with the response
@@ -237,7 +258,12 @@ async def asyncio(
     farm: enterprise and system tenants' terminals go to their own farms, standard tenants' to the
     shared farms. A named farm outside the plan is 409 `farm_not_in_plan`; with no farm named a standard
     tenant is given a shared farm. A tenant already at its terminal quota is 409 `quota_exceeded` with
-    `details {quota, in_use}`.
+    `details {quota, in_use}`. While a version of the Terms of Service or the MetaTrader 5 licence that
+    the organisation must accept is past its grace period unaccepted, a new terminal is 409
+    `terms_not_accepted` (`details.documents`); the terminals it has keep running. While a plan change
+    awaits acceptance of the new plan's Service Agreement, or a Service Agreement version is past its
+    grace period unaccepted, a new terminal is 409 `service_agreement_not_accepted`
+    (`details.plan_change`, `details.documents`, `details.accept_url`).
 
     Args:
         idempotency_key (str):
@@ -248,7 +274,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[Error, TenantTerminal]
+        Union[BillingPaymentRequiredError, Error, TenantTerminal]
     """
 
     return (

@@ -67,7 +67,7 @@ class WebhookAttempt:
         d = dict(src_dict)
         at = isoparse(d.pop("at"))
 
-        outcome = WebhookAttemptOutcome(d.pop("outcome"))
+        outcome = WebhookAttemptOutcome._read(d.pop("outcome"))
 
         def _parse_status_code(data: object) -> Union[None, int]:
             if data is None:

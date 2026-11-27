@@ -101,7 +101,7 @@ class EaReportTrial:
 
         ended_at = isoparse(d.pop("ended_at"))
 
-        verdict = EaColour(d.pop("verdict"))
+        verdict = EaColour._read(d.pop("verdict"))
 
         findings = []
         _findings = d.pop("findings")

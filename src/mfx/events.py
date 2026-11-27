@@ -1,7 +1,9 @@
-"""The order, position, terminal, candle and Risk Management events, as typed values.
+"""The order, position, terminal, candle, Risk Management and copy events, as typed values.
 
-The platform sends these on the stream with every value as text. :func:`event_of` reads one
-message as the event it is, or None for any other:
+The platform sends the order, position, terminal and candle events with every value as text, and
+the copy events in the contract's own shape: nested objects, numbers as numbers, decimals as
+text and nulls as null. :func:`event_of` reads one message as the event it is, or None for any
+other:
 
 .. code-block:: python
 
@@ -14,6 +16,12 @@ Ids are UUIDs, tickets and magic numbers integers, prices, volumes and money Dec
 aware UTC datetimes. The platform's own words (``side``, ``order_type``, ``reason``,
 ``close_reason``, a terminal's states, a candle's ``timeframe``) stay text: they are not a closed
 list, and a word the platform adds later reads as it was written instead of failing the read.
+
+The copy events (``copy.copied``, ``copy.refused``, ``copy.stopout``, ``copy.drift`` and
+``copy.state_changed``) name accounts by ``account_id`` with their ``venue``, never a terminal or a
+ticket. A refusal's ``reason`` is one of :data:`mfx.copy_trading.REFUSAL_REASONS`, with the venue's
+own code beside ``broker`` as ``venue_code``. Stage timings and latencies are milliseconds, as
+floats: they are measurements, not money.
 
 A message keeps its ``data`` whatever this returns, so nothing is lost by a type this version
 does not know.
@@ -29,11 +37,22 @@ from decimal import Decimal
 from typing import Any, ClassVar, Final
 from uuid import UUID
 
+from mfx.errors import RiskRefusal
 from mfx.streaming import StreamMessage
 
 __all__ = [
     "EVENT_KINDS",
     "CandleClosed",
+    "CopyAs",
+    "CopyClosed",
+    "CopyClosedEvent",
+    "CopyCopied",
+    "CopyDeal",
+    "CopyDrift",
+    "CopyNotClosed",
+    "CopyRefused",
+    "CopyStateChanged",
+    "CopyStopoutEvent",
     "Event",
     "OrderClosed",
     "OrderModified",
@@ -107,6 +126,31 @@ class _Data:
     def instant_or_none(self, key: str) -> dt.datetime | None:
         value = self._raw(key, False)
         return None if value is None else _instant(str(value))
+
+    def uuid_or_none(self, key: str) -> UUID | None:
+        value = self._raw(key, False)
+        return None if value is None else UUID(str(value))
+
+    def number_or_none(self, key: str) -> float | None:
+        value = self._raw(key, False)
+        return None if value is None else float(str(value))
+
+    def part(self, key: str) -> _Data:
+        """A nested object the contract requires, read by the same rules."""
+        value = self._raw(key, True)
+        if not isinstance(value, Mapping):
+            raise ValueError(f"{self._kind} `{key}` is not an object")
+        return _Data(f"{self._kind} `{key}`", value)
+
+    def parts(self, key: str) -> list[_Data]:
+        """A list of nested objects; absent or null is an empty list."""
+        value = self._raw(key, False) or []
+        return [_Data(f"{self._kind} `{key}`", item) for item in value]
+
+    def timings(self, key: str) -> dict[str, float]:
+        """A nested object of milliseconds by name; absent or null is empty, as is a null one."""
+        value = self._raw(key, False) or {}
+        return {str(name): float(str(ms)) for name, ms in value.items() if ms is not None}
 
 
 def _instant(raw: str) -> dt.datetime:
@@ -383,6 +427,157 @@ class RiskPeriodClosed:
     at: dt.datetime
 
 
+@dataclass(frozen=True, slots=True, kw_only=True)
+class CopyDeal:
+    """The leader's deal a copy event is about."""
+
+    #: ``open``, ``modify``, ``close``, ``close_part``, ``pending_place``, ``pending_modify`` or
+    #: ``pending_cancel``.
+    action: str
+    #: ``buy`` or ``sell``.
+    side: str
+    #: The leader's volume in base units.
+    units: Decimal
+    price: Decimal | None
+    #: The venue-neutral instrument key (``fx:EURUSD``), when the leader's symbol has one.
+    instrument_key: str | None
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class CopyAs:
+    """What a copy became on the follower account."""
+
+    symbol: str
+    side: str
+    #: In the follower venue's unit.
+    volume: Decimal
+    price: Decimal | None
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class CopyClosed:
+    """Copied volume a stop-out or a requested close closed."""
+
+    symbol: str
+    volume: Decimal
+    command_id: UUID | None
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class _CopyFollowerEvent:
+    schema_version: str
+    follower_id: UUID
+    leader_id: UUID
+    #: The follower account.
+    account_id: UUID
+    #: ``mt5`` or ``ctrader`` today.
+    venue: str
+    at: dt.datetime
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class CopyCopied(_CopyFollowerEvent):
+    """``copy.copied``: one follower's copy filled."""
+
+    KIND: ClassVar[str] = "copy.copied"
+    #: MFX Hub's id for the signal; the copy log names it.
+    signal_id: UUID
+    command_id: UUID
+    deal: CopyDeal
+    #: The contract's ``as``.
+    as_: CopyAs
+    #: MFX Hub's part, in milliseconds (the log row's ``mfx_ms``).
+    latency_ms: float | None
+    slippage: Decimal | None
+    #: Milliseconds by stage (``detect_ms``, ``sign_ms``, ``deliver_ms``, ``expand_ms``,
+    #: ``queue_ms``, ``hand_ms``, ``broker_ms``): the ones measured.
+    stages: dict[str, float]
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class CopyRefused(_CopyFollowerEvent):
+    """``copy.refused``: one follower's copy did not fill: refused, skipped, or a stop-out's
+    close."""
+
+    KIND: ClassVar[str] = "copy.refused"
+    signal_id: UUID
+    deal: CopyDeal
+    #: ``refused``, ``skipped`` or ``stopout``.
+    outcome: str
+    #: One of :data:`mfx.copy_trading.REFUSAL_REASONS`.
+    reason: str
+    #: The venue's own code beside ``broker``.
+    venue_code: str | None
+    #: The reason in words, for a person.
+    why: str | None
+    #: When Risk Management refused the copy (``reason`` ``risk_rule``): the rule, the policy or
+    #: challenge with its version, and the figures as text. None otherwise.
+    risk: RiskRefusal | None = None
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class CopyNotClosed:
+    """A copied position a requested close did not close."""
+
+    symbol: str
+    volume: Decimal | None
+    #: ``netting``, ``not_copied``, ``copy_mismatch`` or ``gave_up``; None when not known.
+    why: str | None
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class CopyClosedEvent(_CopyFollowerEvent):
+    """``copy.closed``: a requested close of copied positions stopped being pending. Sent once."""
+
+    KIND: ClassVar[str] = "copy.closed"
+    close_id: UUID
+    #: ``unfollowed``, ``leader_retired`` or ``group_close``.
+    cause: str
+    #: ``done``, ``incomplete`` or ``superseded``.
+    state: str
+    closed: tuple[CopyClosed, ...]
+    not_closed: tuple[CopyNotClosed, ...]
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class CopyStopoutEvent(_CopyFollowerEvent):
+    """``copy.stopout``: a follower reached a copy limit and is stopped out."""
+
+    KIND: ClassVar[str] = "copy.stopout"
+    stopout_id: UUID
+    #: ``daily``, ``monthly`` or ``lifetime``.
+    limit: str
+    #: In the follower account's currency.
+    used: Decimal
+    #: The copied volume closed, when the follower closes on a stop-out.
+    closed: tuple[CopyClosed, ...]
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class CopyDrift(_CopyFollowerEvent):
+    """``copy.drift``: the follower's copied positions differ from what the leader's positions and
+    the mandate say, found when they were healed from the account. MFX Hub trades nothing to close
+    the gap."""
+
+    KIND: ClassVar[str] = "copy.drift"
+    #: How far the copied exposure is from the expected, as a percentage of the expected.
+    drift_pct: Decimal
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class CopyStateChanged(_CopyFollowerEvent):
+    """``copy.state_changed``: a follower's state changed."""
+
+    KIND: ClassVar[str] = "copy.state_changed"
+    #: The contract's ``from``: ``copying``, ``paused``, ``stopped_out`` or ``unfollowed``.
+    from_state: str
+    #: The contract's ``to``.
+    to_state: str
+    #: ``paused``, ``resumed``, ``stopout``, ``unfollowed``, ``leader_retired`` and others; a word
+    #: added later reads as written.
+    why: str
+
+
 Event = (
     OrderPlaced
     | OrderModified
@@ -396,6 +591,12 @@ Event = (
     | RiskCoverageChanged
     | RiskProgrammeResult
     | RiskPeriodClosed
+    | CopyCopied
+    | CopyRefused
+    | CopyStopoutEvent
+    | CopyDrift
+    | CopyStateChanged
+    | CopyClosedEvent
 )
 
 
@@ -523,6 +724,137 @@ def _risk_period(d: _Data) -> RiskPeriodClosed:
     )
 
 
+def _copy_fields(d: _Data) -> dict[str, Any]:
+    return {
+        "schema_version": d.text("schema_version"),
+        "follower_id": d.uuid("follower_id"),
+        "leader_id": d.uuid("leader_id"),
+        "account_id": d.uuid("account_id"),
+        "venue": d.text("venue"),
+        "at": d.instant("at"),
+    }
+
+
+def _copy_deal(d: _Data) -> CopyDeal:
+    return CopyDeal(
+        action=d.text("action"),
+        side=d.text("side"),
+        units=d.decimal("units"),
+        price=d.decimal_or_none("price"),
+        instrument_key=d.text_or_none("instrument_key"),
+    )
+
+
+def _copy_copied(d: _Data) -> CopyCopied:
+    became = d.part("as")
+    return CopyCopied(
+        **_copy_fields(d),
+        signal_id=d.uuid("signal_id"),
+        command_id=d.uuid("command_id"),
+        deal=_copy_deal(d.part("deal")),
+        as_=CopyAs(
+            symbol=became.text("symbol"),
+            side=became.text("side"),
+            volume=became.decimal("volume"),
+            price=became.decimal_or_none("price"),
+        ),
+        latency_ms=d.number_or_none("latency_ms"),
+        slippage=d.decimal_or_none("slippage"),
+        stages=d.timings("stages"),
+    )
+
+
+def _copy_refused(d: _Data) -> CopyRefused:
+    return CopyRefused(
+        **_copy_fields(d),
+        signal_id=d.uuid("signal_id"),
+        deal=_copy_deal(d.part("deal")),
+        outcome=d.text("outcome"),
+        reason=d.text("reason"),
+        venue_code=d.text_or_none("venue_code"),
+        why=d.text_or_none("why"),
+        risk=_copy_risk(d),
+    )
+
+
+def _copy_risk(d: _Data) -> RiskRefusal | None:
+    """A copy refusal's Risk Management detail: the contract's fields, figures as text."""
+    value = d.json("risk")
+    if not isinstance(value, Mapping):
+        return None
+    r = _Data("copy.refused `risk`", value)
+    version, challenge_version = (
+        r.integer_or_none("version"),
+        r.integer_or_none("challenge_version"),
+    )
+    return RiskRefusal(
+        reason=r.text("reason"),
+        rule=r.text_or_none("rule"),
+        policy_id=r.text_or_none("policy_id"),
+        version=version,
+        challenge_id=r.text_or_none("challenge_id"),
+        challenge_version=challenge_version,
+        used=r.text_or_none("used"),
+        limit=r.text_or_none("limit"),
+        would_be=r.text_or_none("would_be"),
+    )
+
+
+def _copy_closed(d: _Data) -> CopyClosedEvent:
+    return CopyClosedEvent(
+        **_copy_fields(d),
+        close_id=d.uuid("close_id"),
+        cause=d.text("cause"),
+        state=d.text("state"),
+        closed=tuple(
+            CopyClosed(
+                symbol=item.text("symbol"),
+                volume=item.decimal("volume"),
+                command_id=item.uuid_or_none("command_id"),
+            )
+            for item in d.parts("closed")
+        ),
+        not_closed=tuple(
+            CopyNotClosed(
+                symbol=item.text("symbol"),
+                volume=item.decimal_or_none("volume"),
+                why=item.text_or_none("why"),
+            )
+            for item in d.parts("not_closed")
+        ),
+    )
+
+
+def _copy_stopout(d: _Data) -> CopyStopoutEvent:
+    return CopyStopoutEvent(
+        **_copy_fields(d),
+        stopout_id=d.uuid("stopout_id"),
+        limit=d.text("limit"),
+        used=d.decimal("used"),
+        closed=tuple(
+            CopyClosed(
+                symbol=item.text("symbol"),
+                volume=item.decimal("volume"),
+                command_id=item.uuid_or_none("command_id"),
+            )
+            for item in d.parts("closed")
+        ),
+    )
+
+
+def _copy_drift(d: _Data) -> CopyDrift:
+    return CopyDrift(**_copy_fields(d), drift_pct=d.decimal("drift_pct"))
+
+
+def _copy_state_changed(d: _Data) -> CopyStateChanged:
+    return CopyStateChanged(
+        **_copy_fields(d),
+        from_state=d.text("from"),
+        to_state=d.text("to"),
+        why=d.text("why"),
+    )
+
+
 _READERS: Final[Mapping[str, Callable[[_Data], Event]]] = {
     OrderPlaced.KIND: _order_placed,
     OrderModified.KIND: _order_modified,
@@ -536,6 +868,12 @@ _READERS: Final[Mapping[str, Callable[[_Data], Event]]] = {
     RiskCoverageChanged.KIND: _risk_coverage,
     RiskProgrammeResult.KIND: _risk_result,
     RiskPeriodClosed.KIND: _risk_period,
+    CopyCopied.KIND: _copy_copied,
+    CopyRefused.KIND: _copy_refused,
+    CopyStopoutEvent.KIND: _copy_stopout,
+    CopyDrift.KIND: _copy_drift,
+    CopyStateChanged.KIND: _copy_state_changed,
+    CopyClosedEvent.KIND: _copy_closed,
 }
 
 #: The event types :func:`event_of` reads. Any other type is None, never an error.

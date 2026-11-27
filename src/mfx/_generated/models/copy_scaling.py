@@ -71,7 +71,7 @@ class CopyScaling:
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         d = dict(src_dict)
-        mode = CopyScalingMode(d.pop("mode"))
+        mode = CopyScalingMode._read(d.pop("mode"))
 
         multiplier = d.pop("multiplier", UNSET)
 

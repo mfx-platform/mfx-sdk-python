@@ -122,7 +122,7 @@ class CopyStopout:
 
         follower_id = UUID(d.pop("follower_id"))
 
-        limit = CopyLimitKind(d.pop("limit"))
+        limit = CopyLimitKind._read(d.pop("limit"))
 
         used = d.pop("used")
 
@@ -150,7 +150,7 @@ class CopyStopout:
 
             closed.append(closed_item)
 
-        state = CopyStopoutState(d.pop("state"))
+        state = CopyStopoutState._read(d.pop("state"))
 
         def _parse_reset(data: object) -> Union["CopyStopoutResetType0", None]:
             if data is None:

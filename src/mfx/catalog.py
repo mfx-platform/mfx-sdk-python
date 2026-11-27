@@ -49,6 +49,10 @@ class Catalog:
         ``status`` is the broker's: ``active`` is usable, ``suspended`` and ``retired`` are not.
         A terminal requested on a broker that is not usable is refused at request time, and the
         SDK turns that refusal into :class:`~mfx.errors.UnsupportedBrokerError`.
+
+        Args:
+            cursor: Where to continue from: the previous page's ``next_cursor``.
+            limit: How many to return at most, on one page.
         """
         parsed = await self._client.read(
             lambda: _list_brokers.asyncio_detailed(
@@ -68,7 +72,7 @@ class Catalog:
     async def servers(
         self, broker_id: Id, *, cursor: str | None = None, limit: int | None = None
     ) -> Page[TenantBrokerServer]:
-        """The MT5 servers this broker runs, and whether MFX can use each one now. One page.
+        """The MetaTrader 5 servers this broker runs, and whether MFX can use each now. One page.
 
         ``server_name`` is what a credential names. ``enabled`` is the per-server switch and
         ``disabled_reason`` is the sentence the operator recorded for it — the same words the
@@ -76,6 +80,11 @@ class Catalog:
         after the platform split them. A terminal requested on a disabled server is refused 409
         and reaches the caller as :class:`~mfx.errors.UnsupportedBrokerError` with
         ``refused_by == "server_disabled"``, which means *try another server of this broker*.
+
+        Args:
+            broker_id: The broker's id from the catalogue.
+            cursor: Where to continue from: the previous page's ``next_cursor``.
+            limit: How many to return at most, on one page.
         """
         parsed = await self._client.read(
             lambda: _list_broker_servers.asyncio_detailed(
@@ -98,6 +107,9 @@ class Catalog:
         last saw and read :meth:`symbols` again only when it differs. ``source`` is ``live`` while a
         terminal of yours runs there and ``last_known`` when none does any more. A broker you hold
         no catalogue for answers an empty list.
+
+        Args:
+            broker_id: The broker's id from the catalogue.
         """
         parsed = await self._client.read(
             lambda: _list_catalogues.asyncio_detailed(
@@ -130,6 +142,11 @@ class Catalog:
         are the last your terminals reported, each with its own ``refreshed_at``. Each symbol also
         carries the broker's own identity fields (``path``, ``isin``, ``exchange``, ``category``,
         ``currency_base``, ``basis`` and ``calc_mode``), each None when the broker leaves it empty.
+
+        Args:
+            broker_id: The broker's id from the catalogue.
+            cursor: Where to continue from: the previous page's ``next_cursor``.
+            limit: How many to return at most, on one page.
         """
         which = _which(server_id, account_type)
         parsed = await self._client.read(
@@ -158,6 +175,11 @@ class Catalog:
 
         A symbol listed on more than one of the tenant's servers or account types is answered
         409 ``ambiguous_symbol``; name ``server_id`` and ``account_type`` to say which.
+
+        Args:
+            broker_id: The broker's id from the catalogue.
+            symbol: The broker's own symbol name, exactly as the catalogue returns it. MFX Hub never
+                renames an instrument.
         """
         which = _which(server_id, account_type)
         parsed = await self._client.read(
@@ -197,6 +219,11 @@ class Catalog:
 
         A symbol listed on more than one of the tenant's servers or account types is answered
         409 ``ambiguous_symbol``; name ``server_id`` and ``account_type`` to say which.
+
+        Args:
+            broker_id: The broker's id from the catalogue.
+            symbol: The broker's own symbol name, exactly as the catalogue returns it. MFX Hub never
+                renames an instrument.
         """
         which = _which(server_id, account_type)
         parsed = await self._client.read(

@@ -145,7 +145,7 @@ class StreamMessage:
     #: ``account:{terminal_id}`` only: the ``seq`` of the snapshot this message applies to, a
     #: snapshot's being its own (the stream's resume rule). None on every other channel, and on an
     #: account message from a platform that does not stamp it yet. :class:`mfx.LiveAccount` is
-    #: what this is for — it is the whole of rule 2, and applying a mark without checking it
+    #: what this is for — it is the whole point, and applying a mark without checking it
     #: silently merges a delta into a position set it was never measured against.
     base: int | None = None
 
@@ -260,9 +260,9 @@ class Channel:
 
     @staticmethod
     def ea(terminal_id: str | UUID) -> str:
-        """What the tenant's own expert on this terminal writes (ea-telemetry.md): batches of its
+        """What the tenant's own expert on this terminal writes: batches of its
         records as ``expert_advisor.telemetry``, and ``expert_advisor.telemetry_lost`` when the
-        cell had to discard some. Needs ``ea:read``. Replayed up to 15 minutes on resume."""
+        host had to discard some. Needs ``ea:read``. Replayed up to 15 minutes on resume."""
         return _checked(f"ea:{terminal_id}")
 
     @staticmethod

@@ -104,11 +104,11 @@ class CopyStateChanged:
 
         account_id = UUID(d.pop("account_id"))
 
-        venue = Venue(d.pop("venue"))
+        venue = Venue._read(d.pop("venue"))
 
-        from_ = CopyFollowerState(d.pop("from"))
+        from_ = CopyFollowerState._read(d.pop("from"))
 
-        to = CopyFollowerState(d.pop("to"))
+        to = CopyFollowerState._read(d.pop("to"))
 
         why = d.pop("why")
 

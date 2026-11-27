@@ -100,13 +100,13 @@ class TerminalOperationChanged:
 
         terminal_id = UUID(d.pop("terminal_id"))
 
-        kind = TerminalOperationChangedKind(d.pop("kind"))
+        kind = TerminalOperationChangedKind._read(d.pop("kind"))
 
-        state = TerminalOperationChangedState(d.pop("state"))
+        state = TerminalOperationChangedState._read(d.pop("state"))
 
         step = d.pop("step")
 
-        forced_stop = TerminalOperationChangedForcedStop(d.pop("forced_stop"))
+        forced_stop = TerminalOperationChangedForcedStop._read(d.pop("forced_stop"))
 
         cooldown_until = d.pop("cooldown_until")
 

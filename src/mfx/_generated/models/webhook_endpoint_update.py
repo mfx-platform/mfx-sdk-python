@@ -89,7 +89,7 @@ class WebhookEndpointUpdate:
         if isinstance(_status, Unset):
             status = UNSET
         else:
-            status = WebhookEndpointUpdateStatus(_status)
+            status = WebhookEndpointUpdateStatus._read(_status)
 
         webhook_endpoint_update = cls(
             url=url,

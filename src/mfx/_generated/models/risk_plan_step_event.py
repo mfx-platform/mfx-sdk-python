@@ -154,7 +154,7 @@ class RiskPlanStepEvent:
             try:
                 if not isinstance(data, str):
                     raise TypeError()
-                state_type_1 = RiskPlanStepEventStateType1(data)
+                state_type_1 = RiskPlanStepEventStateType1._read(data)
 
                 return state_type_1
             except:  # noqa: E722
@@ -162,7 +162,7 @@ class RiskPlanStepEvent:
             try:
                 if not isinstance(data, str):
                     raise TypeError()
-                state_type_2_type_1 = RiskPlanStepEventStateType2Type1(data)
+                state_type_2_type_1 = RiskPlanStepEventStateType2Type1._read(data)
 
                 return state_type_2_type_1
             except:  # noqa: E722
@@ -170,7 +170,7 @@ class RiskPlanStepEvent:
             try:
                 if not isinstance(data, str):
                     raise TypeError()
-                state_type_3_type_1 = RiskPlanStepEventStateType3Type1(data)
+                state_type_3_type_1 = RiskPlanStepEventStateType3Type1._read(data)
 
                 return state_type_3_type_1
             except:  # noqa: E722
@@ -187,7 +187,7 @@ class RiskPlanStepEvent:
 
         state = _parse_state(d.pop("state"))
 
-        plan_state = RiskPlanStepEventPlanState(d.pop("plan_state"))
+        plan_state = RiskPlanStepEventPlanState._read(d.pop("plan_state"))
 
         def _parse_outcome(data: object) -> Union[None, str]:
             if data is None:

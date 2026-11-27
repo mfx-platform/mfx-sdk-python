@@ -68,7 +68,7 @@ class RiskCheckResult:
         from ..models.risk_rule_check import RiskRuleCheck
 
         d = dict(src_dict)
-        verdict = RiskCheckResultVerdict(d.pop("verdict"))
+        verdict = RiskCheckResultVerdict._read(d.pop("verdict"))
 
         def _parse_reason(data: object) -> Union[None, str]:
             if data is None:

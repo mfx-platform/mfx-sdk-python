@@ -37,7 +37,7 @@ class EaReport:
             version it was judged by.
         categories (list['EaReportCategoriesItem']): One entry for each rule group, in the register's order
         findings (list['EaFinding']):
-        summary (Union[None, str]): The AI review's paragraph for the tenant; null where it did not run
+        summary (Union[None, str]): The review's paragraph for the tenant; null where it did not run
         trial (Union['EaReportTrial', None, Unset]): The newest judged trial of this version: its verdict, what it found
             and its figures. The version's own verdict, findings and categories stay those of its checks; a trial is judged
             on one terminal. Null until a trial has been judged, and absent from older answers
@@ -106,7 +106,7 @@ class EaReport:
         d = dict(src_dict)
         policy_version = d.pop("policy_version")
 
-        verdict = EaColour(d.pop("verdict"))
+        verdict = EaColour._read(d.pop("verdict"))
 
         categories = []
         _categories = d.pop("categories")

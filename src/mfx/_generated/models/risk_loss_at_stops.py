@@ -61,7 +61,7 @@ class RiskLossAtStops:
         d = dict(src_dict)
         limit = RiskAmount.from_dict(d.pop("limit"))
 
-        no_stop = RiskLossAtStopsNoStop(d.pop("no_stop"))
+        no_stop = RiskLossAtStopsNoStop._read(d.pop("no_stop"))
 
         risk_loss_at_stops = cls(
             limit=limit,

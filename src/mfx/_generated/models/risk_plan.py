@@ -159,7 +159,7 @@ class RiskPlan:
 
         version = d.pop("version")
 
-        state = RiskPlanState(d.pop("state"))
+        state = RiskPlanState._read(d.pop("state"))
 
         def _parse_one_r(data: object) -> Union[None, str]:
             if data is None:

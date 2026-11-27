@@ -127,7 +127,7 @@ class Usage:
         from ..models.usage_webhooks import UsageWebhooks
 
         d = dict(src_dict)
-        plan = UsagePlan(d.pop("plan"))
+        plan = UsagePlan._read(d.pop("plan"))
 
         key = UsageKey.from_dict(d.pop("key"))
 

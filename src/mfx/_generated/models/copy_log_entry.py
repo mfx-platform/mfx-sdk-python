@@ -25,6 +25,8 @@ from ..models.venue import Venue
 from ..types import UNSET, Unset
 
 if TYPE_CHECKING:
+    from ..models.copy_leader_deal import CopyLeaderDeal
+    from ..models.copy_log_entry_risk_type_0 import CopyLogEntryRiskType0
     from ..models.copy_stages import CopyStages
 
 
@@ -61,6 +63,15 @@ class CopyLogEntry:
         mfx_ms (Union[None, float]): MFX Hub's part: every stage but broker_ms, added up
         signal_to_order_ms (Union[None, float]): deliver_ms + expand_ms + queue_ms + hand_ms: from a held signal to the
             order call
+        deal (CopyLeaderDeal): The leader's deal a copy came from, in venue-neutral terms
+        symbol (Union[None, str]): The follower's own symbol, as its copy host named it; null where the copy was refused
+            before the leader's instrument was mapped, and on rows from before 15 Nov 2026
+        risk (Union['CopyLogEntryRiskType0', None]): Risk Management's detail of a risk_rule refusal, in the 422
+            risk_refused shape (reason, rule, policy_id, version, used, limit, would_be, and challenge_id, challenge_version
+            when a challenge's rule refused): figures as decimal strings in the follower account's currency (in US dollars
+            when reason is copy_exposure_cap, limit being the follower's share of its group's cap), every field null where
+            the host gave none. A host that predates the detail sends its reason alone, kept with every other field null.
+            Null on every other row
     """
 
     id: UUID
@@ -83,9 +94,14 @@ class CopyLogEntry:
     stages: "CopyStages"
     mfx_ms: Union[None, float]
     signal_to_order_ms: Union[None, float]
+    deal: "CopyLeaderDeal"
+    symbol: Union[None, str]
+    risk: Union["CopyLogEntryRiskType0", None]
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
+        from ..models.copy_leader_deal import CopyLeaderDeal
+        from ..models.copy_log_entry_risk_type_0 import CopyLogEntryRiskType0
         from ..models.copy_stages import CopyStages
 
         id = str(self.id)
@@ -143,6 +159,17 @@ class CopyLogEntry:
         signal_to_order_ms: Union[None, float]
         signal_to_order_ms = self.signal_to_order_ms
 
+        deal = self.deal.to_dict()
+
+        symbol: Union[None, str]
+        symbol = self.symbol
+
+        risk: Union[None, dict[str, Any]]
+        if isinstance(self.risk, CopyLogEntryRiskType0):
+            risk = self.risk.to_dict()
+        else:
+            risk = self.risk
+
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
@@ -167,6 +194,9 @@ class CopyLogEntry:
                 "stages": stages,
                 "mfx_ms": mfx_ms,
                 "signal_to_order_ms": signal_to_order_ms,
+                "deal": deal,
+                "symbol": symbol,
+                "risk": risk,
             }
         )
 
@@ -174,6 +204,8 @@ class CopyLogEntry:
 
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
+        from ..models.copy_leader_deal import CopyLeaderDeal
+        from ..models.copy_log_entry_risk_type_0 import CopyLogEntryRiskType0
         from ..models.copy_stages import CopyStages
 
         d = dict(src_dict)
@@ -189,11 +221,11 @@ class CopyLogEntry:
 
         account_id = UUID(d.pop("account_id"))
 
-        venue = Venue(d.pop("venue"))
+        venue = Venue._read(d.pop("venue"))
 
-        action = CopyLogEntryAction(d.pop("action"))
+        action = CopyLogEntryAction._read(d.pop("action"))
 
-        side = CopyLogEntrySide(d.pop("side"))
+        side = CopyLogEntrySide._read(d.pop("side"))
 
         def _parse_instrument_key(data: object) -> Union[None, str]:
             if data is None:
@@ -202,7 +234,7 @@ class CopyLogEntry:
 
         instrument_key = _parse_instrument_key(d.pop("instrument_key"))
 
-        outcome = CopyOutcome(d.pop("outcome"))
+        outcome = CopyOutcome._read(d.pop("outcome"))
 
         def _parse_reason(data: object) -> Union[CopyReason, None]:
             if data is None:
@@ -210,7 +242,7 @@ class CopyLogEntry:
             try:
                 if not isinstance(data, str):
                     raise TypeError()
-                reason_type_0 = CopyReason(data)
+                reason_type_0 = CopyReason._read(data)
 
                 return reason_type_0
             except:  # noqa: E722
@@ -278,6 +310,30 @@ class CopyLogEntry:
 
         signal_to_order_ms = _parse_signal_to_order_ms(d.pop("signal_to_order_ms"))
 
+        deal = CopyLeaderDeal.from_dict(d.pop("deal"))
+
+        def _parse_symbol(data: object) -> Union[None, str]:
+            if data is None:
+                return data
+            return cast(Union[None, str], data)
+
+        symbol = _parse_symbol(d.pop("symbol"))
+
+        def _parse_risk(data: object) -> Union["CopyLogEntryRiskType0", None]:
+            if data is None:
+                return data
+            try:
+                if not isinstance(data, dict):
+                    raise TypeError()
+                risk_type_0 = CopyLogEntryRiskType0.from_dict(data)
+
+                return risk_type_0
+            except:  # noqa: E722
+                pass
+            return cast(Union["CopyLogEntryRiskType0", None], data)
+
+        risk = _parse_risk(d.pop("risk"))
+
         copy_log_entry = cls(
             id=id,
             created_at=created_at,
@@ -299,6 +355,9 @@ class CopyLogEntry:
             stages=stages,
             mfx_ms=mfx_ms,
             signal_to_order_ms=signal_to_order_ms,
+            deal=deal,
+            symbol=symbol,
+            risk=risk,
         )
 
         copy_log_entry.additional_properties = d

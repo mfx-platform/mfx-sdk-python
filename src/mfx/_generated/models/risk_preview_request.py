@@ -131,9 +131,9 @@ class RiskPreviewRequest:
 
         symbol = d.pop("symbol")
 
-        side = RiskPreviewRequestSide(d.pop("side"))
+        side = RiskPreviewRequestSide._read(d.pop("side"))
 
-        entry_type = RiskPreviewRequestEntryType(d.pop("entry_type"))
+        entry_type = RiskPreviewRequestEntryType._read(d.pop("entry_type"))
 
         sl = d.pop("sl")
 

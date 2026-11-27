@@ -144,7 +144,7 @@ class CopyExternalOpen:
 
         symbol = d.pop("symbol")
 
-        side = CopyExternalOpenSide(d.pop("side"))
+        side = CopyExternalOpenSide._read(d.pop("side"))
 
         def _parse_instrument_key(data: object) -> Union[None, Unset, str]:
             if data is None:

@@ -192,9 +192,9 @@ class OrderClosed:
 
         symbol = d.pop("symbol")
 
-        side = OrderClosedSide(d.pop("side"))
+        side = OrderClosedSide._read(d.pop("side"))
 
-        order_type = OrderClosedOrderType(d.pop("order_type"))
+        order_type = OrderClosedOrderType._read(d.pop("order_type"))
 
         volume = d.pop("volume")
 
@@ -206,7 +206,7 @@ class OrderClosed:
 
         comment = d.pop("comment")
 
-        reason = OrderClosedReason(d.pop("reason"))
+        reason = OrderClosedReason._read(d.pop("reason"))
 
         ts = isoparse(d.pop("ts"))
 

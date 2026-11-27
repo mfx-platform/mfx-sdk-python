@@ -76,7 +76,7 @@ class TenantMaintenanceTerminal:
         d = dict(src_dict)
         terminal_id = UUID(d.pop("terminal_id"))
 
-        state = TenantMaintenanceTerminalState(d.pop("state"))
+        state = TenantMaintenanceTerminalState._read(d.pop("state"))
 
         def _parse_since(data: object) -> Union[None, datetime.datetime]:
             if data is None:

@@ -111,3 +111,25 @@ def test_the_public_check_reads_private_names_from_a_file_and_scans_a_whole_tree
     assert check_public.main(["--tree", str(root)]) == 1
     assert check_public.main(["--tree", str(tmp_path / "missing")]) == 2
     assert f"src/bad.py:1: {WORK_ITEM}" in capsys.readouterr().out
+
+
+def test_the_public_check_refuses_a_test_case_id_of_either_scheme(tmp_path: Path) -> None:
+    """Given a tree whose files carry a test-case id of the area scheme, an S1 id, and text that
+    only looks like one
+    When the public check scans the tree
+    Then the area id (an area code from the closed list and four digits) is refused exactly as an
+    S1 id is, in any case, and an unknown area, a short number or a plain word passes."""
+    area_id = "TC-" + "SDK-0001"
+    root = tmp_path / "tree"
+    root.mkdir()
+    (root / "a.py").write_text(f"# proves {area_id}\n", encoding="utf-8")
+    (root / "b.md").write_text("see " + "TC-S" + "1-W4-001\n", encoding="utf-8")
+    assert check_public.tree_findings(root, frozenset()) == [
+        f"a.py:1: {area_id}",
+        "b.md:1: " + "TC-S" + "1-",
+    ]
+
+    for word in (area_id, "TC-" + "COPY-0042", "TC-" + "PORTAL-0100", "tc-" + "cp-1234"):
+        assert check_public.INTERNAL.search(f"see {word}"), word
+    for word in ("TC-" + "FOO-0001", "TC-" + "SDK-001", "TC-SDK", "a TC- prefix"):
+        assert not check_public.INTERNAL.search(f"see {word}"), word

@@ -96,7 +96,7 @@ class TenantTerminalHa:
             try:
                 if not isinstance(data, str):
                     raise TypeError()
-                mode_type_1 = TenantTerminalHaModeType1(data)
+                mode_type_1 = TenantTerminalHaModeType1._read(data)
 
                 return mode_type_1
             except:  # noqa: E722
@@ -104,7 +104,7 @@ class TenantTerminalHa:
             try:
                 if not isinstance(data, str):
                     raise TypeError()
-                mode_type_2_type_1 = TenantTerminalHaModeType2Type1(data)
+                mode_type_2_type_1 = TenantTerminalHaModeType2Type1._read(data)
 
                 return mode_type_2_type_1
             except:  # noqa: E722
@@ -112,7 +112,7 @@ class TenantTerminalHa:
             try:
                 if not isinstance(data, str):
                     raise TypeError()
-                mode_type_3_type_1 = TenantTerminalHaModeType3Type1(data)
+                mode_type_3_type_1 = TenantTerminalHaModeType3Type1._read(data)
 
                 return mode_type_3_type_1
             except:  # noqa: E722
@@ -129,7 +129,7 @@ class TenantTerminalHa:
 
         mode = _parse_mode(d.pop("mode"))
 
-        fallback_state = TenantTerminalHaFallbackState(d.pop("fallback_state"))
+        fallback_state = TenantTerminalHaFallbackState._read(d.pop("fallback_state"))
 
         tenant_terminal_ha = cls(
             enabled=enabled,

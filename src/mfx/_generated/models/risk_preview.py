@@ -191,7 +191,7 @@ class RiskPreview:
             try:
                 if not isinstance(data, str):
                     raise TypeError()
-                reason_type_1 = RiskPreviewReasonType1(data)
+                reason_type_1 = RiskPreviewReasonType1._read(data)
 
                 return reason_type_1
             except:  # noqa: E722
@@ -199,7 +199,7 @@ class RiskPreview:
             try:
                 if not isinstance(data, str):
                     raise TypeError()
-                reason_type_2_type_1 = RiskPreviewReasonType2Type1(data)
+                reason_type_2_type_1 = RiskPreviewReasonType2Type1._read(data)
 
                 return reason_type_2_type_1
             except:  # noqa: E722
@@ -207,7 +207,7 @@ class RiskPreview:
             try:
                 if not isinstance(data, str):
                     raise TypeError()
-                reason_type_3_type_1 = RiskPreviewReasonType3Type1(data)
+                reason_type_3_type_1 = RiskPreviewReasonType3Type1._read(data)
 
                 return reason_type_3_type_1
             except:  # noqa: E722
@@ -282,7 +282,7 @@ class RiskPreview:
 
             checks.append(checks_item)
 
-        verdict = RiskPreviewVerdict(d.pop("verdict"))
+        verdict = RiskPreviewVerdict._read(d.pop("verdict"))
 
         assumptions = cast(list[str], d.pop("assumptions"))
 

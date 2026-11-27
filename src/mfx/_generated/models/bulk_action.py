@@ -148,9 +148,9 @@ class BulkAction:
         d = dict(src_dict)
         id = UUID(d.pop("id"))
 
-        kind = BulkActionKind(d.pop("kind"))
+        kind = BulkActionKind._read(d.pop("kind"))
 
-        state = BulkActionState(d.pop("state"))
+        state = BulkActionState._read(d.pop("state"))
 
         requested_by = d.pop("requested_by")
 

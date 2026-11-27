@@ -79,7 +79,7 @@ class OwnContact:
         d = dict(src_dict)
         id = UUID(d.pop("id"))
 
-        role = OwnContactRole(d.pop("role"))
+        role = OwnContactRole._read(d.pop("role"))
 
         name = d.pop("name")
 

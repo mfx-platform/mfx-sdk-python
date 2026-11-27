@@ -105,7 +105,7 @@ class MaintenanceWindowChanged:
 
         label = d.pop("label")
 
-        state = MaintenanceWindowChangedState(d.pop("state"))
+        state = MaintenanceWindowChangedState._read(d.pop("state"))
 
         starts_at = isoparse(d.pop("starts_at"))
 
@@ -115,7 +115,7 @@ class MaintenanceWindowChanged:
 
         terminals = d.pop("terminals")
 
-        change = MaintenanceWindowChangedChange(d.pop("change"))
+        change = MaintenanceWindowChangedChange._read(d.pop("change"))
 
         maintenance_window_changed = cls(
             schema_version=schema_version,

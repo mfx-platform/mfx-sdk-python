@@ -5,6 +5,162 @@ Every release of `mfx-sdk`, newest first. The format follows
 [Semantic Versioning](https://semver.org/). Until 1.0.0, a minor version may change the public
 surface; each such change is listed under **Changed** with what to do.
 
+## Unreleased
+
+## 0.19.0
+
+### Added
+
+- The Service Agreement: `client.tenant.service_agreement()` (and `SyncMfxClient.tenant`) reads
+  `GET /tenant/service-agreement`, any key, and answers the API's own `TenantServiceAgreement`:
+  `due`, `held`, the plan in force, the `plan_change` awaiting acceptance (None when there is
+  none), each document due and `accept_url`, where an owner or admin accepts.
+  `SyncMfxClient.tenant` also has `contacts()`.
+- `ServiceAgreementNotAccepted`, a `ConflictError`, for 409 `service_agreement_not_accepted`: a
+  plan change awaits acceptance of the new plan's Service Agreement, or a version of the plan's
+  agreement is past its grace period unaccepted, and an addition (a terminal, an expert advisor,
+  an API key, higher limits) was refused. Its `plan_change` (a `PlanChange`: `id`, `from_`, `to`,
+  `state`, `requested_at`, `until`, `requested_by_operator`), `documents` (each a `DocumentDue`:
+  `document`, `number`, `plan`, `grace_ends_at`) and `accept_url` are read from `details`, None or
+  empty where absent. Not retryable unchanged; nothing running is refused.
+- `TermsNotAccepted`, a `ConflictError`, for 409 `terms_not_accepted`, which until now arrived as a
+  plain `ConflictError`: a Terms of Service or MetaTrader 5 licence version is past its grace
+  period unaccepted. Its `documents` are `DocumentDue` values, each with `grace_ends_at`, when
+  that document's grace period ended.
+- The first answer carrying `MFX-Service-Agreement: due` logs one WARNING on the `mfx` logger,
+  `mfx.SERVICE_AGREEMENT_WARNING`, with the client's `key_id`; that client never logs it again.
+
+- `client.risk.archive_challenge(challenge_id, *, idempotency_key)` archives a challenge
+  (`POST /risk/challenges/{id}/archive`, `risk:write`). It is refused with `StateError`
+  (`state_error`) while any account is in progress, and `details["accounts"]` names them.
+  Archiving it again answers it unchanged. `RiskChallenge` gains `archived_at`, and the planner's
+  check and preview rows (`RiskRuleCheck`) gain `challenge_id`.
+- Billing: `client.billing` (and `SyncMfxClient.billing`) reads every `billing` route of the API
+  (scope `billing:read`): `price_list()` (the public price list, which needs no key and is
+  signed like every request), `summary()` (`GET /billing`: every profile with its standing),
+  `profile(id)`, `forecast(profile_id, month=...)`, `prices()`, `invoice(id)`, and the invoices
+  as `invoices_page(billing_profile_id=..., state=..., cursor=..., limit=...)` or `invoices(...)`,
+  which follows the cursor. Each answers the API's own model; amounts stay exact decimal strings.
+- `PaymentRequiredError`, the class for any 402, and beneath it `BillingPaymentRequiredError`
+  for `billing_payment_required`: a payment is missing on the billing profile. Not retryable
+  unchanged. Its `tenant_id`, `billing_profile_id`, `stage` (`reminder` or `suspended`), `cause`,
+  `since`, `suspends_at`, `pay_by` (aware datetimes) and `action` (a `BillingAction`: `kind`,
+  `portal_path`, `amount_usd` as a `Decimal`, `invoice_id`) are read from `details`, None where
+  absent. An execution method refused for billing returns a refused `ExecutionResult` with the
+  error's text in `detail`, as for every refusal, and never raises.
+- `docs/sdkref.json`: this SDK's public surface in the shared reference format `mfx-sdkref/1`,
+  which the docs site renders beside the other languages. Generated from the source by
+  `tools/sdkref.py`: every class, method, signature with its defaults, docstring, field, enum
+  value, alias and constant, with the API operation each method calls and the API error code
+  each error is raised for. Parameter docs now live in the docstrings, under `Args:`.
+
+### Fixed
+
+- An answer carrying an enum word this SDK was not built with no longer fails the call with a
+  `ValueError` from a generated module: the field reads as the enum's `UNKNOWN`, a
+  pseudo-member whose `.value` is the word as sent, so `to_dict` writes it back unchanged and the
+  rest of the page is read as before. A terminal in a state the SDK does not know reads, with
+  `is_usable` false, where it used to raise `MfxApiError` `contract_breach`. A word you pass in a
+  request is still refused before anything is sent. Suite 0.13.0.
+
+- `place_order` (on `client.execution` and `client.trading_accounts`) now refuses a `comment`
+  longer than 31 characters with `ValueError`, before anything is sent, as its docstring always
+  said and the contract's `maxLength` asks: the terminal would cut it without saying so. Until now
+  it was sent and the platform refused it. Counted in characters (code points), not bytes. The
+  message is `comment is at most 31 characters; the terminal would cut a longer one (N given)`.
+- `close_position` and `close_position_partial` (on `client.execution`, `client.trading_accounts`
+  and their `SyncMfxClient` forms) take an optional `comment`, written on the closing deal
+  (`Deal.comment`) so a caller can tell its own closes apart, as the contract's `PositionClose`
+  and `PositionClosePartial` always allowed; the docstring that said the body had no such field
+  was wrong. Without one the deal takes the position's own comment. Over 31 characters raises
+  the same `ValueError` as `place_order`, before anything is sent.
+
+## 0.18.0
+
+### Added
+
+- Copy Trading: `client.copy` covers every `/copy` route of the API (scopes `copy:read` and
+  `copy:write`). Leaders: `create_leader`, `get_leader`, `leaders` / `all_leaders`,
+  `update_leader`, `pause_leader`, `resume_leader`, `retire_leader(close_copied=..., reason=...)`,
+  and an external leader's `send_open_signal` (exactly one of `volume` and `units`) and
+  `send_close_signal`. Followers: `create_follower`, `preview_follower` (a read: no idempotency
+  key), `get_follower`, `followers` / `all_followers`, `update_follower`, `pause_follower`,
+  `resume_follower`, `resync_follower` and `unfollow(close_copied=...)`; their stop-outs:
+  `stopouts` / `all_stopouts` and `reset_stopouts(reason=...)`. Groups: `create_group`,
+  `get_group`, `groups` / `all_groups`, `update_group`, `add_group_followers`,
+  `remove_group_followers`, `pause_group` and `resume_group`. The copy log: `log` / `all_log`,
+  with its filters (each list sent comma-separated and checked here), its window and its order.
+  Every write takes an `idempotency_key` and is never retried; nested settings are mappings in
+  the API's own names, a `float` anywhere is a `TypeError` and a name the API does not have a
+  `ValueError`, both before anything is sent. Every `all_*` method takes the page size, `limit`.
+  An open signal's `sl` and `tp` may be below zero, as the API's decimals allow; `volume`, `units`
+  and `gross_exposure_cap` may not. The log's `from_` and `to` are aware datetimes: a naive one is
+  a `ValueError`.
+- `options` (a follower's, a preview's and a group template's) takes `when_risk_unchecked`:
+  `"refuse"` (the default) or `"copy"`, for a follower account protected by Risk Management whose
+  copy host cannot yet check a copy against it. It comes from the API description, so a follower
+  read back shows it in `options.when_risk_unchecked`.
+- Requested closes and groups' bulk work: `close_group(group_id, reason=..., pause=...)` (`pause`
+  has no default) closes the copied positions of every live member under one `batch_id`;
+  `rollover_group(group_id, dry_run=..., fields=..., after=..., limit=...)` sets the group's
+  template on its members, a dry run with no key and an applied one with its `idempotency_key`
+  (checked before sending); `closes` / `all_closes` (by follower, leader, group, batch, state and
+  window) and `get_close` follow each requested close of copied positions, an unfollow's or a
+  retire's with `close_copied` among them.
+- The tenant's reads: `signals` / `all_signals` (the leaders' signals with each one's outcomes, by
+  leader, kind, action and window) and `tenant_stopouts` / `all_tenant_stopouts` (every stop-out
+  of the followers, by state, follower, group and window).
+- `followers` / `all_followers` take `sort` (`"newest"`, the default, or `"oldest"`) and
+  `out_of_step`; `log` / `all_log` take `group_id`. A follower read carries `drift`, `limits_use`,
+  `today`, `exposure` and its requested `close`; a group its `exposure` against its cap (USD, an
+  equal share for each live member, with `leavers` and `unenforced`) and `out_of_step`; a log row
+  the leader's `deal`, the follower's `symbol` and, for a Risk refusal, `risk`; the log's stats
+  the p95s; a preview row both contract sizes and the follower's volume unit.
+- `CopyPage`: a list page with its `stats` row, counted over everything the filters match.
+- `REFUSAL_REASONS`: the closed list of reasons a copy did not fill.
+- The `copy.*` events as typed values from `mfx.event_of`: `CopyCopied` (with its stage timings),
+  `CopyRefused` (with `risk`, a `RiskRefusal`, when Risk Management refused the copy),
+  `CopyStopoutEvent`, `CopyDrift`, `CopyStateChanged` and `CopyClosedEvent` (`copy.closed`: a
+  requested close is final, with what it closed and what it did not), each naming the follower
+  account and its venue.
+- `SyncMfxClient.copy`: the same methods, blocking.
+- `client.risk.archive_policy(policy_id, *, idempotency_key)` archives a policy
+  (`POST /risk/policies/{id}/archive`, `risk:write`). It is refused with `StateError`
+  (`state_error`) while any account holds the policy, and `details["accounts"]` names those
+  accounts. Once archived, a policy can't be activated or versioned, and archiving it again answers
+  it unchanged. `RiskPolicy` gains `archived_at`, null while the policy is active.
+- `SyncMfxClient` has the account calls the async client has, for scripts with no event loop:
+  `trading_account_funds`, `trading_account_positions`, `trading_account_pending_orders`,
+  `trading_account_deals`, `trading_account_symbols`; the account's commands
+  (`place_account_order`, `cancel_account_order`, `modify_account_order`,
+  `modify_account_position`, `close_account_position`, `close_account_position_by`,
+  `close_account_position_partial`, `set_account_trailing_stop`, `clear_account_trailing_stop`);
+  `wait_for`; and the cTrader grant flow (`start_ctrader_grant`, `ctrader_grant`,
+  `connect_ctrader_accounts`, `revoke_ctrader_grant`). Each is the blocking form of the method of
+  the same name on `client.trading_accounts` or `client.execution`.
+
+### Changed
+
+- The conformance suite is pinned at 0.8.0: its Copy Trading cases run.
+- `create_group` and `update_group` still take `placement_policy`, which the API now marks
+  deprecated: it is stored and returned, and placement never reads it.
+- Contract refresh: `spec/openapi.yaml` is the public API description with Copy Trading's final
+  shape, and `mfx._generated` is regenerated from it.
+
+## 0.17.0
+
+### Removed
+
+- `terminals.bulk_retire(...)`. MFX Hub does not serve a tenant's bulk retire and will not: the
+  call always answered 404. The contract keeps `POST /terminals:retire` only as deprecated, because
+  v1 changes are additive. To retire many terminals, call `terminals.retire(terminal_id, ...)` for
+  each. `terminals.bulk_restart`, `get_bulk_action` and `cancel_bulk_action` are unchanged.
+
+### Changed
+
+- The vendored contract is refreshed. It adds the advisor parameter-definition routes
+  (`/expert-advisors/{id}/parameter-definitions`), listed under REST only until the SDK wraps them.
+
 ## 0.16.0
 
 ### Added

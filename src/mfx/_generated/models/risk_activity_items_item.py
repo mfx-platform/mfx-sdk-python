@@ -91,7 +91,7 @@ class RiskActivityItemsItem:
 
         command_id = _parse_command_id(d.pop("command_id"))
 
-        outcome = RiskActivityItemsItemOutcome(d.pop("outcome"))
+        outcome = RiskActivityItemsItemOutcome._read(d.pop("outcome"))
 
         def _parse_reason(data: object) -> Union[None, str]:
             if data is None:

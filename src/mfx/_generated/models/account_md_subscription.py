@@ -33,6 +33,7 @@ class AccountMdSubscription:
         symbol (str):
         state (AccountMdSubscriptionState): `pending` until the first spot after it; `streaming` once one has arrived
         created_at (datetime.datetime):
+        timeframes (Union[Unset, list[str]]): The closed-bar series it streams; empty for spots only
         first_tick_at (Union[None, Unset, datetime.datetime]):
     """
 
@@ -41,6 +42,7 @@ class AccountMdSubscription:
     symbol: str
     state: AccountMdSubscriptionState
     created_at: datetime.datetime
+    timeframes: Union[Unset, list[str]] = UNSET
     first_tick_at: Union[None, Unset, datetime.datetime] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
@@ -54,6 +56,10 @@ class AccountMdSubscription:
         state = self.state.value
 
         created_at = self.created_at.isoformat()
+
+        timeframes: Union[Unset, list[str]] = UNSET
+        if not isinstance(self.timeframes, Unset):
+            timeframes = self.timeframes
 
         first_tick_at: Union[None, Unset, str]
         if isinstance(self.first_tick_at, Unset):
@@ -74,6 +80,8 @@ class AccountMdSubscription:
                 "created_at": created_at,
             }
         )
+        if timeframes is not UNSET:
+            field_dict["timeframes"] = timeframes
         if first_tick_at is not UNSET:
             field_dict["first_tick_at"] = first_tick_at
 
@@ -88,9 +96,11 @@ class AccountMdSubscription:
 
         symbol = d.pop("symbol")
 
-        state = AccountMdSubscriptionState(d.pop("state"))
+        state = AccountMdSubscriptionState._read(d.pop("state"))
 
         created_at = isoparse(d.pop("created_at"))
+
+        timeframes = cast(list[str], d.pop("timeframes", UNSET))
 
         def _parse_first_tick_at(data: object) -> Union[None, Unset, datetime.datetime]:
             if data is None:
@@ -115,6 +125,7 @@ class AccountMdSubscription:
             symbol=symbol,
             state=state,
             created_at=created_at,
+            timeframes=timeframes,
             first_tick_at=first_tick_at,
         )
 

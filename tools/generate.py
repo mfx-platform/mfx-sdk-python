@@ -30,6 +30,15 @@ REPO = Path(__file__).resolve().parents[1]
 SPEC = REPO / "spec" / "openapi.yaml"
 OUTPUT = REPO / "src" / "mfx" / "_generated"
 CONFIG = Path(__file__).resolve().parent / "generator-config.yaml"
+#: The generator's own templates, overridden by name where these differ: every enum
+#: gains ``_read``, and a model read from a response builds its enum fields with it, so a word a
+#: later version of the API adds reads as an UNKNOWN pseudo-member keeping the word, instead of
+#: failing the call.
+# DECISION: the tolerance is in ``_read``, not in ``Enum._missing_``. ``_missing_`` would also let
+# a caller's word through ``CopyLeaderSource("acount")`` and send it; a request must still refuse a
+# word the contract does not list. The copy and risk calls that build a body with ``from_dict``
+# pass it through ``mfx._words.refuse_unknown_words``, so their checks before sending still hold.
+TEMPLATES = Path(__file__).resolve().parent / "templates"
 
 
 def generate(spec: Path = SPEC, output: Path = OUTPUT) -> Path:
@@ -67,6 +76,8 @@ def generate(spec: Path = SPEC, output: Path = OUTPUT) -> Path:
             "--overwrite",
             "--config",
             str(CONFIG),
+            "--custom-template-path",
+            str(TEMPLATES),
         ]
         subprocess.run(argv, check=True, cwd=tmp)  # noqa: S603, S607 - fixed argv, never a shell
         missing = dropped_schemas(yaml.safe_load(spec.read_text(encoding="utf-8")), staged)
@@ -128,7 +139,11 @@ def _inlined_alias(schema: Any) -> bool:
     """
     if not isinstance(schema, dict):
         return False
-    if schema.get("type") in _SCALARS:
+    kind = schema.get("type")
+    # OpenAPI 3.1 writes a nullable type as a list, `[string, "null"]`: still a scalar when every
+    # member is one. `[object, "null"]` is not, and the generator drops it, so it is reported.
+    kinds = set(kind) - {"null"} if isinstance(kind, list) else {kind}
+    if kinds and kinds <= _SCALARS:
         return "enum" not in schema
     return _bare_union(schema)
 

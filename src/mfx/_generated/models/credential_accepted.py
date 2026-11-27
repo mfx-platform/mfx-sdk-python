@@ -113,7 +113,7 @@ class CredentialAccepted:
         d = dict(src_dict)
         rotated = d.pop("rotated")
 
-        takes_effect = CredentialAcceptedTakesEffect(d.pop("takes_effect"))
+        takes_effect = CredentialAcceptedTakesEffect._read(d.pop("takes_effect"))
 
         def _parse_operation_id(data: object) -> Union[None, UUID]:
             if data is None:
@@ -134,7 +134,7 @@ class CredentialAccepted:
 
         terminal_id = UUID(d.pop("terminal_id"))
 
-        cred_type = CredentialAcceptedCredType(d.pop("cred_type"))
+        cred_type = CredentialAcceptedCredType._read(d.pop("cred_type"))
 
         execution_disabled = d.pop("execution_disabled")
 

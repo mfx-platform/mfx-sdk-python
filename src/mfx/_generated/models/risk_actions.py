@@ -71,7 +71,7 @@ class RiskActions:
         kinds = []
         _kinds = d.pop("kinds")
         for kinds_item_data in _kinds:
-            kinds_item = RiskActionKind(kinds_item_data)
+            kinds_item = RiskActionKind._read(kinds_item_data)
 
             kinds.append(kinds_item)
 
@@ -80,14 +80,14 @@ class RiskActions:
         if isinstance(_cancel_scope, Unset):
             cancel_scope = UNSET
         else:
-            cancel_scope = RiskActionsCancelScope(_cancel_scope)
+            cancel_scope = RiskActionsCancelScope._read(_cancel_scope)
 
         _close_scope = d.pop("close_scope", UNSET)
         close_scope: Union[Unset, RiskActionsCloseScope]
         if isinstance(_close_scope, Unset):
             close_scope = UNSET
         else:
-            close_scope = RiskActionsCloseScope(_close_scope)
+            close_scope = RiskActionsCloseScope._read(_close_scope)
 
         risk_actions = cls(
             kinds=kinds,

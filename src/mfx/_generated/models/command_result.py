@@ -79,6 +79,15 @@ class CommandResult:
             protection_not_set (Union[Unset, bool]): True when a market order filled but its stop loss or take profit could
                 not be set on the new position (cTrader sets them after the fill): the position is open without them. False
                 otherwise
+            tradable_variants (Union[None, Unset, list[str]]): When `reason` is `instrument_disabled` on MT5: the symbols in
+                the tenant's catalogue for the same server and account type as the terminal that have the refused symbol's base
+                name (its name up to the first `.`, ignoring case) and are not disabled, sorted, never including the refused
+                symbol. A variant whose suffix does not start with `.` (EURUSDm, EURUSD_i) is not found: this is a base-name
+                match, not a full variant search. For example, an order on EURUSD refused this way can name EURUSD.sd. Worked
+                out when the result is read, so it names what trades at that moment. The platform never picks one, rewrites the
+                order or sends it again: send a new order on the one you choose, under a new Idempotency-Key. Null for every
+                other reason, on cTrader, and when no such symbol trades. Not on the `command.failed` stream message: read the
+                command
     """
 
     ok: bool
@@ -104,6 +113,7 @@ class CommandResult:
     volume_units: Union[None, Unset, str] = UNSET
     close_by_emulated: Union[Unset, bool] = UNSET
     protection_not_set: Union[Unset, bool] = UNSET
+    tradable_variants: Union[None, Unset, list[str]] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -225,6 +235,15 @@ class CommandResult:
 
         protection_not_set = self.protection_not_set
 
+        tradable_variants: Union[None, Unset, list[str]]
+        if isinstance(self.tradable_variants, Unset):
+            tradable_variants = UNSET
+        elif isinstance(self.tradable_variants, list):
+            tradable_variants = self.tradable_variants
+
+        else:
+            tradable_variants = self.tradable_variants
+
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
@@ -272,6 +291,8 @@ class CommandResult:
             field_dict["close_by_emulated"] = close_by_emulated
         if protection_not_set is not UNSET:
             field_dict["protection_not_set"] = protection_not_set
+        if tradable_variants is not UNSET:
+            field_dict["tradable_variants"] = tradable_variants
 
         return field_dict
 
@@ -412,7 +433,7 @@ class CommandResult:
         if isinstance(_venue, Unset):
             venue = UNSET
         else:
-            venue = CommandResultVenue(_venue)
+            venue = CommandResultVenue._read(_venue)
 
         def _parse_venue_code(data: object) -> Union[None, Unset, str]:
             if data is None:
@@ -460,6 +481,23 @@ class CommandResult:
 
         protection_not_set = d.pop("protection_not_set", UNSET)
 
+        def _parse_tradable_variants(data: object) -> Union[None, Unset, list[str]]:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, list):
+                    raise TypeError()
+                tradable_variants_type_0 = cast(list[str], data)
+
+                return tradable_variants_type_0
+            except:  # noqa: E722
+                pass
+            return cast(Union[None, Unset, list[str]], data)
+
+        tradable_variants = _parse_tradable_variants(d.pop("tradable_variants", UNSET))
+
         command_result = cls(
             ok=ok,
             reason=reason,
@@ -484,6 +522,7 @@ class CommandResult:
             volume_units=volume_units,
             close_by_emulated=close_by_emulated,
             protection_not_set=protection_not_set,
+            tradable_variants=tradable_variants,
         )
 
         command_result.additional_properties = d
